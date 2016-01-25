@@ -49,7 +49,7 @@ var getBehaviourParams = function(oldParams, req) {
 
     if (typeof oldParams !== 'object') {
 
-        throw new Error('Invalid behaviour parameters');
+        return;
     }
     var keys = Object.keys(oldParams);
     var newParams = {};
