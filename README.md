@@ -90,8 +90,8 @@ backend.setModelController(new ModelController());
 ```
 ## ToDo
 
-1- caching
-2- enhance queue-map algorithm
-3- add streams
-4- add module for external integrations
+1. caching
+2. enhance queue-map algorithm
+3. add streams
+4. add module for external integrations
 
