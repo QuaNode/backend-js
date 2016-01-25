@@ -1,2 +1,2 @@
 # backendjs
-A node module that implements the Behaviour-driven design and other great features
+A node module that implements the behaviour-driven design and map-queue algorithm
