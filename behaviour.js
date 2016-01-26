@@ -2,6 +2,7 @@
 'use strict';
 
 var express = require('express');
+var paginate = require('express-paginate');
 var define = require('define-js');
 
 var QueryExpression = require('./model.js').QueryExpression;
@@ -12,6 +13,13 @@ var BusinessController = require('./business/BusinessController.js').BusinessCon
 var routers = {};
 var businessControllerSharedInstances = {};
 var behaviours = {};
+var types = {
+
+    'database': BusinessBehaviourType.OFFLINESYNC,
+    'integration': BusinessBehaviourType.ONLINESYNC,
+    'database_with_action': BusinessBehaviourType.OFFLINEACTION,
+    'integration_with_action': BusinessBehaviourType.ONLINEACTION
+};
 
 var businessController = function(key) {
 
@@ -50,7 +58,7 @@ var getInputObjects = function(parameters, req) {
 
     if (typeof parameters !== 'object') {
 
-        return;
+        return {};
     }
     var keys = Object.keys(parameters);
     var inputObjects = {};
@@ -112,6 +120,7 @@ module.exports.behaviour = function(app, path) {
             mergeParams: true,
             strict: true
         });
+        router.use(paginate.middleware(10, 50));
         app.use(prefix, router);
         routers[prefix] = router;
     }
@@ -124,6 +133,10 @@ module.exports.behaviour = function(app, path) {
         if (typeof options.name !== 'string' || options.name.length === 0) {
 
             throw new Error('Invalid behaviour name');
+        }
+        if (typeof options.type !== 'string' || !types[options.type]) {
+
+            options.type = 'database';
         }
         if (typeof options.version !== 'string' || options.version.length === 0) {
 
@@ -151,23 +164,51 @@ module.exports.behaviour = function(app, path) {
         var req_handler = function(req, res, next) {
 
             var inputObjects = getInputObjects(options.parameters, req);
+            if (options.paginate) {
+
+                inputObjects.paginate = true;
+                inputObjects.page = req.query.page;
+                inputObjects.limit = req.query.limit;
+            }
             var behaviour = new BehaviourConstructor({
 
-                type: BusinessBehaviourType.OFFLINESYNC,
-                priority: 0,
+                type: types[options.type],
+                priority: options.priority || 0,
                 inputObjects: inputObjects
             });
-            businessController(typeof options.queue == 'function' ? options.queue() : options.queue)
-                .runBehaviour(behaviour, null, function(behaviourResponse, error) {
+            var cancel = businessController(typeof options.queue == 'function' ? options.queue() : options.queue)
+                .runBehaviour(behaviour, options.paginate ? function(property, superProperty) {
+
+                    var page = {
+
+                        modelObjects: 'modelObjects',
+                        pageCount: 'pageCount'
+                    };
+                    return typeof options.map === 'function' ? options.map(property, superProperty) || page[property] : page[property];
+                } : options.map, function(behaviourResponse, error) {
 
                     if (typeof error === 'object' || typeof behaviourResponse !== 'object') {
 
+                        error.name = options.name;
+                        error.version = options.version;
                         next(error || new Error('Error while executing ' + options.name + ' behaviour, version ' + options.version + '!'));
                     } else {
 
-                        res.json(behaviourResponse);
+                        var response = {
+
+                            behaviour: options.name,
+                            version: options.version,
+                            response: options.paginate ? behaviourResponse.modelObjects || behaviourResponse : behaviourResponse
+                        };
+                        if (options.paginate) response.has_more = paginate.hasNextPages(req)(typeof behaviourResponse.pageCount === 'number' ?
+                            behaviourResponse.pageCount : 1);
+                        res.json(response);
                     }
                 });
+            req.on('close', function() {
+
+                if (typeof cancel === 'function') cancel();
+            });
         };
         if (typeof options.method === 'string' && typeof router[(options.method).toLowerCase()] == 'function') {
 
