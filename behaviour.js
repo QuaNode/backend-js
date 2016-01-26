@@ -91,18 +91,19 @@ var getBehaviourParams = function(oldParams, req) {
     return newParams;
 };
 
-module.exports.behaviour = function(app, pathPrefix) {
+module.exports.behaviour = function(app, path) {
 
-    var router = routers[pathPrefix];
+    var prefix = path;
+    if (typeof prefix !== 'string') {
+
+        prefix = '/';
+    }
+    var router = routers[prefix];
     if (!router) {
 
         if (typeof app !== 'object' || typeof app.use !== 'function') {
 
             throw new Error('Invalid express app');
-        }
-        if (typeof pathPrefix !== 'string') {
-
-            throw new Error('Invalid path prefix');
         }
         router = express.Router({
 
@@ -110,8 +111,8 @@ module.exports.behaviour = function(app, pathPrefix) {
             mergeParams: true,
             strict: true
         });
-        app.use(pathPrefix, router);
-        routers[pathPrefix] = router;
+        app.use(prefix, router);
+        routers[prefix] = router;
     }
     return function(definitionObj, getConstructor) {
 
@@ -146,7 +147,7 @@ module.exports.behaviour = function(app, pathPrefix) {
         var BehaviourConstructor = define(getConstructor)
             .extend(definitionObj.superConstructor)
             .parameters(definitionObj.superDefaults);
-        var req_handler = function(req, res) {
+        var req_handler = function(req, res, next) {
 
             var params = getBehaviourParams(definitionObj.parameters, req);
             var behaviour = new BehaviourConstructor({
@@ -160,10 +161,7 @@ module.exports.behaviour = function(app, pathPrefix) {
 
                     if (typeof error === 'object' || typeof behaviourResponse !== 'object') {
 
-                        res.json({
-
-                            message: "Error while executing " + definitionObj.name + " behaviour, version " + definitionObj.version + "!" + "\n" + JSON.stringify(error)
-                        });
+                        next(error || new Error('Error while executing ' + definitionObj.name + ' behaviour, version ' + definitionObj.version + '!'));
                     } else {
 
                         res.json(behaviourResponse);
