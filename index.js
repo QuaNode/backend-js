@@ -7,9 +7,11 @@ var setModelController = require('./model.js').setModelController;
 var model = require('./model.js').model;
 var behaviour = require('./behaviour.js').behaviour;
 
+var expressApp = null;
 
 module.exports = function(app) {
 
+    expressApp = app;
     var backend = {
 
         setComparisonOperators: setComparisonOperators,
@@ -19,9 +21,9 @@ module.exports = function(app) {
 
             return model;
         },
-        behaviour: function(pathPrefix) {
+        behaviour: function(path) {
 
-            return behaviour(app, pathPrefix);
+            return behaviour(app || expressApp, path);
         },
     };
     return backend;
