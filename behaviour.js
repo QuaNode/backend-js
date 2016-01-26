@@ -11,6 +11,7 @@ var BusinessController = require('./business/BusinessController.js').BusinessCon
 
 var routers = {};
 var businessControllerSharedInstances = {};
+var behaviours = {};
 
 var businessController = function(key) {
 
@@ -45,50 +46,50 @@ var businessController = function(key) {
 
 module.exports.businessController = businessController;
 
-var getBehaviourParams = function(oldParams, req) {
+var getInputObjects = function(parameters, req) {
 
-    if (typeof oldParams !== 'object') {
+    if (typeof parameters !== 'object') {
 
         return;
     }
-    var keys = Object.keys(oldParams);
-    var newParams = {};
+    var keys = Object.keys(parameters);
+    var inputObjects = {};
     for (var i = 0; i < keys.length; i++) {
 
-        if (typeof oldParams[keys[i]].key !== 'string') {
+        if (typeof parameters[keys[i]].key !== 'string') {
 
             throw new Error('Invalid behaviour key');
         }
-        if (typeof oldParams[keys[i]].type !== 'string') {
+        if (typeof parameters[keys[i]].type !== 'string') {
 
             throw new Error('Invalid behaviour type');
         }
-        switch (oldParams[keys[i]].type) {
+        switch (parameters[keys[i]].type) {
 
             case 'header':
-                newParams[keys[i]] = req.get(oldParams[keys[i]].key);
+                inputObjects[keys[i]] = req.get(parameters[keys[i]].key);
                 break;
             case 'body':
-                var pathNodes = oldParams[keys[i]].key.split('.');
-                var bodyParamValue = req.body;
-                for (var j = 0; j < pathNodes.length; j++) {
+                var pathComponents = parameters[keys[i]].key.split('.');
+                var value = req.body;
+                for (var j = 0; j < pathComponents.length; j++) {
 
-                    bodyParamValue = bodyParamValue[pathNodes[j]];
+                    value = value[pathComponents[j]];
                 }
-                newParams[keys[i]] = bodyParamValue;
+                inputObjects[keys[i]] = value;
                 break;
             case 'query':
-                newParams[keys[i]] = req.query[oldParams[keys[i]].key];
+                inputObjects[keys[i]] = req.query[parameters[keys[i]].key];
                 break;
             case 'path':
-                newParams[keys[i]] = req.params[oldParams[keys[i]].key];
+                inputObjects[keys[i]] = req.params[parameters[keys[i]].key];
                 break;
             default:
                 new Error('Invalid behaviour type');
                 break;
         }
     }
-    return newParams;
+    return inputObjects;
 };
 
 module.exports.behaviour = function(app, path) {
@@ -114,29 +115,29 @@ module.exports.behaviour = function(app, path) {
         app.use(prefix, router);
         routers[prefix] = router;
     }
-    return function(definitionObj, getConstructor) {
+    return function(options, getConstructor) {
 
-        if (typeof definitionObj !== 'object') {
+        if (typeof options !== 'object') {
 
             throw new Error('Invalid definition object');
         }
-        if (typeof definitionObj.name !== 'string' || definitionObj.name.length === 0) {
+        if (typeof options.name !== 'string' || options.name.length === 0) {
 
             throw new Error('Invalid behaviour name');
         }
-        if (typeof definitionObj.version !== 'string' || definitionObj.version.length === 0) {
+        if (typeof options.version !== 'string' || options.version.length === 0) {
 
             throw new Error('Invalid behaviour version');
         }
-        if (typeof definitionObj.path !== 'string' || definitionObj.path.length === 0) {
+        if (typeof options.path !== 'string' || options.path.length === 0) {
 
             throw new Error('Invalid path');
         }
-        if (typeof definitionObj.superConstructor !== 'function') {
+        if (typeof options.superConstructor !== 'function') {
 
             throw new Error('Invalid super constructor function');
         }
-        if (typeof definitionObj.superDefaults !== 'object') {
+        if (typeof options.superDefaults !== 'object') {
 
             throw new Error('Invalid super constructor defaults');
         }
@@ -145,38 +146,48 @@ module.exports.behaviour = function(app, path) {
             throw new Error('Invalid constructor');
         }
         var BehaviourConstructor = define(getConstructor)
-            .extend(definitionObj.superConstructor)
-            .parameters(definitionObj.superDefaults);
+            .extend(options.superConstructor)
+            .parameters(options.superDefaults);
         var req_handler = function(req, res, next) {
 
-            var params = getBehaviourParams(definitionObj.parameters, req);
+            var inputObjects = getInputObjects(options.parameters, req);
             var behaviour = new BehaviourConstructor({
 
                 type: BusinessBehaviourType.OFFLINESYNC,
                 priority: 0,
-                inputObjects: params
+                inputObjects: inputObjects
             });
-            businessController(typeof definitionObj.queue == 'function' ? definitionObj.queue() : definitionObj.queue)
+            businessController(typeof options.queue == 'function' ? options.queue() : options.queue)
                 .runBehaviour(behaviour, null, function(behaviourResponse, error) {
 
                     if (typeof error === 'object' || typeof behaviourResponse !== 'object') {
 
-                        next(error || new Error('Error while executing ' + definitionObj.name + ' behaviour, version ' + definitionObj.version + '!'));
+                        next(error || new Error('Error while executing ' + options.name + ' behaviour, version ' + options.version + '!'));
                     } else {
 
                         res.json(behaviourResponse);
                     }
                 });
         };
-        if (typeof definitionObj.method === 'string' && typeof router[(definitionObj.method).toLowerCase()] == 'function') {
+        if (typeof options.method === 'string' && typeof router[(options.method).toLowerCase()] == 'function') {
 
-            router[(definitionObj.method).toLowerCase()](definitionObj.path, req_handler);
+            router[(options.method).toLowerCase()](options.path, req_handler);
         } else {
 
             throw new Error('Invalid method');
         }
+        behaviours[options.name] = {
+
+            name: options.name,
+            version: options.version,
+            method: options.method,
+            path: options.path,
+            parameters: options.parameters
+        };
     };
 };
+
+module.exports.behaviours = behaviours;
 
 //var CacheController = require('./cache/CacheController.js').CacheController;
 //var cacheController = new CacheController();

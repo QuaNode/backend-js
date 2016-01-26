@@ -45,37 +45,37 @@ module.exports.setModelController = function(mc) {
   module.exports.modelController = modelController;
 };
 
-module.exports.model = function(definitionObj, attributes, plugins) {
+module.exports.model = function(options, attributes, plugins) {
 
   if (!ModelController || !modelController) {
 
     throw new Error('Set model controller before defining a model');
   }
-  if (typeof definitionObj !== 'object') {
+  if (typeof options !== 'object') {
 
     throw new Error('Invalid definition object');
   }
-  if (typeof definitionObj.name !== 'string' || definitionObj.name.length === 0) {
+  if (typeof options.name !== 'string' || options.name.length === 0) {
 
     throw new Error('Invalid model name');
   }
-  // if (typeof definitionObj.version !== 'string') {
+  // if (typeof options.version !== 'string') {
 
   //   throw new Error('Invalid behaviour version');
   // }
-  if (typeof definitionObj.features !== 'object') {
+  if (typeof options.features !== 'object') {
 
-    definitionObj.features = {};
+    options.features = {};
   }
-  if (!Array.isArray(definitionObj.queryExpressions)) {
+  if (!Array.isArray(options.queryExpressions)) {
 
-    definitionObj.queryExpressions = [];
+    options.queryExpressions = [];
   }
   if (typeof attributes !== 'object') {
 
     throw new Error('Invalid attributes');
   }
-  var EntityConstructor = ModelController.defineEntity(definitionObj.name, attributes, plugins);
+  var EntityConstructor = ModelController.defineEntity(options.name, attributes, plugins);
   var Entity = define(function(init) {
 
     return function(features) {
@@ -84,21 +84,21 @@ module.exports.model = function(definitionObj, attributes, plugins) {
 
         constructor: EntityConstructor,
         attributes: attributes,
-        features: merge(features, definitionObj.features),
-        queryExpressions: definitionObj.queryExpressions
+        features: merge(features, options.features),
+        queryExpressions: options.queryExpressions
       }]).self();
     };
   }).extend(ModelEntity).parameters({
 
     constructor: EntityConstructor,
     attributes: attributes,
-    features: definitionObj.features,
-    queryExpressions: definitionObj.queryExpressions
+    features: options.features,
+    queryExpressions: options.queryExpressions
   });
   ModelEntity.registerModelEntity({
 
     entity: Entity,
-    entityName: definitionObj.name
+    entityName: options.name
   });
   return Entity;
 };
