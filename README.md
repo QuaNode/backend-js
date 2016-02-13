@@ -9,42 +9,38 @@ A node module that implements the behaviour-driven design and map-queue algorith
 
 ``` js
 
-var express = require('express');
-var app = express();
-
-var backend = require('backend-js')(app);
-var model = backend.model();
+var backend = require('backend-js');
 var behaviour = backend.behaviour('/api/v1');
 
+var model = backend.model();
 var User = model({
-  name : 'User'
+
+  name: 'User'
 }, {
-  username : String
+
+  username: String,
+  password: String
 });
 
 behaviour({
-  name : 'GetUser',
-  version : '1',
-  path : '/user'
-}, function (init) {
 
-    return function () {
+  name: 'GetUsers',
+  version: '1',
+  path: '/users',
+  method: 'GET'
+}, function(init) {
 
-        var self = init.apply(this, arguments).self();
-        self.begin('QUERY', function (key, businessController, operation) {
+  return function() {
 
-            var queryExpressions = [new QueryExpression({
+    var self = init.apply(this, arguments).self();
+    self.begin('Query', function(key, businessController, operation) {
 
-                fieldName: 'username',
-                comparisonOperator: ComparisonOperators.EQUAL,
-                fieldValue: 'test'
-            })];
-            operation
-                .query(queryExpressions)
-                .entity(new User())
-                .apply();
-        })
-    };
+        operation
+          .entity(new User())
+          .append(true)
+          .apply();
+      });
+  };
 });
 
 ```
@@ -54,13 +50,13 @@ you should define your own data access layer like following
 
 ``` js
 
-var backend = require('backend-js')();
+var backend = require('backend-js');
 
 var ModelController = function () {
 
     self.removeObjects = function (queryExprs, entity, callback) {
 
-        // do remove 
+        // do remove
     };
     self.newObjects = function (objsAttributes, entity, callback) {
 
