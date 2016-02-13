@@ -57,15 +57,15 @@ module.exports.BusinessBehaviour = define(function (init) {
         self.setType(options.type);
         self.beginServiceOperation = function (serviceOperation) {
 
-            return businessBehaviourExt.beginServiceOperation.apply(businessBehaviourExt, arguments);
+            return businessBehaviourExt.beginServiceOperation.apply(self, arguments);
         };
         self.beginModelOperation = function (modelOperation) {
 
-            return businessBehaviourExt.beginModelOperation.apply(businessBehaviourExt, arguments);
+            return businessBehaviourExt.beginModelOperation.apply(self, arguments);
         };
         self.beginBusinessOperation = function (businessOperation) {
 
-            return businessBehaviourExt.beginBusinessOperation.apply(businessBehaviourExt, arguments);
+            return businessBehaviourExt.beginBusinessOperation.apply(self, arguments);
         };
     };
 }).extend(BusinessLanguage).parameters({});

@@ -1,43 +1,29 @@
 /*jslint node: true */
 'use strict';
 
+var QueryExpression = require('./model/QueryExpression.js').QueryExpression;
 var setComparisonOperators = require('./model.js').setComparisonOperators;
 var setLogicalOperators = require('./model.js').setLogicalOperators;
 var setModelController = require('./model.js').setModelController;
 var model = require('./model.js').model;
 var behaviour = require('./behaviour.js').behaviour;
 var behaviours = require('./behaviour.js').behaviours;
-var utility = require('path');
+var app = require('./behaviour.js').app;
 
-var expressApp = null;
+module.exports = {
 
-module.exports = function(app) {
+    QueryExpression : QueryExpression,
+    setComparisonOperators: setComparisonOperators,
+    setLogicalOperators: setLogicalOperators,
+    setModelController: setModelController,
+    model: function() {
 
-    expressApp = app;
-    var backend = {
+        return model;
+    },
+    behaviour: behaviour,
+    behaviours: behaviours,
+    app: function() {
 
-        setComparisonOperators: setComparisonOperators,
-        setLogicalOperators: setLogicalOperators,
-        setModelController: setModelController,
-        model: function() {
-
-            return model;
-        },
-        behaviour: function(path) {
-
-            return behaviour(app || expressApp, path);
-        },
-        behaviours: function(path) {
-
-            if (typeof(expressApp || app) !== 'object' || typeof(expressApp || app).get !== 'function') {
-
-                throw new Error('Invalid express app');
-            }
-            (expressApp || app).get(typeof path === 'string' ? utility.join(path, '/behaviours') : '/behaviours', function(req, res) {
-
-                res.json(behaviours);
-            });
-        }
-    };
-    return backend;
+        return app;
+    }
 };

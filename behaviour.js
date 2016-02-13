@@ -4,10 +4,12 @@
 var express = require('express');
 var paginate = require('express-paginate');
 var define = require('define-js');
+var utility = require('path');
 
 var QueryExpression = require('./model.js').QueryExpression;
 var ModelEntity = require('./model.js').ModelEntity;
 var BusinessBehaviourType = require('./business/BusinessBehaviour.js').BusinessBehaviourType;
+var BusinessBehaviour = require('./business/BusinessBehaviour.js').BusinessBehaviour;
 var BusinessController = require('./business/BusinessController.js').BusinessController;
 
 var routers = {};
@@ -100,7 +102,9 @@ var getInputObjects = function(parameters, req) {
     return inputObjects;
 };
 
-module.exports.behaviour = function(app, path) {
+var app = module.exports.app = express();
+
+module.exports.behaviour = function(path) {
 
     var prefix = path;
     if (typeof prefix !== 'string') {
@@ -110,7 +114,7 @@ module.exports.behaviour = function(app, path) {
     var router = routers[prefix];
     if (!router) {
 
-        if (typeof app !== 'object' || typeof app.use !== 'function') {
+        if (typeof app !== 'function' || typeof app.use !== 'function') {
 
             throw new Error('Invalid express app');
         }
@@ -146,21 +150,20 @@ module.exports.behaviour = function(app, path) {
 
             throw new Error('Invalid path');
         }
-        if (typeof options.superConstructor !== 'function') {
+        if (typeof options.superConstructor === 'function' && !(options.superConstructor.prototype instanceof BusinessBehaviour)) {
 
-            throw new Error('Invalid super constructor function');
-        }
-        if (typeof options.superDefaults !== 'object') {
-
-            throw new Error('Invalid super constructor defaults');
+            throw new Error('Super behaviour constructor does not inherit from BusinessBehaviour');
         }
         if (typeof getConstructor !== 'function') {
 
             throw new Error('Invalid constructor');
         }
-        var BehaviourConstructor = define(getConstructor)
-            .extend(options.superConstructor)
-            .parameters(options.superDefaults);
+        var BehaviourConstructor = typeof options.superConstructor === 'function' ? define(getConstructor)
+            .extend(options.superConstructor).parameters(options.superDefaults) : define(getConstructor).extend(BusinessBehaviour)
+            .parameters({
+
+                type: types[options.type]
+            });
         var req_handler = function(req, res, next) {
 
             var inputObjects = getInputObjects(options.parameters, req);
@@ -225,11 +228,17 @@ module.exports.behaviour = function(app, path) {
             path: options.path,
             parameters: options.parameters
         };
+        return BehaviourConstructor;
     };
 };
 
-module.exports.behaviours = behaviours;
+module.exports.behaviours = function(path) {
 
+    app.get(typeof path === 'string' ? utility.join(path, '/behaviours') : '/behaviours', function(req, res) {
+
+        res.json(behaviours);
+    });
+};
 //var CacheController = require('./cache/CacheController.js').CacheController;
 //var cacheController = new CacheController();
 //var LogController = require('./logs/LogController.js').LogController;

@@ -8,7 +8,6 @@ module.exports.setComparisonOperators = require('./model/QueryExpression.js').se
 module.exports.setLogicalOperators = require('./model/QueryExpression.js').setLogicalOperators;
 module.exports.QueryExpression = require('./model/QueryExpression.js').QueryExpression;
 var ModelEntity = require('./model/ModelEntity.js').ModelEntity;
-module.exports.ModelEntity = ModelEntity;
 
 var ModelController = null;
 var modelController = null;
