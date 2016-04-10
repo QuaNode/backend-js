@@ -13,7 +13,8 @@ var app = require('./behaviour.js').app;
 
 module.exports = {
 
-    QueryExpression : QueryExpression,
+    ModelEntity: ModelEntity,
+    QueryExpression: QueryExpression,
     setComparisonOperators: setComparisonOperators,
     setLogicalOperators: setLogicalOperators,
     setModelController: setModelController,
