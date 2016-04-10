@@ -1,6 +1,7 @@
 /*jslint node: true */
 'use strict';
 
+var ModelEntity = require('./model/ModelEntity.js').ModelEntity;
 var QueryExpression = require('./model/QueryExpression.js').QueryExpression;
 var setComparisonOperators = require('./model.js').setComparisonOperators;
 var setLogicalOperators = require('./model.js').setLogicalOperators;
