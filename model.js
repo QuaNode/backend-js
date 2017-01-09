@@ -11,6 +11,29 @@ var ModelEntity = require('./model/ModelEntity.js').ModelEntity;
 
 var ModelController = null;
 var modelController = null;
+var resovleTypeAttribute = function(attributes) {
+
+  Object.keys(attributes).forEach(function(key) {
+
+    var object = Array.isArray(attributes[key]) ? attributes[key][0] : typeof attributes[key] === 'object' ? attributes[key] : null;
+    if (object) {
+
+      switch (Object.keys[object].length) {
+
+        case 2:
+          if (Object.keys.indexOf('ref') === -1) break;
+          /* falls through */
+        case 1:
+          if (Object.keys.indexOf('type') > -1) {
+
+            object[key] = object[key].type;
+            return;
+          }
+      }
+      resovleTypeAttribute(object);
+    }
+  });
+};
 
 module.exports.setModelController = function(mc) {
 
@@ -75,17 +98,7 @@ module.exports.model = function(options, attributes, plugins) {
     throw new Error('Invalid attributes');
   }
   var EntityConstructor = ModelController.defineEntity(options.name, attributes, plugins);
-  Object.keys(attributes).forEach(function(key) {
-
-    if (key === 'type' && typeof attributes[key] === 'object') {
-
-      var object = typeof attributes[key] === 'object' ? attributes[key] : Array.isArray(attributes[key]) ? attributes[key][0] : null;
-      if (object && Object.keys[object].length == 1 && Object.keys[object][0] === 'type') {
-
-        object.type = object.type.type;
-      }
-    }
-  });
+  resovleTypeAttribute(attributes);
   var Entity = define(function(init) {
 
     return function(features) {
