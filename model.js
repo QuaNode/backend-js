@@ -75,6 +75,17 @@ module.exports.model = function(options, attributes, plugins) {
     throw new Error('Invalid attributes');
   }
   var EntityConstructor = ModelController.defineEntity(options.name, attributes, plugins);
+  Object.keys(attributes).forEach(function(key) {
+
+    if (key === 'type' && typeof attributes[key] === 'object') {
+
+      var object = typeof attributes[key] === 'object' ? attributes[key] : Array.isArray(attributes[key]) ? attributes[key][0] : null;
+      if (object && Object.keys[object].length == 1 && Object.keys[object][0] === 'type') {
+
+        object.type = object.type.type;
+      }
+    }
+  });
   var Entity = define(function(init) {
 
     return function(features) {
@@ -101,6 +112,3 @@ module.exports.model = function(options, attributes, plugins) {
   });
   return Entity;
 };
-
-// Attributes.interactions[0].type = Attributes.interactions[0].type.type;
-// Attributes.settings.payment_methods[0].type = Attributes.settings.payment_methods[0].type.type;
