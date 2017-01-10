@@ -13,9 +13,9 @@ var BusinessBehaviourType = {
     OFFLINEACTION: 3
 };
 
-module.exports.BusinessBehaviour = define(function (init) {
+module.exports.BusinessBehaviour = define(function(init) {
 
-    return function (options) {
+    return function(options) {
 
         var languageParameters = {
 
@@ -29,14 +29,44 @@ module.exports.BusinessBehaviour = define(function (init) {
         var businessBehaviourExt = new BusinessBehaviourExt(languageParameters);
         var type = null;
         self.priority = options.priority;
-        self.inputObjects = options.inputObjects;
+        var parameters = options.inputObjects;
+        Object.defineProperty(self, 'inputObjects', {
+
+            value: parameters,
+            writable: true,
+            configurable: false,
+            enumerable: true,
+            get: function() {
+
+                return parameters;
+            },
+            set: function(inputObjects) {
+
+                parameters = inputObjects;
+            }
+        });
+        Object.defineProperty(self, 'parameters', {
+
+            value: parameters,
+            writable: true,
+            configurable: false,
+            enumerable: true,
+            get: function() {
+
+                return parameters;
+            },
+            set: function(params) {
+
+                parameters = params;
+            }
+        });
         self.searchText = options.searchText;
         self.mandatoryBehaviour = options.mandatoryBehaviour;
-        self.getType = function () {
+        self.getType = function() {
 
             return type;
         };
-        self.setType = function (typeParameter) {
+        self.setType = function(typeParameter) {
 
             if (typeParameter !== undefined) {
 
@@ -55,22 +85,22 @@ module.exports.BusinessBehaviour = define(function (init) {
             throw new Error('invalid behaviour type');
         };
         self.setType(options.type);
-        self.beginServiceOperation = function (serviceOperation) {
+        self.beginServiceOperation = function(serviceOperation) {
 
             return businessBehaviourExt.beginServiceOperation.apply(self, arguments);
         };
-        self.beginModelOperation = function (modelOperation) {
+        self.beginModelOperation = function(modelOperation) {
 
             return businessBehaviourExt.beginModelOperation.apply(self, arguments);
         };
-        self.beginBusinessOperation = function (businessOperation) {
+        self.beginBusinessOperation = function(businessOperation) {
 
             return businessBehaviourExt.beginBusinessOperation.apply(self, arguments);
         };
     };
 }).extend(BusinessLanguage).parameters({});
 
-module.exports.BusinessBehaviour.prototype.hasMandatoryBehaviour = function (behaviour) {
+module.exports.BusinessBehaviour.prototype.hasMandatoryBehaviour = function(behaviour) {
 
     var self = this;
     if (behaviour && self.mandatoryBehaviour === behaviour) {
@@ -85,7 +115,7 @@ module.exports.BusinessBehaviour.prototype.hasMandatoryBehaviour = function (beh
     }
 };
 
-module.exports.BusinessBehaviour.prototype.isEqualToBehaviour = function (behaviour) {
+module.exports.BusinessBehaviour.prototype.isEqualToBehaviour = function(behaviour) {
 
     var self = this;
     if (self === behaviour) {
