@@ -21,10 +21,10 @@ var resovleTypeAttribute = function(attributes) {
       switch (Object.keys(object).length) {
 
         case 2:
-          if (Object.keys.indexOf('ref') === -1) break;
+          if (Object.keys(object).indexOf('ref') === -1) break;
           /* falls through */
         case 1:
-          if (Object.keys.indexOf('type') > -1) {
+          if (Object.keys(object).indexOf('type') > -1) {
 
             object[key] = object[key].type;
             return;
