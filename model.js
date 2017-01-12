@@ -26,7 +26,7 @@ var resovleTypeAttribute = function(attributes) {
         case 1:
           if (Object.keys(object).indexOf('type') > -1) {
 
-            object[key] = object[key].type;
+            attributes[key] = object.type;
             return;
           }
       }
