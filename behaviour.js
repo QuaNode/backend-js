@@ -162,10 +162,6 @@ var setResponse = function(returns, req, res, response) {
     var keys = Object.keys(returns);
     for (var i = 0; i < keys.length; i++) {
 
-        if (typeof returns[keys[i]].key !== 'string') {
-
-            throw new Error('Invalid return key');
-        }
         if (typeof returns[keys[i]].type !== 'string') {
 
             throw new Error('Invalid return type');
@@ -173,12 +169,12 @@ var setResponse = function(returns, req, res, response) {
         switch (returns[keys[i]].type) {
 
             case 'header':
-                var value = getValueAtPath(returns[keys[i]].key, response, true);
+                var value = getValueAtPath(typeof returns[keys[i]].key !== 'string' ? returns[keys[i]].key : keys[i], response, true);
                 if (value && res) res.set(keys[i], value);
                 break;
             case 'body':
                 if (res) respond(res, response);
-                if (req) req[keys[i]] = getValueAtPath(returns[keys[i]].key, response, true);
+                if (req) req[keys[i]] = getValueAtPath(typeof returns[keys[i]].key !== 'string' ? returns[keys[i]].key : keys[i], response, true);
                 break;
             default:
                 new Error('Invalid return type');
