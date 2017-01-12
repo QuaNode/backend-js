@@ -173,7 +173,6 @@ var setResponse = function(returns, req, res, response) {
                 if (value && res) res.set(keys[i], value);
                 break;
             case 'body':
-                if (res) respond(res, response);
                 if (req) req[keys[i]] = getValueAtPath(typeof returns[keys[i]].key !== 'string' ? returns[keys[i]].key : keys[i], response, true);
                 break;
             default:
@@ -181,6 +180,7 @@ var setResponse = function(returns, req, res, response) {
                 break;
         }
     }
+    if (res) respond(res, response);
 };
 
 module.exports.behaviour = function(path) {
