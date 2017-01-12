@@ -1,7 +1,7 @@
 /*jslint node: true */
 'use strict';
 
-module.exports.ServiceObjectMetadata = function (options) {
+module.exports.ServiceObjectMetadata = function(options) {
 
     var self = this;
     if (typeof options.model === 'string') {
@@ -22,7 +22,7 @@ module.exports.ServiceObjectMetadata = function (options) {
     }
     if (Array.isArray(options.attributes)) {
 
-        if (options.attributes.some(function (attribute) {
+        if (options.attributes.some(function(attribute) {
 
                 return !(attribute instanceof module.exports.ServiceAttributeMetadata);
             })) throw new Error('invalid attributes');
@@ -35,7 +35,7 @@ module.exports.ServiceObjectMetadata = function (options) {
     self.storeID = options.storeID;
 };
 
-module.exports.ServiceAttributeMetadata = function (options) {
+module.exports.ServiceAttributeMetadata = function(options) {
 
     var self = this;
     if (typeof options.model === 'string') {

@@ -10,7 +10,7 @@ var BusinessBehaviourQueue = require('./BusinessBehaviourQueue.js').BusinessBeha
 var BusinessBehaviourCycle = require('./BusinessBehaviourCycle.js').BusinessBehaviourCycle;
 var BusinessControllerExt = require('./BusinessControllerExt.js').BusinessControllerExt;
 
-var BusinessController = function (options) {
+var BusinessController = function(options) {
 
     var self = this;
     var ignoreBehaviours = false;
@@ -69,36 +69,35 @@ var BusinessController = function (options) {
     self.modelController = modelController;
     self.serviceController = serviceController;
     self.cacheController = cacheController;
-    self.getQueueLength = function () {
+    self.getQueueLength = function() {
 
         return businessBehaviourQueue.length();
     };
-    self.forceCancelBehaviours = function () {
+    self.forceCancelBehaviours = function() {
 
         businessBehaviourQueue.cancelAll(businessControllerExt.cancelRunningBehaviour);
     };
-    self.ignoreBehaviours = function () {
+    self.ignoreBehaviours = function() {
 
         ignoreBehaviours = true;
     };
-    self.acceptBehaviours = function () {
+    self.acceptBehaviours = function() {
 
         ignoreBehaviours = false;
     };
-    self.runBehaviour = function (behaviour, getProperty, callback) {
+    self.runBehaviour = function(behaviour, getProperty, callback) {
 
         if (!(behaviour instanceof BusinessBehaviour)) {
 
             throw new Error('Behaviour Missing');
         }
-        if (ignoreBehaviours || businessBehaviourQueue.isEnqueued(behaviour)) return function () {
-        };
-        behaviour.getProperty = getProperty || function (property) {
+        if (ignoreBehaviours || businessBehaviourQueue.isEnqueued(behaviour)) return function() {};
+        behaviour.getProperty = getProperty || function(property) {
 
-                return property;
-            };
+            return property;
+        };
         behaviour.callback = callback;
-        return businessBehaviourQueue.enqueue(behaviour, function () {
+        return businessBehaviourQueue.enqueue(behaviour, function() {
 
             businessBehaviourCycle.runNextBehaviour();
         }, businessControllerExt.cancelRunningBehaviour);

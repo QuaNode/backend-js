@@ -71,24 +71,24 @@ var STATUS_CODES = {
 
 var deviceready = false;
 
-var CacheController = function () {
+var CacheController = function() {
 
     var self = this;
     var callback = null;
     window.cleanURLCache = window.plugins && window.plugins.utils && window.plugins.utils.cleanURLCache;
-    var cacheFileSystem = new CacheFileSystem(function () {
+    var cacheFileSystem = new CacheFileSystem(function() {
 
         deviceready = true;
         if (typeof callback === 'function') callback();
         callback = null;
     });
     var isCanceled = {};
-    var load = function (afterLoad) {
+    var load = function(afterLoad) {
 
         if (!deviceready) callback = afterLoad;
         else if (typeof afterLoad === 'function') afterLoad();
     };
-    var getUsersPath = function () {
+    var getUsersPath = function() {
 
         var path = cacheFileSystem.getRootPath();
         if (device.platform.toLowerCase() !== 'windows8') {
@@ -97,27 +97,27 @@ var CacheController = function () {
         }
         return path;
     };
-    var getUserResourcePath = function (username) {
+    var getUserResourcePath = function(username) {
 
         if (device.platform.toLowerCase() !== 'windows8') return getUsersPath() + '/' + username + '/resources/';
         else return getUsersPath() + '\\' + username + '\\resources\\';
     };
-    var getUserImagePath = function (username) {
+    var getUserImagePath = function(username) {
 
         if (device.platform.toLowerCase() !== 'windows8') return getUsersPath() + '/' + username + '/images/';
         else return getUsersPath() + '\\' + username + '\\images\\';
     };
-    var getHead = function (url, callback) {
+    var getHead = function(url, callback) {
 
         var headXHR = new window.XMLHttpRequest();
         headXHR.open('HEAD', url, true);
-        headXHR.onerror = function () {
+        headXHR.onerror = function() {
 
             var error = new Error(STATUS_CODES[headXHR.status]);
             error.code = headXHR.status;
             callback(0, 0, null, error);
         };
-        headXHR.onload = function (/*oEvent*/) {
+        headXHR.onload = function( /*oEvent*/ ) {
 
             if (headXHR.status < 301) {
 
@@ -129,11 +129,11 @@ var CacheController = function () {
         };
         headXHR.send();
     };
-    var download = function (url, startByte, downloadProgress, completed) {
+    var download = function(url, startByte, downloadProgress, completed) {
 
-        getHead(url, function (fileSize, supportsRanges, fileType, er) {
+        getHead(url, function(fileSize, supportsRanges, fileType, er) {
 
-            var downloadRange = function (start) {
+            var downloadRange = function(start) {
 
                 var SEGMENTSIZE = 10 * 1024 * 1024;
                 var end = start + SEGMENTSIZE;
@@ -145,13 +145,13 @@ var CacheController = function () {
                 getXHR.open('GET', url, true);
                 getXHR.responseType = 'blob';
                 if (supportsRanges) getXHR.setRequestHeader('Range', 'bytes=' + start + '-' + end);
-                getXHR.onerror = function () {
+                getXHR.onerror = function() {
 
                     var error = new Error(STATUS_CODES[getXHR.status]);
                     error.code = getXHR.status;
                     completed(null, start, fileSize, error);
                 };
-                getXHR.onload = function (/*oEvent*/) {
+                getXHR.onload = function( /*oEvent*/ ) {
 
                     if (getXHR.status < 301) {
 
@@ -176,7 +176,7 @@ var CacheController = function () {
                                 throw new Error('can not obtain downloaded blob');
                             }
                         }
-                        window.setTimeout(function () {
+                        window.setTimeout(function() {
 
                             completed(blob, supportsRanges ? end : fileSize, fileSize);
                             if (supportsRanges && end < fileSize) downloadRange(end);
@@ -203,10 +203,10 @@ var CacheController = function () {
             else if (fileSize > 0) downloadRange(startByte || 0);
         });
     };
-    self.downloadResource = function (resource, resume, callback) {
+    self.downloadResource = function(resource, resume, callback) {
 
         var cancel = null;
-        load(function () {
+        load(function() {
 
             var fileSizeLimit = (device.platform.toLowerCase() === 'ios' ? 50 : 100) * 1024 * 1024;
             if (resource.bytesLength > fileSizeLimit) {
@@ -217,8 +217,7 @@ var CacheController = function () {
                 callback(false, 0, error);
                 return;
             }
-            var downloadProgress = resource.downloadProgress || function () {
-                };
+            var downloadProgress = resource.downloadProgress || function() {};
             if (!resource.url || resource.url.length === 0) {
 
                 throw new Error('invalid resource');
@@ -243,9 +242,9 @@ var CacheController = function () {
 
                 var urlComponents = resource.url.split('/');
                 path += urlComponents[urlComponents.length - 1];
-                var beginDownload = function (startByte) {
+                var beginDownload = function(startByte) {
 
-                    download(resource.url, startByte, downloadProgress, function (data, loaded, total, er) {
+                    download(resource.url, startByte, downloadProgress, function(data, loaded, total, er) {
 
                         queue[queue.length] = data;
                         if (!er) {
@@ -255,7 +254,7 @@ var CacheController = function () {
                                 if (cancel === null) {
 
                                     var size = queue[0].size;
-                                    var writeCompletion = function (success, err) {
+                                    var writeCompletion = function(success, err) {
 
                                         if (!success || err) {
 
@@ -268,7 +267,7 @@ var CacheController = function () {
                                             downloadProgress(loaded + size, 2 * total);
                                             if (loaded == total) {
 
-                                                if (resource.data !== undefined) cacheFileSystem.readFile(path, function (fileData, e) {
+                                                if (resource.data !== undefined) cacheFileSystem.readFile(path, function(fileData, e) {
 
                                                     resource.data = fileData;
                                                     if (window.cleanURLCache) window.cleanURLCache([]);
@@ -306,15 +305,15 @@ var CacheController = function () {
                         }
                     });
                 };
-                cacheFileSystem.isFileExisted(path, function (existed, file, error) {
+                cacheFileSystem.isFileExisted(path, function(existed, file, error) {
 
                     if (existed) {
 
                         var size = file ? file.size : 0;
                         resource.path = cacheFileSystem.removeRootPath(path);
-                        var checkResume = function (fileSize) {
+                        var checkResume = function(fileSize) {
 
-                            if (resource.data !== undefined || fileSize) cacheFileSystem.readFile(path, function (fileData, err) {
+                            if (resource.data !== undefined || fileSize) cacheFileSystem.readFile(path, function(fileData, err) {
 
 
                                 if (fileSize > size) {
@@ -330,7 +329,7 @@ var CacheController = function () {
                         };
                         if (resume) {
 
-                            getHead(resource.url, function (fileSize) {
+                            getHead(resource.url, function(fileSize) {
 
                                 checkResume(fileSize);
                             });
@@ -345,7 +344,7 @@ var CacheController = function () {
                 });
             }
         });
-        return function () {
+        return function() {
 
             isCanceled[resource.url] = true;
             if (cancel) {

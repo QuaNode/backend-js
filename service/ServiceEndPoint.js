@@ -5,7 +5,7 @@ var ServiceAdapter = require('./ServiceAdapter.js').ServiceAdapter;
 var ServiceObjectMetadata = require('./ServiceResponseMetadata.js').ServiceObjectMetadata;
 var ServiceAttributeMetadata = require('./ServiceResponseMetadata.js').ServiceAttributeMetadata;
 
-module.exports.ServiceEndPoint = function (options) {
+module.exports.ServiceEndPoint = function(options) {
 
     var self = this;
     var baseURL = options.baseURL;
@@ -25,11 +25,11 @@ module.exports.ServiceEndPoint = function (options) {
 
         throw new Error('invalid response metadata');
     }
-    self.adapter = function (param) {
+    self.adapter = function(param) {
 
         return new Adapter(baseURL, param);
     };
-    self.consumableByAdapter = function (serviceAdapter) {
+    self.consumableByAdapter = function(serviceAdapter) {
 
         return serviceAdapter instanceof ServiceAdapter && serviceAdapter instanceof Adapter && serviceAdapter.getBaseURL() === baseURL;
     };
