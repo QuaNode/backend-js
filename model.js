@@ -18,7 +18,7 @@ var resovleTypeAttribute = function(attributes) {
     var object = Array.isArray(attributes[key]) ? attributes[key][0] : typeof attributes[key] === 'object' ? attributes[key] : null;
     if (object) {
 
-      switch (Object.keys[object].length) {
+      switch (Object.keys(object).length) {
 
         case 2:
           if (Object.keys.indexOf('ref') === -1) break;
