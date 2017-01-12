@@ -189,7 +189,7 @@ var setResponse = function(returns, req, res, response) {
 
 module.exports.behaviour = function(path) {
 
-    if (!defaultPrefix && typeof prefix === 'string' && prefix.length > 0) defaultPrefix = path;
+    if (!defaultPrefix && typeof path === 'string' && path.length > 0) defaultPrefix = path;
     var prefix = path || defaultPrefix;
     var router = null;
     if (typeof prefix === 'string' && prefix.length > 0) {
