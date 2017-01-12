@@ -3,14 +3,16 @@
 
 var merge = require('merge');
 var define = require('define-js');
+var ModelEntity = require('./model/ModelEntity.js').ModelEntity;
 
 module.exports.setComparisonOperators = require('./model/QueryExpression.js').setComparisonOperators;
 module.exports.setLogicalOperators = require('./model/QueryExpression.js').setLogicalOperators;
 module.exports.QueryExpression = require('./model/QueryExpression.js').QueryExpression;
-var ModelEntity = require('./model/ModelEntity.js').ModelEntity;
 
 var ModelController = null;
 var modelController = null;
+var model = module.exports;
+
 var resovleTypeAttribute = function(attributes) {
 
   Object.keys(attributes).forEach(function(key) {
@@ -63,8 +65,8 @@ module.exports.setModelController = function(mc) {
   }
   modelController = mc;
   ModelController = modelController.constructor;
-  module.exports.ModelController = ModelController;
-  module.exports.modelController = modelController;
+  model.ModelController = ModelController;
+  model.modelController = modelController;
 };
 
 module.exports.model = function(options, attributes, plugins) {
