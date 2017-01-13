@@ -166,7 +166,7 @@ var setResponse = function(returns, req, res, response) {
 
             throw new Error('Invalid return type');
         }
-        var value = getValueAtPath(typeof returns[keys[i]].key !== 'string' ? returns[keys[i]].key : keys[i], response.response);
+        var value = getValueAtPath(typeof returns[keys[i]].key === 'string' ? returns[keys[i]].key : keys[i], response.response);
         switch (returns[keys[i]].type) {
 
             case 'header':
