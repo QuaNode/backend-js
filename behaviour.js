@@ -322,7 +322,8 @@ module.exports.behaviour = function(path) {
 
                 path: options.unless.map(function(name) {
 
-                    return typeof prefix === 'string' ? utility.join(prefix, behaviours[name].path) : behaviours[name].path;
+                    var suffix = (behaviours[name] && behaviours[name].path) || name;
+                    return typeof prefix === 'string' ? utility.join(prefix, suffix) : suffix;
                 })
             });
         }
