@@ -104,6 +104,9 @@ var getInputObjects = function(parameters, req) {
             case 'path':
                 inputObjects[keys[i]] = req.params[parameters[keys[i]].key];
                 break;
+            case 'middleware':
+                inputObjects[keys[i]] = req[parameters[keys[i]].key];
+                break;
             default:
                 new Error('Invalid parameter type');
                 break;
@@ -155,7 +158,7 @@ var setResponse = function(returns, req, res, response) {
 
     if (typeof returns !== 'object') {
 
-        if (res) respond(res, response);
+        respond(res, response);
         return;
     }
     var keys = Object.keys(returns);
@@ -170,18 +173,20 @@ var setResponse = function(returns, req, res, response) {
         switch (returns[keys[i]].type) {
 
             case 'header':
-                if (value && res) res.set(keys[i], value);
+                if (value) res.set(keys[i], value);
                 break;
             case 'body':
-                if (res) body[keys[i]] = value;
-                if (req) req[keys[i]] = value;
+                body[keys[i]] = value;
+                break;
+            case 'middleware':
+                req[keys[i]] = value;
                 break;
             default:
                 new Error('Invalid return type');
                 break;
         }
     }
-    if (res) {
+    if (Object.keys(body).length > 0) {
 
         response.response = body;
         respond(res, response);
@@ -273,8 +278,8 @@ module.exports.behaviour = function(path) {
 
                     if (typeof error === 'object' || typeof behaviourResponse !== 'object') {
 
-                        error.name = options.name;
-                        error.version = options.version;
+                        if (error) error.name = options.name;
+                        if (error) error.version = options.version;
                         next(error || new Error('Error while executing ' + options.name + ' behaviour, version ' + options.version + '!'));
                     } else {
 
@@ -286,10 +291,10 @@ module.exports.behaviour = function(path) {
                         };
                         if (options.paginate) response.has_more = paginate.hasNextPages(req)(typeof behaviourResponse.pageCount === 'number' ?
                             behaviourResponse.pageCount : 1);
-                        if (typeof options.path == 'string' && options.path.length > 0) setResponse(options.returns, undefined, res, response);
+                        if (typeof options.path == 'string' && options.path.length > 0) setResponse(options.returns, req, res, response);
                         else {
 
-                            setResponse(options.returns, req, undefined, response);
+                            setResponse(options.returns, req, res, response);
                             next();
                         }
                     }
