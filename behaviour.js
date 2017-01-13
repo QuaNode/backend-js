@@ -61,15 +61,13 @@ var businessController = function(key) {
 
 module.exports.businessController = businessController;
 
-var getValueAtPath = function(path, object, deleteValue) {
+var getValueAtPath = function(path, object) {
 
     var pathComponents = path.split('.');
     var value = object;
     for (var j = 0; value && j < pathComponents.length; j++) {
 
-        var temp = value[pathComponents[j]];
-        if (j === pathComponents.length - 1 && deleteValue) delete value[pathComponents[j]];
-        value = temp;
+        value = value[pathComponents[j]];
     }
     return value;
 };
@@ -157,30 +155,37 @@ var setResponse = function(returns, req, res, response) {
 
     if (typeof returns !== 'object') {
 
-        return {};
+        if (res) respond(res, response);
+        return;
     }
     var keys = Object.keys(returns);
+    var body = {};
     for (var i = 0; i < keys.length; i++) {
 
         if (typeof returns[keys[i]].type !== 'string') {
 
             throw new Error('Invalid return type');
         }
+        var value = getValueAtPath(typeof returns[keys[i]].key !== 'string' ? returns[keys[i]].key : keys[i], response.response);
         switch (returns[keys[i]].type) {
 
             case 'header':
-                var value = getValueAtPath(typeof returns[keys[i]].key !== 'string' ? returns[keys[i]].key : keys[i], response, true);
                 if (value && res) res.set(keys[i], value);
                 break;
             case 'body':
-                if (req) req[keys[i]] = getValueAtPath(typeof returns[keys[i]].key !== 'string' ? returns[keys[i]].key : keys[i], response, true);
+                if (res) body[keys[i]] = value;
+                if (req) req[keys[i]] = value;
                 break;
             default:
                 new Error('Invalid return type');
                 break;
         }
     }
-    if (res) respond(res, response);
+    if (res) {
+
+        response.response = body;
+        respond(res, response);
+    }
 };
 
 module.exports.behaviour = function(path) {
