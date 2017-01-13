@@ -8,7 +8,6 @@ var utility = require('path');
 var unless = require('express-unless');
 var stream = require('stream');
 var converter = require('converter');
-
 var QueryExpression = require('./model.js').QueryExpression;
 var ModelEntity = require('./model.js').ModelEntity;
 var BusinessBehaviourType = require('./business/BusinessBehaviour.js').BusinessBehaviourType;
@@ -17,7 +16,14 @@ var BusinessController = require('./business/BusinessController.js').BusinessCon
 
 var routers = {};
 var businessControllerSharedInstances = {};
-var behaviours = {};
+var behaviours = {
+
+    behaviours: {
+
+        method: 'GET',
+        path: '/behaviours'
+    }
+};
 var types = {
 
     'database': BusinessBehaviourType.OFFLINESYNC,
@@ -76,7 +82,7 @@ var getInputObjects = function(parameters, req) {
 
     if (typeof parameters !== 'object') {
 
-        return {};
+        return req.body;
     }
     var keys = Object.keys(parameters);
     var inputObjects = {};
@@ -156,7 +162,8 @@ var respond = function(res, object) {
 
 var setResponse = function(returns, req, res, response) {
 
-    if (typeof returns !== 'object') {
+    if (typeof returns !== 'object' || typeof response !== 'object' || typeof response.response !== 'object' ||
+        Array.isArray(response.response)) {
 
         respond(res, response);
         return;
@@ -227,6 +234,10 @@ module.exports.behaviour = function(path) {
         if (typeof options.name !== 'string' || options.name.length === 0) {
 
             throw new Error('Invalid behaviour name');
+        }
+        if (options.name === 'behaviours') {
+
+            throw new Error('behaviours is a reserved name');
         }
         if (typeof options.type !== 'string' || !types[options.type]) {
 
@@ -304,42 +315,39 @@ module.exports.behaviour = function(path) {
                 if (typeof cancel === 'function') cancel();
             });
         };
-        if (typeof options.unless === 'function') {
+        if (Array.isArray(options.unless)) {
 
             req_handler.unless = unless;
             req_handler = req_handler.unless({
 
-                custom: function(request) {
+                path: options.unless.map(function(name) {
 
-                    return options.unless({
-
-                        path: request.path,
-                        method: request.method,
-                        secure: request.secure,
-                        ip: request.ip
-                    });
-                }
+                    return typeof prefix === 'string' ? utility.join(prefix, behaviours[name].path) : behaviours[name].path;
+                })
             });
         }
         if (typeof options.path == 'string' && options.path.length > 0 && typeof options.method === 'string' &&
-            typeof router[options.method.toLowerCase()] == 'function') router[options.method.toLowerCase()](options.path, req_handler);
-        else app.use(req_handler);
-        behaviours[options.name] = {
+            typeof router[options.method.toLowerCase()] == 'function') {
 
-            name: options.name,
-            version: options.version,
-            method: options.method,
-            path: options.path,
-            parameters: options.parameters,
-            returns: options.returns
-        };
+            router[options.method.toLowerCase()](options.path, req_handler);
+            behaviours[options.name] = {
+
+                version: options.version,
+                method: options.method,
+                path: options.path,
+                parameters: options.parameters,
+                returns: options.returns
+            };
+        } else app.use(req_handler);
         return BehaviourConstructor;
     };
 };
 
 module.exports.behaviours = function(path) {
 
-    app.get(typeof path === 'string' ? utility.join(path, '/behaviours') : '/behaviours', function(req, res) {
+    if (!defaultPrefix && typeof path === 'string' && path.length > 0) defaultPrefix = path;
+    var prefix = path || defaultPrefix;
+    app.get(typeof prefix === 'string' ? utility.join(prefix, '/behaviours') : '/behaviours', function(req, res) {
 
         res.json(behaviours);
     });

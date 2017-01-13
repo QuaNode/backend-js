@@ -27,7 +27,7 @@ module.exports = {
     },
     behaviour: behaviour,
     behaviours: behaviours,
-    app: function(path, format, port) {
+    app: function(webPath, localPath, format, port) {
 
         if (started) return app;
         started = true;
@@ -52,7 +52,8 @@ module.exports = {
                 next();
             }
         });
-        require(path);
+        if (typeof webPath === 'string' && webPath.length > 0) behaviours(webPath);
+        if (typeof localPath === 'string' && localPath.length > 0) require(localPath);
         app.use(function(req, res, next) {
 
             var err = new Error('Not Found');
