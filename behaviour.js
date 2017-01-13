@@ -299,28 +299,28 @@ module.exports.behaviour = function(path) {
                         }
                     }
                 });
-            if (typeof options.unless === 'function') {
-
-                req_handler.unless = unless;
-                req_handler = req_handler.unless({
-
-                    custom: function(request) {
-
-                        return options.unless({
-
-                            path: request.path,
-                            method: request.method,
-                            secure: request.secure,
-                            ip: request.ip
-                        });
-                    }
-                });
-            }
             req.on('close', function() {
 
                 if (typeof cancel === 'function') cancel();
             });
         };
+        if (typeof options.unless === 'function') {
+
+            req_handler.unless = unless;
+            req_handler = req_handler.unless({
+
+                custom: function(request) {
+
+                    return options.unless({
+
+                        path: request.path,
+                        method: request.method,
+                        secure: request.secure,
+                        ip: request.ip
+                    });
+                }
+            });
+        }
         if (typeof options.path == 'string' && options.path.length > 0 && typeof options.method === 'string' &&
             typeof router[options.method.toLowerCase()] == 'function') router[options.method.toLowerCase()](options.path, req_handler);
         else app.use(req_handler);
