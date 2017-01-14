@@ -7,9 +7,10 @@ var setComparisonOperators = require('./model.js').setComparisonOperators;
 var setLogicalOperators = require('./model.js').setLogicalOperators;
 var setModelController = require('./model.js').setModelController;
 var model = require('./model.js').model;
-var behaviour = require('./behaviour.js').behaviour;
-var behaviours = require('./behaviour.js').behaviours;
-var app = require('./behaviour.js').app;
+var backend = require('./behaviour.js');
+var behaviour = backend.behaviour;
+var behaviours = backend.behaviours;
+var app = backend.app;
 var bodyParser = require('body-parser');
 var logger = require('morgan');
 var started = false;
@@ -27,33 +28,33 @@ module.exports = {
     },
     behaviour: behaviour,
     behaviours: behaviours,
-    app: function(webPath, localPath, format, port) {
+    app: function(path, options) {
 
         if (started) return app;
         started = true;
         app.use(logger('dev'));
-        app.use(typeof format === 'string' && typeof bodyParser[format] === 'function' ? bodyParser[format]() : bodyParser.json());
-        app.all('/*', function(req, res, next) {
+        app.use(typeof options.parser === 'string' && typeof bodyParser[options.parser] === 'function' ?
+            bodyParser[options.parser]() : bodyParser.json());
+        if (typeof options.origins === 'string' && options.origins.length > 0) {
 
-            // res.header('Access-Control-Allow-Origin', '*');
-            // res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
-            // res.header('Access-Control-Allow-Headers', 'Content-type,Accept,X-Access-Token');
-            if (/[A-Z]/.test(req.path)) {
+            app.all((typeof options.path === 'string' && options.path.length > 0 ? options.path : '') + '/*', function(req, res, next) {
 
-                res.status(404).json({
+                backend.origins = options.origins;
+                res.header('Access-Control-Allow-Origin', options.origins);
+                if (/[A-Z]/.test(req.path)) {
 
-                    'message': 'Small letters url required'
-                });
-            } else if (req.method === 'OPTIONS') {
+                    res.status(404).json({
 
-                res.status(200).end();
-            } else {
+                        'message': 'Small letters url required'
+                    });
+                } else {
 
-                next();
-            }
-        });
-        if (typeof webPath === 'string' && webPath.length > 0) behaviours(webPath);
-        if (typeof localPath === 'string' && localPath.length > 0) require(localPath);
+                    next();
+                }
+            });
+        }
+        if (typeof options.path === 'string' && options.path.length > 0) behaviours(options.path);
+        if (typeof path === 'string' && path.length > 0) require(path);
         app.use(function(req, res, next) {
 
             var err = new Error('Not Found');
@@ -70,7 +71,7 @@ module.exports = {
                 message: err.message
             });
         });
-        app.set('port', port || process.env.PORT || 3000);
+        app.set('port', options.port || process.env.PORT || 3000);
         var server = app.listen(app.get('port'), function() {
 
             console.log('Express server listening on port ' + server.address().port);
