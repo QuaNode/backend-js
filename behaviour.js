@@ -340,7 +340,7 @@ module.exports.behaviour = function(path) {
                 returns: options.returns
             };
         } else if (typeof options.path == 'string' && options.path.length > 0)
-            app.use(typeof prefix.path == 'string' && prefix.path.length > 0 ? utility.join(prefix, options.path) : options.path, req_handler);
+            app.use(typeof prefix == 'string' && prefix.length > 0 ? utility.join(prefix, options.path) : options.path, req_handler);
         else app.use(req_handler);
         return BehaviourConstructor;
     };
