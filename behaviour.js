@@ -339,7 +339,8 @@ module.exports.behaviour = function(path) {
                 parameters: options.parameters,
                 returns: options.returns
             };
-        } else if (typeof options.path == 'string' && options.path.length > 0) app.use(options.path, req_handler);
+        } else if (typeof options.path == 'string' && options.path.length > 0)
+            app.use(typeof prefix.path == 'string' && prefix.path.length > 0 ? utility.join(prefix, options.path) : options.path, req_handler);
         else app.use(req_handler);
         return BehaviourConstructor;
     };
