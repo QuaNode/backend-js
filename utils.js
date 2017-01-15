@@ -40,7 +40,7 @@ module.exports = {
                     inputObjects[keys[i]] = req.get(parameters[keys[i]].key);
                     break;
                 case 'body':
-                    inputObjects[keys[i]] = this.getValueAtPath(parameters[keys[i]].key, req.body);
+                    inputObjects[keys[i]] = utils.getValueAtPath(parameters[keys[i]].key, req.body);
                     break;
                 case 'query':
                     inputObjects[keys[i]] = req.query[parameters[keys[i]].key];
@@ -87,11 +87,11 @@ module.exports = {
             },
             text: function() {
 
-                this.sendConverted(res, JSON.stringify(object), 'csv');
+                utils.sendConverted(res, JSON.stringify(object), 'csv');
             },
             xml: function() {
 
-                this.sendConverted(res, JSON.stringify(object), 'xml');
+                utils.sendConverted(res, JSON.stringify(object), 'xml');
             }
         });
     },
@@ -100,7 +100,7 @@ module.exports = {
         if (typeof returns !== 'object' || typeof response !== 'object' || typeof response.response !== 'object' ||
             Array.isArray(response.response)) {
 
-            this.respond(res, response);
+            utils.respond(res, response);
             return;
         }
         var keys = Object.keys(returns);
@@ -111,7 +111,7 @@ module.exports = {
 
                 throw new Error('Invalid return type');
             }
-            var value = this.getValueAtPath(typeof returns[keys[i]].key === 'string' ? returns[keys[i]].key : keys[i], response.response);
+            var value = utils.getValueAtPath(typeof returns[keys[i]].key === 'string' ? returns[keys[i]].key : keys[i], response.response);
             switch (returns[keys[i]].type) {
 
                 case 'header':
@@ -131,15 +131,12 @@ module.exports = {
         if (Object.keys(body).length > 0) {
 
             response.response = body;
-            this.respond(res, response);
+            utils.respond(res, response);
         }
     },
-    allowCrossOrigins: function(options, res, allOriginsAllowed) {
+    allowCrossOrigins: function(options, res, origins) {
 
-        if (!allOriginsAllowed) {
-
-            res.header('Access-Control-Allow-Origin', options.origins);
-        }
+        res.header('Access-Control-Allow-Origin', origins || options.origins || '*');
         if (typeof options.method === 'string' && options.method.length > 0) {
 
             res.header('Access-Control-Allow-Methods', options.method.toUpperCase() + ',OPTIONS');
@@ -157,3 +154,5 @@ module.exports = {
         }
     }
 };
+
+var utils = module.exports;

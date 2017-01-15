@@ -11,7 +11,6 @@ var BusinessBehaviourType = require('./business/BusinessBehaviour.js').BusinessB
 var BusinessBehaviour = require('./business/BusinessBehaviour.js').BusinessBehaviour;
 var getInputObjects = require('./utils.js').getInputObjects;
 var setResponse = require('./utils.js').setResponse;
-var allowCrossOrigins = require('./utils.js').allowCrossOrigins;
 
 var routers = {};
 var behaviours = {
@@ -35,31 +34,10 @@ var app = backend.app = express();
 
 module.exports.behaviour = function(path) {
 
-    if (!defaultPrefix && typeof path === 'string' && path.length > 0) defaultPrefix = path;
-    var prefix = path || defaultPrefix;
-    var router = null;
-    if (typeof prefix === 'string' && prefix.length > 0) {
-
-        router = routers[prefix];
-        if (!router) {
-
-            if (typeof app !== 'function' || typeof app.use !== 'function') {
-
-                throw new Error('Invalid express app');
-            }
-            router = express.Router({
-
-                caseSensitive: true,
-                mergeParams: true,
-                strict: true
-            });
-            router.use(paginate.middleware(10, 50));
-            app.use(prefix, router);
-            routers[prefix] = router;
-        }
-    } else router = app;
     return function(options, getConstructor) {
 
+        if (!defaultPrefix && typeof path === 'string' && path.length > 0) defaultPrefix = path;
+        var prefix = path || defaultPrefix;
         if (typeof options !== 'object') {
 
             throw new Error('Invalid definition object');
@@ -88,16 +66,6 @@ module.exports.behaviour = function(path) {
 
             throw new Error('Invalid constructor');
         }
-        options.allowCrossOrigins = (backend.origins || (typeof options.origins === 'string' && options.origins.length > 0)) &&
-            (typeof options.path == 'string' && options.path.length > 0);
-        if (options.allowCrossOrigins) {
-
-            app.options(typeof prefix === 'string' ? utility.join(prefix, options.path) : options.path, function(req, res, next) {
-
-                allowCrossOrigins(options, res, backend.origins);
-                res.status(200).end();
-            });
-        }
         var BehaviourConstructor = typeof options.superConstructor === 'function' ? define(getConstructor)
             .extend(options.superConstructor).parameters(options.superDefaults) : define(getConstructor).extend(BusinessBehaviour)
             .parameters({
@@ -106,7 +74,6 @@ module.exports.behaviour = function(path) {
             });
         var req_handler = function(req, res, next) {
 
-            if (options.allowCrossOrigins) allowCrossOrigins(options, res, backend.origins);
             var inputObjects = getInputObjects(options.parameters, req);
             if (options.paginate) {
 
@@ -164,16 +131,43 @@ module.exports.behaviour = function(path) {
             req_handler.unless = unless;
             req_handler = req_handler.unless({
 
-                path: options.unless.map(function(name) {
+                custom: function(request) {
 
-                    var suffix = (behaviours[name] && behaviours[name].path) || name;
-                    return typeof prefix === 'string' ? utility.join(prefix, suffix) : suffix;
-                })
+                    return options.unless.map(function(name) {
+
+                        return (behaviours[name] && behaviours[name].path) || name;
+                    }).filter(function(suffix) {
+
+                        return request.path === suffix ||
+                            request.path === (typeof prefix === 'string' ? utility.join(prefix, suffix) : suffix);
+                    }).length > 0;
+                }
             });
         }
         if (typeof options.path == 'string' && options.path.length > 0 && typeof options.method === 'string' &&
-            typeof router[options.method.toLowerCase()] == 'function') {
+            typeof app[options.method.toLowerCase()] == 'function') {
 
+            var router = null;
+            if (typeof prefix === 'string' && prefix.length > 0) {
+
+                router = routers[prefix];
+                if (!router) {
+
+                    if (typeof app !== 'function' || typeof app.use !== 'function') {
+
+                        throw new Error('Invalid express app');
+                    }
+                    router = express.Router({
+
+                        caseSensitive: true,
+                        mergeParams: true,
+                        strict: true
+                    });
+                    router.use(paginate.middleware(10, 50));
+                    app.use(prefix, router);
+                    routers[prefix] = router;
+                }
+            } else router = app;
             router[options.method.toLowerCase()](options.path, req_handler);
             behaviours[options.name] = {
 
@@ -198,7 +192,11 @@ module.exports.behaviours = function(path) {
 
         res.json(behaviours);
     });
+    return behaviours;
 };
+
+module.exports.meta = behaviours;
+
 //var CacheController = require('./cache/CacheController.js').CacheController;
 //var cacheController = new CacheController();
 //var LogController = require('./logs/LogController.js').LogController;
