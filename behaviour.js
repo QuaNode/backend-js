@@ -175,7 +175,8 @@ module.exports.behaviour = function(path) {
                 method: options.method,
                 path: options.path,
                 parameters: options.parameters,
-                returns: options.returns
+                returns: options.returns,
+                default: options.default || false
             };
         } else if (typeof options.path == 'string' && options.path.length > 0)
             app.use(typeof prefix == 'string' && prefix.length > 0 ? utility.join(prefix, options.path) : options.path, req_handler);

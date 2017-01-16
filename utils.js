@@ -100,7 +100,7 @@ module.exports = {
         if (typeof returns !== 'object' || typeof response !== 'object' || typeof response.response !== 'object' ||
             Array.isArray(response.response)) {
 
-            utils.respond(res, response);
+            utils.respond(res, response || {});
             return;
         }
         var keys = Object.keys(returns);
@@ -151,6 +151,16 @@ module.exports = {
 
                     return accumulator + key;
                 }, ''));
+        }
+        if (typeof options.returns === 'object') {
+
+            res.header('Access-Control-Expose-Headers', Object.keys(options.returns).map(function(key) {
+
+                return options.returns[key].type === 'header' ? ',' + key : '';
+            }).reduce(function(accumulator, key) {
+
+                return accumulator + key;
+            }, ''));
         }
     }
 };
