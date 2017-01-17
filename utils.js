@@ -101,7 +101,7 @@ module.exports = {
             Array.isArray(response.response)) {
 
             utils.respond(res, response || {});
-            return;
+            return true;
         }
         var keys = Object.keys(returns);
         var body = {};
@@ -132,7 +132,9 @@ module.exports = {
 
             response.response = body;
             utils.respond(res, response);
+            return true;
         }
+        return false;
     },
     allowCrossOrigins: function(options, res, origins) {
 

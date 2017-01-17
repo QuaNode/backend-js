@@ -113,12 +113,7 @@ module.exports.behaviour = function(path) {
                         };
                         if (options.paginate) response.has_more = paginate.hasNextPages(req)(typeof behaviourResponse.pageCount === 'number' ?
                             behaviourResponse.pageCount : 1);
-                        if (typeof options.path == 'string' && options.path.length > 0) setResponse(options.returns, req, res, response);
-                        else {
-
-                            setResponse(options.returns, req, res, response);
-                            next();
-                        }
+                        if (!setResponse(options.returns, req, res, response)) next();
                     }
                 });
             req.on('close', function() {
@@ -175,8 +170,7 @@ module.exports.behaviour = function(path) {
                 method: options.method,
                 path: options.path,
                 parameters: options.parameters,
-                returns: options.returns,
-                default: options.default || false
+                returns: options.returns
             };
         } else if (typeof options.path == 'string' && options.path.length > 0)
             app.use(typeof prefix == 'string' && prefix.length > 0 ? utility.join(prefix, options.path) : options.path, req_handler);
