@@ -67,8 +67,9 @@ module.exports = {
             }
         });
         behaviours(options.path);
+        if (typeof options.parserOptions !== 'object') options.parserOptions = undefined;
         app.use(typeof options.parser === 'string' && typeof bodyParser[options.parser] === 'function' ?
-            bodyParser[options.parser]() : bodyParser.json());
+            bodyParser[options.parser](options.parserOptions) : bodyParser.json(options.parserOptions));
         if (typeof path === 'string' && path.length > 0) require(path);
         app.use(function(req, res, next) {
 
