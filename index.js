@@ -1,7 +1,6 @@
 /*jslint node: true */
 'use strict';
 
-var utility = require('path');
 var bodyParser = require('body-parser');
 var logger = require('morgan');
 var ModelEntity = require('./model/ModelEntity.js').ModelEntity;
@@ -41,7 +40,7 @@ module.exports = {
             for (var i = 0; i < keys.length; i++) {
 
                 var route = typeof options.path === 'string' && typeof backend.meta[keys[i]].path === 'string' ?
-                    utility.join(options.path, backend.meta[keys[i]].path) : backend.meta[keys[i]].path || options.path;
+                    backend.join(options.path, backend.meta[keys[i]].path) : backend.meta[keys[i]].path || options.path;
                 var method = typeof backend.meta[keys[i]].method === 'string' &&
                     typeof app[backend.meta[keys[i]].method.toLowerCase()] == 'function' && backend.meta[keys[i]].method.toLowerCase();
                 var origins = options.origins || backend.meta[keys[i]].options;

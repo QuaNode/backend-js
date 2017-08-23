@@ -4,13 +4,22 @@
 var express = require('express');
 var paginate = require('express-paginate');
 var define = require('define-js');
-var utility = require('path');
 var unless = require('express-unless');
 var businessController = require('./controller.js').businessController;
 var BusinessBehaviourType = require('./business/BusinessBehaviour.js').BusinessBehaviourType;
 var BusinessBehaviour = require('./business/BusinessBehaviour.js').BusinessBehaviour;
 var getInputObjects = require('./utils.js').getInputObjects;
 var setResponse = require('./utils.js').setResponse;
+
+var backend = module.exports;
+var join = backend.join = function() {
+
+    var utility = require('url');
+    return function(s1, s2) {
+
+        return utility.resolve(s1.substr(0, s1.endsWith('/') ? s1.length - 1 : s1.length) + '/', s2.substr(s2.startsWith('/') ? 1 : 0));
+    };
+}();
 
 var routers = {};
 var behaviours = {
@@ -29,10 +38,9 @@ var types = {
     'integration_with_action': BusinessBehaviourType.ONLINEACTION
 };
 var defaultPrefix = null;
-var backend = module.exports;
 var app = backend.app = express();
 
-module.exports.behaviour = function(path) {
+backend.behaviour = function(path) {
 
     return function(options, getConstructor) {
 
@@ -134,7 +142,7 @@ module.exports.behaviour = function(path) {
                     }).filter(function(suffix) {
 
                         return request.path === suffix ||
-                            request.path === (typeof prefix === 'string' ? utility.join(prefix, suffix) : suffix);
+                            request.path === (typeof prefix === 'string' ? join(prefix, suffix) : suffix);
                     }).length > 0;
                 }
             });
@@ -173,24 +181,24 @@ module.exports.behaviour = function(path) {
                 returns: options.returns
             };
         } else if (typeof options.path == 'string' && options.path.length > 0)
-            app.use(typeof prefix == 'string' && prefix.length > 0 ? utility.join(prefix, options.path) : options.path, req_handler);
+            app.use(typeof prefix == 'string' && prefix.length > 0 ? join(prefix, options.path) : options.path, req_handler);
         else app.use(req_handler);
         return BehaviourConstructor;
     };
 };
 
-module.exports.behaviours = function(path) {
+backend.behaviours = function(path) {
 
     if (!defaultPrefix && typeof path === 'string' && path.length > 0) defaultPrefix = path;
     var prefix = path || defaultPrefix;
-    app.get(typeof prefix === 'string' ? utility.join(prefix, '/behaviours') : '/behaviours', function(req, res) {
+    app.get(typeof prefix === 'string' ? join(prefix + '/', '/behaviours') : '/behaviours', function(req, res) {
 
         res.json(behaviours);
     });
     return behaviours;
 };
 
-module.exports.meta = behaviours;
+backend.meta = behaviours;
 
 //var CacheController = require('./cache/CacheController.js').CacheController;
 //var cacheController = new CacheController();

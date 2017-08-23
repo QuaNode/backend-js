@@ -1,41 +1,41 @@
 {
-  "name": "backend-js",
-  "version": "0.9.9-29",
-  "description": "A node module that implements the behaviour-driven design and map-queue algorithm",
-  "main": "index.js",
-  "scripts": {
-    "test": "test"
-  },
-  "dependencies": {
-    "express": "latest",
-    "express-paginate": "latest",
-    "shallow-copy": "latest",
-    "merge": "latest",
-    "parseparams": "latest",
-    "define-js": "latest",
-    "express-unless": "latest",
-    "body-parser": "latest",
-    "converter": "https://github.com/QuaNode/converter.git",
-    "morgan": "latest"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/quaNode/backendjs.git"
-  },
-  "keywords": [
-    "backend",
-    "js",
-    "javascript",
-    "behaviour",
-    "design",
-    "map",
-    "queue",
-    "beam"
-  ],
-  "author": "Ahmed Ragab <ahmed.ragab@me.com> (http://backendjs.com)",
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/quaNode/backendjs/issues"
-  },
-  "homepage": "https://github.com/quaNode/backendjs#readme"
+    "name": "backend-js",
+    "version": "0.9.9-30",
+    "description": "A node module that implements the behaviour-driven design and map-queue algorithm",
+    "main": "index.js",
+    "scripts": {
+        "test": "test"
+    },
+    "dependencies": {
+        "express": "latest",
+        "express-paginate": "latest",
+        "shallow-copy": "latest",
+        "merge": "latest",
+        "parseparams": "latest",
+        "define-js": "latest",
+        "express-unless": "latest",
+        "body-parser": "latest",
+        "converter": "https://github.com/QuaNode/converter.git",
+        "morgan": "latest"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/quaNode/backendjs.git"
+    },
+    "keywords": [
+        "backend",
+        "js",
+        "javascript",
+        "behaviour",
+        "design",
+        "map",
+        "queue",
+        "beam"
+    ],
+    "author": "Ahmed Ragab <ahmed.ragab@me.com> (http://backendjs.com)",
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/quaNode/backendjs/issues"
+    },
+    "homepage": "https://github.com/quaNode/backendjs#readme"
 }
