@@ -32,7 +32,7 @@ module.exports.BusinessBehaviour = define(function(init) {
         var parameters = options.inputObjects;
         Object.defineProperty(self, 'inputObjects', {
 
-            configurable: false,
+            writable: true,
             enumerable: true,
             get: function() {
 
@@ -45,7 +45,7 @@ module.exports.BusinessBehaviour = define(function(init) {
         });
         Object.defineProperty(self, 'parameters', {
 
-            configurable: false,
+            writable: true,
             enumerable: true,
             get: function() {
 

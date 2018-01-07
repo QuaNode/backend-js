@@ -76,7 +76,7 @@ module.exports = {
             err.code = 404;
             next(err);
         });
-        app.use(function(err, req, res, next) {
+        app.use(function(err, req, res) {
 
             console.log(err);
             res.status(err.code || 500).json({

@@ -1,6 +1,6 @@
 {
     "name": "backend-js",
-    "version": "0.9.9-30",
+    "version": "0.9.9-31",
     "description": "A node module that implements the behaviour-driven design and map-queue algorithm",
     "main": "index.js",
     "scripts": {
@@ -10,7 +10,6 @@
         "express": "latest",
         "express-paginate": "latest",
         "shallow-copy": "latest",
-        "merge": "latest",
         "parseparams": "latest",
         "define-js": "latest",
         "express-unless": "latest",

@@ -9,7 +9,7 @@ module.exports.ModelEntity = function(options) {
     var constructor = options.constructor;
     var attributes = options.attributes;
     var features = options.features;
-    var queryExpressions = options.queryExpressions;
+    var query = options.query;
     if (typeof constructor !== 'function' || Array.isArray(attributes) === 0) throw new Error('Invalid entity parameters');
     self.getObjectConstructor = function() {
 
@@ -23,9 +23,9 @@ module.exports.ModelEntity = function(options) {
 
         return features;
     };
-    self.getObjectQueryExpressions = function() {
+    self.getObjectQuery = function() {
 
-        return queryExpressions;
+        return query;
     };
 };
 
@@ -39,7 +39,7 @@ module.exports.ModelEntity.registerModelEntity = function(options) {
     else throw new Error('Invalid entity parameters');
 };
 
-module.exports.ModelEntity.createModelEntity = function(entityName) {
+module.exports.ModelEntity.createModelEntity = function(entityName, options) {
 
-    return ModelEntities[entityName] && new ModelEntities[entityName]();
+    return ModelEntities[entityName] && new ModelEntities[entityName](options);
 };

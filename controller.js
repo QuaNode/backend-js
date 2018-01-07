@@ -19,7 +19,7 @@ var businessController = function(key) {
             QueryExpression: QueryExpression,
             ComparisonOperators: require('./model/QueryExpression.js').ComparisonOperators,
             //cacheController : cacheController,
-            operationCallback: function(data, operationType, operationSubtype) {
+            operationCallback: function( /*data, operationType , operationSubtype*/ ) {
 
                 /*if (data && data.error) {
 
