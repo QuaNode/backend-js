@@ -72,7 +72,7 @@ module.exports.model = function(options, attributes, plugins) {
 
         throw new Error('Invalid attributes');
     }
-    var EntityConstructor = ModelController.defineEntity(options.name, attributes, plugins);
+    var EntityConstructor = ModelController.defineEntity(options.name, attributes, plugins, options.constraints);
     var Entity = define(function(init) {
 
         return function(features, query) {
