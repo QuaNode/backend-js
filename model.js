@@ -44,6 +44,7 @@ module.exports.setModelController = function(mc) {
 };
 module.exports.model = function(options, attributes, plugins) {
 
+    if (typeof options === 'string' && !attributes && !plugins) return ModelEntity.getModelEntity(options);
     if (!ModelController || !modelController) {
 
         throw new Error('Set model controller before defining a model');

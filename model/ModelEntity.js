@@ -43,3 +43,8 @@ module.exports.ModelEntity.createModelEntity = function(entityName, options) {
 
     return ModelEntities[entityName] && new ModelEntities[entityName](options);
 };
+
+module.exports.ModelEntity.getModelEntity = function(entityName) {
+
+    return ModelEntities[entityName];
+};
