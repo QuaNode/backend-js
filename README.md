@@ -1,4 +1,7 @@
 # backendjs
+
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/f2f50320606542ffb89bc9fef79dbf3f)](https://www.codacy.com/app/quanode/backendjs?utm_source=github.com&utm_medium=referral&utm_content=quaNode/backendjs&utm_campaign=badger)
+
 A node module that implements the behaviour-driven design and map-queue algorithm
 
 ## Installation
