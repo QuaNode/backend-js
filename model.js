@@ -89,7 +89,7 @@ module.exports.model = function(options, attributes, plugins) {
 
                 constructor: EntityConstructor,
                 attributes: attributes,
-                features: Object.assign(features, options.features),
+                features: Object.assign(features || {}, options.features),
                 query: options.query.concat(query)
             }]).self();
         };

@@ -10,6 +10,7 @@ var setLogicalOperators = require('./model.js').setLogicalOperators;
 var setModelController = require('./model.js').setModelController;
 var model = require('./model.js').model;
 var allowCrossOrigins = require('./utils.js').allowCrossOrigins;
+var respond = require('./utils.js').respond;
 var backend = require('./behaviour.js');
 
 var app = backend.app;
@@ -53,7 +54,7 @@ module.exports = {
             }
             if (/[A-Z]/.test(req.path)) {
 
-                res.status(404).json({
+                respond(res.status(404), {
 
                     'message': 'Small letters url required'
                 });
@@ -76,10 +77,10 @@ module.exports = {
             err.code = 404;
             next(err);
         });
-        app.use(function(err, req, res) {
+        app.use(function(err, req, res, next) {
 
             console.log(err);
-            res.status(err.code || 500).json({
+            respond(res.status(err.code || 500), {
 
                 behaviour: err.name,
                 version: err.version,
