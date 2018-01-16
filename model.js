@@ -46,7 +46,9 @@ module.exports.model = function(options, attributes, plugins) {
 
     if (typeof options === 'string' && !attributes && !plugins) return function() {
 
-        return ModelEntity.getModelEntity(options);
+        var modelEntity = ModelEntity.getModelEntity(options);
+        if (!modelEntity) throw new Error('Use require() instead of model() for ' + options);
+        return modelEntity;
     };
     if (!ModelController || !modelController) {
 
