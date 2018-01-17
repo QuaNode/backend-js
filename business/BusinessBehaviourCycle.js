@@ -56,7 +56,7 @@ var endRunningBehaviour = function(currentBehaviour, options) {
 
             self.runNextBehaviour();
         });
-        else console.log('Behaviour already dequeued');
+        else console.log('Behaviour already dequeued, may be misuse of next()');
     };
     if (ignoreBusinessOperation(currentBehaviour, BusinessOperation.ERRORHANDLING, false) ||
         !currentBehaviour.beginBusinessOperation(BusinessOperation.ERRORHANDLING, businessController, businessDelegate)) {

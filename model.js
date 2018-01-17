@@ -44,10 +44,10 @@ module.exports.setModelController = function(mc) {
 };
 module.exports.model = function(options, attributes, plugins) {
 
-    if (typeof options === 'string' && !attributes && !plugins) return function() {
+    if (typeof options === 'string' && !attributes && !plugins) return function(modelName) {
 
         var modelEntity = ModelEntity.getModelEntity(options);
-        if (!modelEntity) throw new Error('Use require() instead of model() for ' + options);
+        if (!modelEntity) throw new Error('Use require() instead of model() for ' + options + ' in ' + modelName);
         return modelEntity;
     };
     if (!ModelController || !modelController) {
@@ -77,6 +77,12 @@ module.exports.model = function(options, attributes, plugins) {
     if (typeof attributes !== 'object') {
 
         throw new Error('Invalid attributes');
+    } else {
+
+        Object.keys(attributes).forEach(function(key) {
+
+            if (!attributes[key]) throw new Error('undefined attribute ! try to use model() instead of require() for ' + key + ' in ' + options.name + ' or check attribute datatype');
+        });
     }
     var EntityConstructor = ModelController.defineEntity(options.name, attributes, plugins, options.constraints);
     var Entity = define(function(init) {
