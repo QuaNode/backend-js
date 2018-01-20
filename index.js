@@ -3,6 +3,7 @@
 
 var bodyParser = require('body-parser');
 var logger = require('morgan');
+var Route = require('route-parser');
 var ModelEntity = require('./model/ModelEntity.js').ModelEntity;
 var QueryExpression = require('./model/QueryExpression.js').QueryExpression;
 var setComparisonOperators = require('./model.js').setComparisonOperators;
@@ -42,11 +43,12 @@ module.exports = {
 
                 var route = typeof options.path === 'string' && typeof backend.meta[keys[i]].path === 'string' ?
                     backend.join(options.path, backend.meta[keys[i]].path) : backend.meta[keys[i]].path || options.path;
+                if (route) route = new Route(route);
                 var method = typeof backend.meta[keys[i]].method === 'string' &&
                     typeof app[backend.meta[keys[i]].method.toLowerCase()] == 'function' && backend.meta[keys[i]].method.toLowerCase();
                 var origins = options.origins || backend.meta[keys[i]].options;
                 origins = typeof origins === 'string' && origins.length > 0 && origins;
-                if (origins && route === req.path && (method === req.method.toLowerCase() || req.method === 'OPTIONS')) {
+                if (origins && route && route.match(req.path) && (method === req.method.toLowerCase() || req.method === 'OPTIONS')) {
 
                     allowCrossOrigins(backend.meta[keys[i]], res, origins);
                     break;

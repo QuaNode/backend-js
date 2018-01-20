@@ -1,6 +1,6 @@
 {
     "name": "backend-js",
-    "version": "0.9.9-37",
+    "version": "0.9.9-38",
     "description": "A node module that implements the behaviour-driven design and map-queue algorithm",
     "main": "index.js",
     "scripts": {
@@ -15,7 +15,8 @@
         "express-unless": "latest",
         "body-parser": "latest",
         "converter": "https://github.com/QuaNode/converter.git",
-        "morgan": "latest"
+        "morgan": "latest",
+        "route-parser": "latest"
     },
     "repository": {
         "type": "git",
