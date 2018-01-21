@@ -44,19 +44,9 @@ backend.behaviour = function(path) {
 
     return function(options, getConstructor) {
 
-        if (!defaultPrefix && typeof path === 'string' && path.length > 0) defaultPrefix = path;
-        var prefix = path || defaultPrefix;
         if (typeof options !== 'object') {
 
             throw new Error('Invalid definition object');
-        }
-        if (typeof options.name !== 'string' || options.name.length === 0) {
-
-            throw new Error('Invalid behaviour name');
-        }
-        if (options.name === 'behaviours') {
-
-            throw new Error('behaviours is a reserved name');
         }
         if (typeof options.type !== 'string' || !types[options.type]) {
 
@@ -66,7 +56,7 @@ backend.behaviour = function(path) {
 
             throw new Error('Invalid behaviour version');
         }
-        if (typeof options.superConstructor === 'function' && !(options.superConstructor.prototype instanceof BusinessBehaviour)) {
+        if (typeof options.inherits === 'function' && !(options.inherits.prototype instanceof BusinessBehaviour)) {
 
             throw new Error('Super behaviour constructor does not inherit from BusinessBehaviour');
         }
@@ -74,115 +64,128 @@ backend.behaviour = function(path) {
 
             throw new Error('Invalid constructor');
         }
-        var BehaviourConstructor = typeof options.superConstructor === 'function' ? define(getConstructor)
-            .extend(options.superConstructor).parameters(options.superDefaults) : define(getConstructor).extend(BusinessBehaviour)
+        var BehaviourConstructor = typeof options.inherits === 'function' ? define(getConstructor)
+            .extend(options.inherits).parameters({
+
+                type: types[options.type],
+                inputObjects: options.defaults
+            }) : define(getConstructor).extend(BusinessBehaviour)
             .parameters({
 
                 type: types[options.type]
             });
-        var req_handler = function(req, res, next) {
+        if (typeof options.name === 'string' || options.name.length > 0) {
 
-            var inputObjects = getInputObjects(options.parameters, req);
-            if (options.paginate) {
+            if (!defaultPrefix && typeof path === 'string' && path.length > 0) defaultPrefix = path;
+            var prefix = path || defaultPrefix;
+            if (options.name === 'behaviours') {
 
-                inputObjects.paginate = true;
-                inputObjects.page = req.query.page;
-                inputObjects.limit = req.query.limit;
+                throw new Error('behaviours is a reserved name');
             }
-            var behaviour = new BehaviourConstructor({
+            var req_handler = function(req, res, next) {
 
-                type: types[options.type],
-                priority: options.priority || 0,
-                inputObjects: inputObjects
-            });
-            var cancel = businessController(typeof options.queue == 'function' ? options.queue() : options.queue)
-                .runBehaviour(behaviour, options.paginate ? function(property, superProperty) {
+                var inputObjects = getInputObjects(options.parameters, req);
+                if (options.paginate) {
 
-                    var page = {
+                    inputObjects.paginate = true;
+                    inputObjects.page = req.query.page;
+                    inputObjects.limit = req.query.limit;
+                }
+                var behaviour = new BehaviourConstructor({
 
-                        modelObjects: 'modelObjects',
-                        pageCount: 'pageCount'
-                    };
-                    return typeof options.map === 'function' ? options.map(property, superProperty) || page[property] : page[property];
-                } : options.map, function(behaviourResponse, error) {
+                    type: types[options.type],
+                    priority: options.priority || 0,
+                    inputObjects: inputObjects
+                });
+                var cancel = businessController(typeof options.queue == 'function' ? options.queue() : options.queue)
+                    .runBehaviour(behaviour, options.paginate ? function(property, superProperty) {
 
-                    if (typeof error === 'object' || typeof behaviourResponse !== 'object') {
+                        var page = {
 
-                        if (error) error.name = options.name;
-                        if (error) error.version = options.version;
-                        next(error || new Error('Error while executing ' + options.name + ' behaviour, version ' + options.version + '!'));
-                    } else {
-
-                        var response = {
-
-                            behaviour: options.name,
-                            version: options.version,
-                            response: options.paginate ? behaviourResponse.modelObjects || behaviourResponse : behaviourResponse
+                            modelObjects: 'modelObjects',
+                            pageCount: 'pageCount'
                         };
-                        if (options.paginate) response.has_more = paginate.hasNextPages(req)(typeof behaviourResponse.pageCount === 'number' ?
-                            behaviourResponse.pageCount : 1);
-                        if (!setResponse(options.returns, req, res, response)) next();
+                        return typeof options.map === 'function' ? options.map(property, superProperty) || page[property] : page[property];
+                    } : options.map, function(behaviourResponse, error) {
+
+                        if (typeof error === 'object' || typeof behaviourResponse !== 'object') {
+
+                            if (error) error.name = options.name;
+                            if (error) error.version = options.version;
+                            next(error || new Error('Error while executing ' + options.name + ' behaviour, version ' + options.version + '!'));
+                        } else {
+
+                            var response = {
+
+                                behaviour: options.name,
+                                version: options.version,
+                                response: options.paginate ? behaviourResponse.modelObjects || behaviourResponse : behaviourResponse
+                            };
+                            if (options.paginate) response.has_more = paginate.hasNextPages(req)(typeof behaviourResponse.pageCount === 'number' ?
+                                behaviourResponse.pageCount : 1);
+                            if (!setResponse(options.returns, req, res, response)) next();
+                        }
+                    });
+                req.on('close', function() {
+
+                    if (typeof cancel === 'function') cancel();
+                });
+            };
+            if (Array.isArray(options.unless)) {
+
+                req_handler.unless = unless;
+                req_handler = req_handler.unless({
+
+                    custom: function(request) {
+
+                        return options.unless.map(function(name) {
+
+                            return (behaviours[name] && behaviours[name].path) || name;
+                        }).filter(function(suffix) {
+
+                            return request.path === suffix ||
+                                request.path === (typeof prefix === 'string' ? join(prefix, suffix) : suffix);
+                        }).length > 0;
                     }
                 });
-            req.on('close', function() {
+            }
+            if (typeof options.path == 'string' && options.path.length > 0 && typeof options.method === 'string' &&
+                typeof app[options.method.toLowerCase()] == 'function') {
 
-                if (typeof cancel === 'function') cancel();
-            });
-        };
-        if (Array.isArray(options.unless)) {
+                var router = null;
+                if (typeof prefix === 'string' && prefix.length > 0) {
 
-            req_handler.unless = unless;
-            req_handler = req_handler.unless({
+                    router = routers[prefix];
+                    if (!router) {
 
-                custom: function(request) {
+                        if (typeof app !== 'function' || typeof app.use !== 'function') {
 
-                    return options.unless.map(function(name) {
+                            throw new Error('Invalid express app');
+                        }
+                        router = express.Router({
 
-                        return (behaviours[name] && behaviours[name].path) || name;
-                    }).filter(function(suffix) {
-
-                        return request.path === suffix ||
-                            request.path === (typeof prefix === 'string' ? join(prefix, suffix) : suffix);
-                    }).length > 0;
-                }
-            });
-        }
-        if (typeof options.path == 'string' && options.path.length > 0 && typeof options.method === 'string' &&
-            typeof app[options.method.toLowerCase()] == 'function') {
-
-            var router = null;
-            if (typeof prefix === 'string' && prefix.length > 0) {
-
-                router = routers[prefix];
-                if (!router) {
-
-                    if (typeof app !== 'function' || typeof app.use !== 'function') {
-
-                        throw new Error('Invalid express app');
+                            caseSensitive: true,
+                            mergeParams: true,
+                            strict: true
+                        });
+                        router.use(paginate.middleware(10, 50));
+                        app.use(prefix, router);
+                        routers[prefix] = router;
                     }
-                    router = express.Router({
+                } else router = app;
+                router[options.method.toLowerCase()](options.path, req_handler);
+                behaviours[options.name] = {
 
-                        caseSensitive: true,
-                        mergeParams: true,
-                        strict: true
-                    });
-                    router.use(paginate.middleware(10, 50));
-                    app.use(prefix, router);
-                    routers[prefix] = router;
-                }
-            } else router = app;
-            router[options.method.toLowerCase()](options.path, req_handler);
-            behaviours[options.name] = {
-
-                version: options.version,
-                method: options.method,
-                path: options.path,
-                parameters: options.parameters,
-                returns: options.returns
-            };
-        } else if (typeof options.path == 'string' && options.path.length > 0)
-            app.use(typeof prefix == 'string' && prefix.length > 0 ? join(prefix, options.path) : options.path, req_handler);
-        else app.use(req_handler);
+                    version: options.version,
+                    method: options.method,
+                    path: options.path,
+                    parameters: options.parameters,
+                    returns: options.returns
+                };
+            } else if (typeof options.path == 'string' && options.path.length > 0)
+                app.use(typeof prefix == 'string' && prefix.length > 0 ? join(prefix, options.path) : options.path, req_handler);
+            else app.use(req_handler);
+        }
         return BehaviourConstructor;
     };
 };
