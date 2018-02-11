@@ -98,7 +98,7 @@ backend.behaviour = function(path) {
                     priority: options.priority || 0,
                     inputObjects: inputObjects
                 });
-                var cancel = businessController(typeof options.queue == 'function' ? options.queue() : options.queue)
+                var cancel = businessController(typeof options.queue === 'function' ? options.queue() : options.queue)
                     .runBehaviour(behaviour, options.paginate ? function(property, superProperty) {
 
                         var page = {
@@ -144,16 +144,16 @@ backend.behaviour = function(path) {
                             return (behaviours[name] && behaviours[name].path) || name;
                         }).filter(function(suffix) {
 
-                            var route = typeof prefix === 'string' && typeof suffix === 'string' ?
-                                backend.join(prefix, suffix) : suffix || prefix;
+                            var route = typeof prefix === 'string' && request.path.startsWith(prefix) &&
+                                typeof suffix === 'string' ? backend.join(prefix, suffix) : suffix || prefix;
                             if (route) route = new Route(route);
                             return route && route.match(request.path);
                         }).length > 0;
                     }
                 });
             }
-            if (typeof options.path == 'string' && options.path.length > 0 && typeof options.method === 'string' &&
-                typeof app[options.method.toLowerCase()] == 'function') {
+            if (typeof options.path === 'string' && options.path.length > 0 && typeof options.method === 'string' &&
+                typeof app[options.method.toLowerCase()] === 'function') {
 
                 var router = null;
                 if (typeof prefix === 'string' && prefix.length > 0) {
@@ -185,8 +185,8 @@ backend.behaviour = function(path) {
                     parameters: options.parameters,
                     returns: options.returns
                 };
-            } else if (typeof options.path == 'string' && options.path.length > 0)
-                app.use(typeof prefix == 'string' && prefix.length > 0 ? join(prefix, options.path) : options.path, req_handler);
+            } else if (typeof options.path === 'string' && options.path.length > 0)
+                app.use(typeof prefix === 'string' && prefix.length > 0 ? join(prefix, options.path) : options.path, req_handler);
             else app.use(req_handler);
         }
         return BehaviourConstructor;
