@@ -3,6 +3,7 @@
 
 var express = require('express');
 var paginate = require('express-paginate');
+var Route = require('route-parser');
 var define = require('define-js');
 var unless = require('express-unless');
 var businessController = require('./controller.js').businessController;
@@ -143,8 +144,10 @@ backend.behaviour = function(path) {
                             return (behaviours[name] && behaviours[name].path) || name;
                         }).filter(function(suffix) {
 
-                            return request.path === suffix ||
-                                request.path === (typeof prefix === 'string' ? join(prefix, suffix) : suffix);
+                            var route = typeof prefix === 'string' && typeof suffix === 'string' ?
+                                backend.join(prefix, suffix) : suffix || prefix;
+                            if (route) route = new Route(route);
+                            return route && route.match(request.path);
                         }).length > 0;
                     }
                 });
