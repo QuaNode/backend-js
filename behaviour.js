@@ -75,7 +75,7 @@ backend.behaviour = function(path) {
 
                 type: types[options.type]
             });
-        if (typeof options.name === 'string' || options.name.length > 0) {
+        if (typeof options.name === 'string' && options.name.length > 0) {
 
             if (!defaultPrefix && typeof path === 'string' && path.length > 0) defaultPrefix = path;
             var prefix = path || defaultPrefix;
