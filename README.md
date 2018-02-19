@@ -4,7 +4,7 @@
 
 ### **Code generation engine designed to understand user requirements.**
 
-    Usually, code generators only focus on performing functions or do specific jobs based on some user requirements, But 
+        Usually, code generators only focus on performing functions or do specific jobs based on some user requirements, But 
 
 they missed the  important part if i want to continue developing what shall i do, start from beginning that's insane !!!
 
@@ -28,11 +28,11 @@ but no clear relation between requirements and the whole code, so the main goal 
 
 of this gap.
 
-That's our new pattern Behavior Driven Design solve, inspired by Behavior Driven Development.
+That's our new pattern Behavior Driven Design solve, inspired by Behavior Driven Development. Also, Defining a standard 
 
-Also, Defining a standard interface to deal with any database operations regardless its engine
+interface to deal with any database operations regardless its engine and integration became easier between backend and 
 
-Integration became easier between backend and frontend with our SDKs
+frontend with our SDKs
 
 ## Installation
 
