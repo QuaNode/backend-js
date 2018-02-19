@@ -1,10 +1,8 @@
-# backendj
-
-
+# backendjs
 
 ### Code generation engine designed to understand user requirements.
 
-        Usually, code generators only focus on performing functions or do specific jobs based on some user requirements, but
+        Usually, code generators on focus on performing functions or do specific jobs based on some user requirements, but
 
 they are missing the important part if i want to continue developing what shall I do ? start from beginning that's insane !
 
@@ -18,11 +16,9 @@ The relationship between user requirements and the code always exists in documen
 
 **For example; in a banking system, the domain contains terminologies like Account, Transaction, etc... so you should use this for naming your code unites \(variables, classes, functions, etc... \).**
 
-Despite that, there is no strong relation between requirements and the code. That where our goal "lead to continuing"  came from.
+Despite that, there is no strong relation between requirements and the code. That where our goal "lead to continuing" came from.
 
 Our new pattern Behavior Driven Design that is inspired by Behavior Driven Development, solves this by many ways like defining a standard interface to deal with databases regardless its type also making front-end integration easier using our cross-platform SDK.
-
-frontend with our SDKs
 
 ## Installation
 
