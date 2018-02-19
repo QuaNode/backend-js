@@ -1,10 +1,14 @@
-# backendjs
+backendj
 
-[![Codacy Badge](https://api.codacy.com/project/badge/Grade/f2f50320606542ffb89bc9fef79dbf3f)](https://www.codacy.com/app/quanode/backendjs?utm_source=github.com&utm_medium=referral&utm_content=quaNode/backendjs&utm_campaign=badger)
+```
 
-### **Code generation engine designed to understand user requirements.**
+```
 
-        Usually, code generators only focus on performing functions or do specific jobs based on some user requirements, but 
+Code generation engine designed to understand user requirements.
+
+```
+Usually, code generators only focus on performing functions or do specific jobs based on some user requirements, but 
+```
 
 they are missing the important part if i want to continue developing what shall I do ? start from beginning that's insane !
 
@@ -40,9 +44,9 @@ var model_name = model(options, attributes, plugins)
 
 | parameter | type | description |
 | :--- | :--- | :--- |
-| options | string \|\| object |  json object can contain name, query  or features. |
-| attributes | json |  json object describe model schema |
-| plugins | array |  add more functionality on schema |
+| options | string \|\| object | json object can contain name, query  or features. |
+| attributes | json | json object describe model schema |
+| plugins | array | add more functionality on schema |
 
 ```js
 var backend = require('backend-js');
@@ -57,8 +61,6 @@ var User = model({
   username: String,
   password: String
 });
-
-
 ```
 
 ### behaviour
@@ -69,8 +71,8 @@ var behaviour_name = behaviour(option, function(){});
 
 | parameter | type | description |
 | :--- | :--- | :--- |
-| options | json |  api configuration |
-| constructor | function |  logic function works by pipe                programming  do functions regardless its order |
+| options | json | api configuration |
+| constructor | function | logic function works by pipe                programming  do functions regardless its order |
 
 ```js
 var getUsers = behaviour({
