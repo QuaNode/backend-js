@@ -4,7 +4,7 @@
 
 ### **Code generation engine designed to understand user requirements.**
 
-        Usually, code generators only focus on performing functions or do specific jobs based on some user requirements, But 
+    Usually, code generators only focus on performing functions or do specific jobs based on some user requirements, But 
 
 they missed the  important part if i want to continue developing what shall i do, start from beginning that's insane !!!
 
@@ -12,11 +12,11 @@ from other side when developing code from scratch you are obliged to follow a lo
 
 ---
 
-That's our backend.js engine idea goal "continuing development using that generated code" by making it standardized, usable, 
+That's our backend.js engine idea goal "continuing development using that generated code" by making it standardized, usable,
 
 readable and maintainable like if you coded it by yourself.
 
-The relationship between user requirements and the code is always documented or just in the developer mind. Domain Driven 
+The relationship between user requirements and the code is always documented or just in the developer mind. Domain Driven
 
 Design had put rules to strengthen this relationship by naming the variables based on the domain you're working on
 
@@ -24,7 +24,7 @@ Design had put rules to strengthen this relationship by naming the variables bas
 
 if you develop a system for a bank variables should be like this\(account, national\_id, client, ....\).
 
-but no clear relation between requirements and the whole code, so the main goal "lead to continuing" can't be satisfied because 
+but no clear relation between requirements and the whole code, so the main goal "lead to continuing" can't be satisfied because
 
 of this gap.
 
