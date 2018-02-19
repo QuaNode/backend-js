@@ -2,9 +2,7 @@
 
 ### Code generation engine designed to understand user requirements.
 
-        Usually, code generators on focus on performing functions or do specific jobs based on some user requirements, but
-
-they are missing the important part if i want to continue developing what shall I do ? start from beginning that's insane !
+      Usually, code generators on focus on performing functions or do specific jobs based on some user requirements, but they are missing the important part if i want to continue developing what shall I do ? start from beginning that's insane !
 
 from the other side when developing code on your own from scratch you are obliged to follow a lot of standards and checklists to achieve the clean code.
 
