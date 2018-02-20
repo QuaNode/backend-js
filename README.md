@@ -12,7 +12,7 @@ The relationship between user requirements and the code always exists in documen
 
 Despite that, there is no strong relation between user requirements and the code that is where our goal "lead to continuing" came from.
 
-Our new pattern Behavior Driven Design that is inspired by Behavior Driven Development, solves this by many ways like defining a standard interface to deal with databases regardless its type also defining a language to write the higher level logic breaking that gap between code and user requirements.
+Our new pattern [Behavior Driven Design](https://github.com/QuaNode/backendjs/wiki/Behavior-driven-design) that is inspired by Behavior Driven Development, solves this by many ways like defining a standard interface to deal with databases regardless its type also defining a language to write the higher level logic breaking that gap between code and user requirements.
 
 ## Installation
 
