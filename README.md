@@ -22,7 +22,46 @@ npm install backend-js
 
 ## Usage
 
+### server
+
+```js
+var beam = require('./beamjs/index.js');
+
+beam.database(__dirname + '/models', {
+
+    type: "mysql",
+    username: "root",
+    password: "123456789",
+    name: "database_name",
+    host: "domain",
+    port: "3306"
+}).app(__dirname + '/behaviours', {
+
+    path: '/api/v1',
+    parser: 'json',
+    port: 8383,
+    origins: '*'
+});
+
+```
+
+##### database
+
+| parameter | type | description |
+| :--- | :--- | :--- |
+| path | string | path directory of models |
+| configuration | json | database configurations |
+
+##### app
+
+| parameter | type | description |
+| :--- | :--- | :--- |
+| path | string | path directory of behaviours |
+| configuration | json | apis configurations |
+
 ### model
+
+model entity
 
 ```js
 var Model = model(options, attributes, plugins)
@@ -30,8 +69,8 @@ var Model = model(options, attributes, plugins)
 
 | parameter | type | description |
 | :--- | :--- | :--- |
-| options | string \|\| object | object can contain name, query  or features. |
-| attributes | object | json object describe model schema |
+| options | string \|\| object | object can contain name, query or features. |
+| attributes | object | json object describes model schema |
 | plugins | array | add more functionality on schema |
 
 ```js
@@ -51,6 +90,8 @@ var User = model({
 
 ### behaviour
 
+create an api
+
 ```js
 var behaviour_name = behaviour(option, function(){});
 ```
@@ -58,7 +99,7 @@ var behaviour_name = behaviour(option, function(){});
 | parameter | type | description |
 | :--- | :--- | :--- |
 | options | json | api configuration |
-| constructor | function | logic function works by pipe                programming  do functions regardless its order |
+| constructor | function | logic function works by pipe programming do functions regardless its order |
 
 ```js
 var getUsers = behaviour({
