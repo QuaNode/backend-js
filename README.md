@@ -97,7 +97,7 @@ var behaviour_name = behaviour(option, function(){});
 
 | parameter | type | description |
 | :--- | :--- | :--- |
-| options | object | api configuration like \(name, version, path, method, parameters, returns\) |
+| options | object | api configuration \(name, version, path, method, parameters, returns\) |
 | constructor | function | logic function works by pipe programming do functions regardless its order |
 |  |  | database processor query insert delete |
 |  |  | data mapping map returns |
