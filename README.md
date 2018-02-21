@@ -2,7 +2,7 @@
 
 ### Made for code generation, designed to understand user requirements.
 
-Usually, code generators focus on performing functions or do specific jobs based on user requirements, but they are missing the important part if I want to continue developing what shall I do? start from the beginning that's insane! from the other side when developing code on your own from scratch you are obliged to follow a lot of standards and checklists to achieve that clean code.
+Usually, code generators always focus on performing functions or do specific jobs based on user requirements, but they are missing the important part if I want to continue developing what shall I do? start from the beginning that's insane! from the other side when developing code on your own from scratch you are obliged to follow a lot of standards and checklists to achieve that clean code.
 
 That's the idea of our backend.js engine "continuing development using that generated code" by making it standardized, reusable, readable and maintainable as if you coded it by yourself.
 
@@ -42,7 +42,6 @@ beam.database(__dirname + '/models', {
     port: 8383,
     origins: '*'
 });
-
 ```
 
 ##### database
