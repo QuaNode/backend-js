@@ -48,14 +48,14 @@ beam.database(__dirname + '/models', {
 
 | parameter | type | description |
 | :--- | :--- | :--- |
-| path | string | path of models |
+| path | string | path of models folder |
 | configuration | object | database configurations |
 
 ##### app
 
 | parameter | type | description |
 | :--- | :--- | :--- |
-| path | string | path of behaviours |
+| path | string | path of behaviours folder |
 | configuration | object | app configurations |
 
 ### model
@@ -97,11 +97,11 @@ var behaviour_name = behaviour(option, function(){});
 
 | parameter | type | description |
 | :--- | :--- | :--- |
-| options | object | api configuration \(me\) |
+| options | object | api configuration like \(name, version, path, method, parameters, returns\) |
 | constructor | function | logic function works by pipe programming do functions regardless its order |
 |  |  | database processor query insert delete |
-|  |  | data mapping map returns  |
-|  |  | error handling  |
+|  |  | data mapping map returns |
+|  |  | error handling |
 
 ```js
 var getUsers = behaviour({
