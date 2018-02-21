@@ -48,14 +48,14 @@ beam.database(__dirname + '/models', {
 
 | parameter | type | description |
 | :--- | :--- | :--- |
-| path | string | path directory of models |
+| path | string | path of models |
 | configuration | json | database configurations |
 
 ##### app
 
 | parameter | type | description |
 | :--- | :--- | :--- |
-| path | string | path directory of behaviours |
+| path | string | path of behaviours |
 | configuration | json | apis configurations |
 
 ### model
