@@ -98,10 +98,7 @@ var behaviour_name = behaviour(option, function(){});
 | parameter | type | description |
 | :--- | :--- | :--- |
 | options | object | api configuration \(name, version, path, method, parameters, returns\) |
-| constructor | function | logic function works by pipe programming do functions regardless its order |
-|  |  | database processor query insert delete |
-|  |  | data mapping map returns |
-|  |  | error handling |
+| constructor | function | logic function works by registering on methods to do functions regardless its orders, like \(database processor query, insert, delete or update\), data mapping to map returns of data to specific format or server error handling  |
 
 ```js
 var getUsers = behaviour({
