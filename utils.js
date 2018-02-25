@@ -16,7 +16,7 @@ module.exports = {
         }
         return value;
     },
-    getInputObjects: function(parameters, req) {
+    getInputObjects: function(parameters, req, callback) {
 
         if (typeof parameters !== 'object') {
 
@@ -56,7 +56,7 @@ module.exports = {
                     break;
             }
         }
-        return inputObjects;
+        callback(inputObjects);
     },
     sendConverted: function(res, json, format) {
 

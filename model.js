@@ -11,6 +11,7 @@ module.exports.QueryExpression = require('./model/QueryExpression.js').QueryExpr
 var ModelController = null;
 var modelController = null;
 var model = module.exports;
+
 module.exports.setModelController = function(mc) {
 
     if (typeof mc !== 'object') {

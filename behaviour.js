@@ -11,6 +11,7 @@ var BusinessBehaviourType = require('./business/BusinessBehaviour.js').BusinessB
 var BusinessBehaviour = require('./business/BusinessBehaviour.js').BusinessBehaviour;
 var getInputObjects = require('./utils.js').getInputObjects;
 var setResponse = require('./utils.js').setResponse;
+var respond = require('./utils.js').respond;
 
 var backend = module.exports;
 var join = backend.join = function() {
@@ -83,9 +84,8 @@ backend.behaviour = function(path) {
 
                 throw new Error('behaviours is a reserved name');
             }
-            var req_handler = function(req, res, next) {
+            var behaviour_runner = function(req, res, next, inputObjects, er) {
 
-                var inputObjects = getInputObjects(options.parameters, req);
                 if (options.paginate) {
 
                     inputObjects.paginate = true;
@@ -113,7 +113,7 @@ backend.behaviour = function(path) {
 
                             if (error) error.name = options.name;
                             if (error) error.version = options.version;
-                            next(error || new Error('Error while executing ' + options.name + ' behaviour, version ' + options.version + '!'));
+                            next(error || er || new Error('Error while executing ' + options.name + ' behaviour, version ' + options.version + '!'));
                         } else {
 
                             var response = {
@@ -124,12 +124,29 @@ backend.behaviour = function(path) {
                             };
                             if (options.paginate) response.has_more = paginate.hasNextPages(req)(typeof behaviourResponse.pageCount === 'number' ?
                                 behaviourResponse.pageCount : 1);
-                            if (!setResponse(options.returns, req, res, response)) next();
+                            if (typeof options.returns !== 'function') {
+
+                                if (!setResponse(options.returns, req, res, response)) next();
+                            } else options.returns(req, res, function(outputObjects) {
+
+                                respond(res, outputObjects);
+                            });
                         }
                     });
                 req.on('close', function() {
 
                     if (typeof cancel === 'function') cancel();
+                });
+            };
+            var req_handler = function(req, res, next) {
+
+                if (typeof options.parameters !== 'function') getInputObjects(options.parameters, req, function(inputObjects) {
+
+                    behaviour_runner(req, res, next, inputObjects);
+                });
+                else options.parameters(req, res, function(inputObjects, er) {
+
+                    behaviour_runner(req, res, next, inputObjects, er);
                 });
             };
             if (Array.isArray(options.unless)) {
@@ -176,7 +193,8 @@ backend.behaviour = function(path) {
                         routers[prefix] = router;
                     }
                 } else router = app;
-                router[options.method.toLowerCase()](options.path, req_handler);
+                if (typeof options.plugin !== 'function') router[options.method.toLowerCase()](options.path, req_handler);
+                else app[options.method.toLowerCase()](options.path, options.plugin, req_handler);
                 behaviours[options.name] = {
 
                     version: options.version,
