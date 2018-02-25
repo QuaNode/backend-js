@@ -41,6 +41,7 @@ var types = {
 };
 var defaultPrefix = null;
 var app = backend.app = express();
+backend.static = express.static;
 
 backend.behaviour = function(path) {
 

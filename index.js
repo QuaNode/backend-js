@@ -15,6 +15,7 @@ var respond = require('./utils.js').respond;
 var backend = require('./behaviour.js');
 
 var app = backend.app;
+var serve = backend.static;
 var behaviour = backend.behaviour;
 var behaviours = backend.behaviours;
 var started = false;
@@ -35,6 +36,7 @@ module.exports = {
 
         if (started) return app;
         started = true;
+        if (typeof options.static === 'object') serve(options.static);
         app.use(logger('dev'));
         app.all('/*', function(req, res, next) {
 
