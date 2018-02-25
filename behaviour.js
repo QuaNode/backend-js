@@ -194,7 +194,8 @@ backend.behaviour = function(path) {
                     }
                 } else router = app;
                 if (typeof options.plugin !== 'function') router[options.method.toLowerCase()](options.path, req_handler);
-                else app[options.method.toLowerCase()](options.path, options.plugin, req_handler);
+                else app[options.method.toLowerCase()](typeof prefix === 'string' && prefix.length > 0 ?
+                    join(prefix, options.path) : options.path, options.plugin, req_handler);
                 behaviours[options.name] = {
 
                     version: options.version,
