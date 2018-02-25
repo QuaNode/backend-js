@@ -36,7 +36,7 @@ module.exports = {
 
         if (started) return app;
         started = true;
-        if (typeof options.static === 'object') serve(options.static);
+        if (typeof options.static === 'object') serve(options.static.path, options.static.options);
         app.use(logger('dev'));
         app.all('/*', function(req, res, next) {
 
