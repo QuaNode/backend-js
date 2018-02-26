@@ -36,7 +36,6 @@ module.exports = {
 
         if (started) return app;
         started = true;
-        if (typeof options.static === 'object') serve(options.static.path, options.static.options);
         app.use(logger('dev'));
         app.all('/*', function(req, res, next) {
 
@@ -71,6 +70,11 @@ module.exports = {
             }
         });
         behaviours(options.path);
+        if (typeof options.static === 'object') {
+
+            if (typeof options.static.route === 'string') app.use(options.static.route, server(options.static.path, options.static));
+            else app.use(server(options.static.path, options.static));
+        }
         if (typeof options.parserOptions !== 'object') options.parserOptions = undefined;
         app.use(typeof options.parser === 'string' && typeof bodyParser[options.parser] === 'function' ?
             bodyParser[options.parser](options.parserOptions) : bodyParser.json(options.parserOptions));

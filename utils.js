@@ -67,15 +67,11 @@ module.exports = {
         });
         outStream.on("data", function(chunk) {
 
-            chunks.push(chunk);
-        });
-        outStream.on("end", function() {
-
-            res.send(Buffer.concat(chunks));
+            res.send(chunk);
         });
         var inStream = new stream.PassThrough();
-        var chunks = [];
-        inStream.read(new Buffer(json)).pipe(outStream).end();
+        inStream.end(json);
+        inStream.pipe(outStream);
     },
     respond: function(res, object) {
 
