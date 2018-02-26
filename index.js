@@ -72,8 +72,8 @@ module.exports = {
         behaviours(options.path);
         if (typeof options.static === 'object') {
 
-            if (typeof options.static.route === 'string') app.use(options.static.route, server(options.static.path, options.static));
-            else app.use(server(options.static.path, options.static));
+            if (typeof options.static.route === 'string') app.use(options.static.route, serve(options.static.path, options.static));
+            else app.use(serve(options.static.path, options.static));
         }
         if (typeof options.parserOptions !== 'object') options.parserOptions = undefined;
         app.use(typeof options.parser === 'string' && typeof bodyParser[options.parser] === 'function' ?
