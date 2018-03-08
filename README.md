@@ -54,7 +54,12 @@ backend.app(__dirname + '/behaviours', {
 | path | string | path of behaviours directory. |
 | options | object | app configurations object. |
 | options.path | string | prefix path appended to the beginning of routes. |
-| options.parser | string | if json, text, raw or urlencoded is used, the body of request  will be parsed accordingly also the body of the response will be serialized accordingly. |
+| options.parser | string | if json, text, raw or urlencoded is used, the body of the request  will be parsed accordingly also the body of the response will be serialized accordingly. |
+|  |  |  |
+|  |  |  |
+|  |  |  |
+|  |  |  |
+|  |  |  |
 
 ### model
 
