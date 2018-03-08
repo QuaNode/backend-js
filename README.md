@@ -1,4 +1,4 @@
-# backendjs
+# backend-js
 
 ### Made for code generation, designed to understand user requirements.
 
