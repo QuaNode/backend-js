@@ -1,4 +1,4 @@
-# backend-js
+* [ ] # backend-js
 
 ### Made for code generation, designed to understand user requirements.
 
@@ -54,12 +54,13 @@ backend.app(__dirname + '/behaviours', {
 | path | string | path of behaviours directory. |
 | options | object | app configurations object. |
 | options.path | string | prefix path appended to the beginning of routes. |
-| options.parser | string | if json, text, raw or urlencoded is used, the body of the request  will be parsed accordingly also the body of the response will be serialized accordingly. |
-|  |  |  |
-|  |  |  |
-|  |  |  |
-|  |  |  |
-|  |  |  |
+| options.parser | string | if json, text, raw or urlencoded is used, the body of the request  will be parsed accordingly also the body of the respo-nse will be serialized accordingly. |
+| options.parserOptions | object | options for [parser](https://github.com/expressjs/body-parser). |
+| options.port | number | port of server. |
+| options.origins | string | comma separated domains allowed to send ajax requests to this server or "\*" to allow any. |
+| options.static | object | options object to define [static-served](https://expressjs.com/en/4x/api.html#express.static) files. |
+| options.static.route | string | virtual path/route for static served file-s. |
+| options.static.path | string | relative path of the directory of server files. |
 
 ### model
 
