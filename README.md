@@ -25,17 +25,13 @@ npm install backend-js
 ### server
 
 ```js
-var beam = require('./beamjs/index.js');
+var backend = require('backend-js');
 
-beam.database(__dirname + '/models', {
+backend.dbType = "mongodb";
+backend.dbURI = "mongodb://user:password@host:port";
+backend.dbName = "database name";
 
-    type: "mysql",
-    username: "root",
-    password: "123456789",
-    name: "database_name",
-    host: "domain",
-    port: "3306"
-}).app(__dirname + '/behaviours', {
+backend.app(__dirname + '/behaviours', {
 
     path: '/api/v1',
     parser: 'json',
@@ -48,15 +44,17 @@ beam.database(__dirname + '/models', {
 
 | parameter | type | description |
 | :--- | :--- | :--- |
-| path | string | path of models folder |
-| configuration | object | database configurations |
+| dbType | string | only mongodb is supported for now. |
+| dbURI | string | mongodb [connection string](https://docs.mongodb.com/manual/reference/connection-string/). |
 
-##### app
+##### .app\(path, options\)
 
 | parameter | type | description |
 | :--- | :--- | :--- |
-| path | string | path of behaviours folder |
-| configuration | object | app configurations |
+| path | string | path of behaviours directory. |
+| options | object | app configurations object. |
+| options.path | string | prefix path appended to the beginning of routes. |
+| options.parser | string | if json, text, raw or urlencoded is used, the body of request  will be parsed accordingly also the body of the response will be serialized accordingly. |
 
 ### model
 
@@ -98,7 +96,7 @@ var behaviour_name = behaviour(option, function(){});
 | parameter | type | description |
 | :--- | :--- | :--- |
 | options | object | api configuration \(name, version, path, method, parameters, returns\) |
-| constructor | function | logic function works by registering on methods to do functions regardless its orders, like \(database processor query, insert, delete or update\), data mapping to map returns of data to specific format or server error handling  |
+| constructor | function | logic function works by registering on methods to do functions regardless its orders, like \(database processor query, insert, delete or update\), data mapping to map returns of data to specific format or server error handling |
 
 ```js
 var getUsers = behaviour({
