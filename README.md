@@ -128,12 +128,12 @@ var query = [new QueryExpression({
 | options.fieldName | string | attribute/field name of the model to be part of the condition. |
 | options.comparisonOperator | string | a value represents comparison operation to be manipulated by database engine. |
 | options.fieldValue | any | the value to be compared to the attribute/field of the model. |
-| options.logicalOperator | string | a value represents logical operation to be manipulated by database to combine multiple conditions.  |
-| options.contextualLevel | number | starts with 0 represents the depth of the logical operation in the conditions tree. It is used to indicate brackets.   |
+| options.logicalOperator | string | a value represents logical operation to be manipulated by database to combine multiple conditions. |
+| options.contextualLevel | number | starts with 0 represents the depth of the logical operation in the conditions tree. It is used to indicate brackets. |
 
 | return | type | description |
 | :--- | :--- | :--- |
-| expression | object | object represents a condition expresión combined with other expressions to represent a query. It is adapted by [data access layer](#data-access).. |
+| expression | object | object represents a condition expression combined with other expressions to represent a query. It is adapted by [data access layer](#data-access).. |
 
 ### entity
 
