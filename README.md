@@ -1,4 +1,4 @@
-* [ ] # backend-js
+# backend-js
 
 ### Made for code generation, designed to understand user requirements.
 
@@ -22,14 +22,14 @@ npm install backend-js
 
 ## Usage
 
-### server
+### backend
 
 ```js
 var backend = require('backend-js');
 
 backend.dbType = "mongodb";
 backend.dbURI = "mongodb://user:password@host:port";
-backend.dbName = "database name";
+backend.dbName = "database";
 
 backend.app(__dirname + '/behaviours', {
 
@@ -40,46 +40,33 @@ backend.app(__dirname + '/behaviours', {
 });
 ```
 
-##### database
-
-| parameter | type | description |
+| attribute | type | description |
 | :--- | :--- | :--- |
 | dbType | string | only mongodb is supported for now. |
 | dbURI | string | mongodb [connection string](https://docs.mongodb.com/manual/reference/connection-string/). |
+| dbName | string | name of the database. |
 
-##### .app\(path, options\)
+##### app\(path, options\)
 
 | parameter | type | description |
 | :--- | :--- | :--- |
 | path | string | path of behaviours directory. |
 | options | object | app configurations object. |
 | options.path | string | prefix path appended to the beginning of routes. |
-| options.parser | string | if json, text, raw or urlencoded is used, the body of the request  will be parsed accordingly also the body of the respo-nse will be serialized accordingly. |
+| options.parser | string | if json, text, raw or urlencoded is used, the body of the request  will be parse accordingly also the body of the response will be serialized accordingly. |
 | options.parserOptions | object | options for [parser](https://github.com/expressjs/body-parser). |
 | options.port | number | port of server. |
 | options.origins | string | comma separated domains allowed to send ajax requests to this server or "\*" to allow any. |
-| options.static | object | options object to define [static-served](https://expressjs.com/en/4x/api.html#express.static) files. |
-| options.static.route | string | virtual path/route for static served file-s. |
-| options.static.path | string | relative path of the directory of server files. |
+| options.static | object | options object to define [static served](https://expressjs.com/en/4x/api.html#express.static) files. |
+| options.static.route | string | virtual path/route for static served files. |
+| options.static.path | string | relative path of the directory of static served files. |
 
 ### model
 
 model entity
 
 ```js
-var Model = model(options, attributes, plugins)
-```
-
-| parameter | type | description |
-| :--- | :--- | :--- |
-| options | string \|\| object | object can contain name, query or features. |
-| attributes | object | json object describes model schema |
-| plugins | array | add more functionality on schema |
-
-```js
 var backend = require('backend-js');
-var behaviour = backend.behaviour('/api/v1');
-
 var model = backend.model();
 var User = model({
 
@@ -90,6 +77,17 @@ var User = model({
   password: String
 });
 ```
+
+##### var Model = model\(options, attributes, plugins\);
+
+| parameter | type | description |
+| :--- | :--- | :--- |
+| options | string \|\| object | either model name for lazy loading or object for model configuration. |
+| options.name | string | model name. |
+| options.features | object | object contains special attributes of the model. It is passed to [data access layer](#data-access). |
+| options.query | array | array of QueryExpression. |
+| attributes | object | object describes the model schema. it contains key-value pairs where the key is a model attribute/field name and the value is the data type of this attribute/field. Data types are native javascript data types String, Number and Date. Data type could be javascript array of single object annotation \[{}\] or just an object annotation {} containing other key-value pairs expressing nested model schema. |
+| plugins | array | add more functionality on schema |
 
 ### behaviour
 
@@ -127,7 +125,7 @@ var getUsers = behaviour({
 });
 ```
 
-## data access
+## data access {#data-access}
 
 you should define your own data access layer like following
 
