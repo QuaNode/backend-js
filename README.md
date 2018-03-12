@@ -52,7 +52,7 @@ var App = backend.app(__dirname + '/behaviours', {
 
 | return | type | description |
 | :--- | :--- | :--- |
-| app | object | object conventionally denotes the [Express application](https://expressjs.com/en/4x/api.html#app). |
+| App | function | function conventionally denotes the [Express application](https://expressjs.com/en/4x/api.html#app). |
 
 ### model
 
@@ -69,16 +69,54 @@ var User = model({
 });
 ```
 
-##### var Model = model\(options, attributes, plugins\);
+##### var ModelEntity = model\(options, attributes, plugins\);
 
 | parameter | type | description |
 | :--- | :--- | :--- |
 | options | string \| object | either model name for lazy loading or object for model configuration. |
 | options.name | string | model name. |
-| options.features | object | object contains special attributes of the model. It is passed to [data access layer](#data-access). |
-| options.query | array | array of QueryExpression. |
+| options.features | object | object contains special functionalities of the model. It is passed to [data access layer](#data-access). |
+| options.query | array | array of [QueryExpression](#query) repressing the query to be executed by default. |
 | attributes | object | object describes the model schema. it contains key-value pairs where the key is a model attribute/field name and the value is the data type of this attribute/field. Data types are native javascript data types String, Number and Date. Data type could be javascript array of single object annotation \[{}\] or just an object annotation {} containing other key-value pairs expressing nested model schema. |
 | plugins | array | array of [mongoose plugins](https://www.npmjs.com/search?q=mongoose&page=1&ranking=optimal) to define additional functionalities to the model. |
+
+| return | type | description |
+| :--- | :--- | :--- |
+| ModelEntity | function | model constructor function prototyped as [ModelEntity](#entity). |
+
+### query
+
+```js
+var QueryExpression = backend.QueryExpression;
+var query = [new QueryExpression({
+})]
+
+```
+
+### entity
+
+```js
+var ModelEntity = backend.ModelEntity;
+var entity = new ModelEntity({});
+var model = entity.getObjectConstructor();
+var schema = entity.getObjectAttributes();
+var features = entity.getObjectFeatures();
+var query = entity.getObjectQuery();
+```
+
+##### var entity = new ModelEntity\(features\);
+
+| parameter | type | description |
+| :--- | :--- | :--- |
+| features | object | object contains special functionalities of the model. It is passed to [data access layer](#data-access). |
+
+| return | type | description |
+| :--- | :--- | :--- |
+| entity | object | object contains all specifications and meta data of the model. |
+| entity.getObjectConstructor | function | function returns the model constructor depending on the[ data access layer](#data-access). |
+| entity.getObjectAttributes | function | function returns the model schema key-value pairs. |
+| entity.getObjectFeatures | function | function returns the model features. |
+| entity.getObjectQuery | function | function returns the model query an array of [QueryExpression](#query) to be executed by default.  |
 
 ### behaviour \(API / functional code unit\)
 
