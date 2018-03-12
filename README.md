@@ -45,7 +45,7 @@ var App = backend.app(__dirname + '/behaviours', {
 | options.parser | string | if json, text, raw or urlencoded is used, the body of the request  will be parse accordingly also the body of the response will be serialized accordingly. |
 | options.parserOptions | object | options for [parser](https://github.com/expressjs/body-parser). |
 | options.port | number | port of server. |
-| options.origins | string | comma separated domains allowed to send ajax requests to this server or "\*" to allow any. |
+| options.origins | string | comma separated domains allowed to send ajax requests to this server or **"\*"** to allow any. |
 | options.static | object | options object to define [static served](https://expressjs.com/en/4x/api.html#express.static) files. |
 | options.static.route | string | virtual path/route for static served files. |
 | options.static.path | string | relative path of the directory of static served files. |
@@ -112,7 +112,7 @@ var getUsers = behaviour({
 | options | object | api configuration \(name, version, path, method, parameters, returns\) |
 | constructor | function | logic function works by registering on methods to do functions regardless its orders, like \(database processor query, insert, delete or update\), data mapping to map returns of data to specific format or server error handling |
 
-## data access {#data-access}
+## data access
 
 you should define your own data access layer like following
 
