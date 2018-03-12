@@ -69,7 +69,7 @@ var User = model({
 });
 ```
 
-##### var ModelEntity = model\(options, attributes, plugins\);
+##### var ModelEntity = model\(options, attributes, plugins\)
 
 | parameter | type | description |
 | :--- | :--- | :--- |
@@ -88,10 +88,52 @@ var User = model({
 
 ```js
 var QueryExpression = backend.QueryExpression;
+var ComparisonOperators = {
+    EQUAL: '=',
+    NE: '$ne'
+};
+var LogicalOperators = {
+    AND: '$and',
+    OR: '$or',
+    NOT: '$not'
+};
+backend.setComparisonOperators(ComparisonOperators);
+backend.setLogicalOperators(LogicalOperators);
 var query = [new QueryExpression({
+    fieldName: 'username',
+    comparisonOperator: ComparisonOperators.EQUAL,
+    fieldValue: 'name'
+}),new QueryExpression({    
+    fieldName: 'password',
+    comparisonOperator: ComparisonOperators.EQUAL,
+    fieldValue: 'pass',
+    logicalOperator: LogicalOperators.AND,
+    contextualLevel: 0
 })]
-
 ```
+
+##### setComparisonOperators\(operators\)
+
+##### setLogicalOperators\(operators\)
+
+| parameter | type | description |
+| :--- | :--- | :--- |
+| operators | object | object contains key-value pairs where the key is a unique id for an operator and the value is a corresponding database engine operator. It is passed to [data access layer](#data-access). |
+
+##### var expression = new QueryExpression\(options\)
+
+| parameter | type | description |
+| :--- | :--- | :--- |
+| options | object | object describes a condition in a where clause of a query. |
+| options.fieldName | string | attribute/field name of the model to be part of the condition. |
+| options.comparisonOperator | string | a value represents comparison operation to be manipulated by database engine. |
+| options.fieldValue | any | the value to be compared to the attribute/field of the model. |
+| options.logicalOperator | string | a value represents logical operation to be manipulated by database to combine multiple conditions.  |
+| options.contextualLevel | number | starts with 0 represents the depth of the logical operation in the conditions tree. It is used to indicate brackets.   |
+
+| return | type | description |
+| :--- | :--- | :--- |
+| expression | object | object represents a condition expresión combined with other expressions to represent a query. It is adapted by [data access layer](#data-access).. |
 
 ### entity
 
@@ -104,7 +146,7 @@ var features = entity.getObjectFeatures();
 var query = entity.getObjectQuery();
 ```
 
-##### var entity = new ModelEntity\(features\);
+##### var entity = new ModelEntity\(features\)
 
 | parameter | type | description |
 | :--- | :--- | :--- |
@@ -116,7 +158,7 @@ var query = entity.getObjectQuery();
 | entity.getObjectConstructor | function | function returns the model constructor depending on the[ data access layer](#data-access). |
 | entity.getObjectAttributes | function | function returns the model schema key-value pairs. |
 | entity.getObjectFeatures | function | function returns the model features. |
-| entity.getObjectQuery | function | function returns the model query an array of [QueryExpression](#query) to be executed by default.  |
+| entity.getObjectQuery | function | function returns the model query an array of [QueryExpression](#query) to be executed by default. |
 
 ### behaviour \(API / functional code unit\)
 
