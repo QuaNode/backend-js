@@ -26,12 +26,7 @@ npm install backend-js
 
 ```js
 var backend = require('backend-js');
-
-backend.dbType = "mongodb";
-backend.dbURI = "mongodb://user:password@host:port";
-backend.dbName = "database";
-
-backend.app(__dirname + '/behaviours', {
+var App = backend.app(__dirname + '/behaviours', {
 
     path: '/api/v1',
     parser: 'json',
@@ -40,13 +35,7 @@ backend.app(__dirname + '/behaviours', {
 });
 ```
 
-| attribute | type | description |
-| :--- | :--- | :--- |
-| dbType | string | only mongodb is supported for now. |
-| dbURI | string | mongodb [connection string](https://docs.mongodb.com/manual/reference/connection-string/). |
-| dbName | string | name of the database. |
-
-##### app\(path, options\)
+##### var App = app\(path, options\)
 
 | parameter | type | description |
 | :--- | :--- | :--- |
@@ -60,6 +49,10 @@ backend.app(__dirname + '/behaviours', {
 | options.static | object | options object to define [static served](https://expressjs.com/en/4x/api.html#express.static) files. |
 | options.static.route | string | virtual path/route for static served files. |
 | options.static.path | string | relative path of the directory of static served files. |
+
+| return | type | description |
+| :--- | :--- | :--- |
+| app | object | object conventionally denotes the [Express application](https://expressjs.com/en/4x/api.html#app). |
 
 ### model
 
@@ -76,7 +69,7 @@ var User = model({
 });
 ```
 
-##### var Model = model\(options, attributes, plugins\); 
+##### var Model = model\(options, attributes, plugins\);
 
 | parameter | type | description |
 | :--- | :--- | :--- |
