@@ -73,7 +73,7 @@ var User = model({
 
 | parameter | type | description |
 | :--- | :--- | :--- |
-| options | string \|\| object | either model name for lazy loading or object for model configuration. |
+| options | string \| object | either model name for lazy loading or object for model configuration. |
 | options.name | string | model name. |
 | options.features | object | object contains special attributes of the model. It is passed to [data access layer](#data-access). |
 | options.query | array | array of QueryExpression. |
