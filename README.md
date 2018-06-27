@@ -231,5 +231,7 @@ ModelController.prototype.constructor = ModelController;
 backend.setModelController(new ModelController());
 ```
 
+Starter project
 
+[https://github.com/QuaNode/BeamJS-Start](https://github.com/QuaNode/BeamJS-Start)
 
