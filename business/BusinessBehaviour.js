@@ -1,6 +1,7 @@
 /*jslint node: true */
 'use strict';
 
+var copy = require('shallow-copy');
 var BusinessBehaviourExt = require('./BusinessBehaviourExt.js').BusinessBehaviourExt;
 var BusinessLanguage = require('./BusinessLanguage.js').BusinessLanguage;
 var define = require('define-js');
@@ -23,7 +24,7 @@ module.exports.BusinessBehaviour = define(function(init) {
             delegates: {},
             watchers: {},
             useConditions: {},
-            beginConditions: {}
+            beginConditions: {},
         };
         var self = init.apply(this, [languageParameters]).self();
         var businessBehaviourExt = new BusinessBehaviourExt(languageParameters);
@@ -79,6 +80,21 @@ module.exports.BusinessBehaviour = define(function(init) {
             throw new Error('invalid behaviour type');
         };
         self.setType(options.type);
+        self.prepareOperations = function(serviceOperations, modelOperations, businessOperations) {
+
+            if (!self.state) {
+
+                self.state = {};
+                self.state.serviceOperations = copy(serviceOperations);
+                self.state.modelOperations = copy(modelOperations);
+                self.state.businessOperations = copy(businessOperations);
+                languageParameters.delegates.keys().every(function(delegate) {
+
+                    if (businessOperations.concat(serviceOperations).concat(modelOperations).indexOf(delegate) === -1)
+                        throw new Error('Invalid operation name: ' + delegate);
+                });
+            }
+        };
         self.beginServiceOperation = function(serviceOperation) {
 
             return businessBehaviourExt.beginServiceOperation.apply(self, arguments);

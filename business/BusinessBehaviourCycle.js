@@ -1,8 +1,6 @@
 /*jslint node: true */
 'use strict';
 
-var copy = require('shallow-copy');
-
 var BusinessOperation = {
 
     SERVICEOBJECTMAPPING: 'ServiceObjectMapping',
@@ -156,13 +154,7 @@ var BusinessBehaviourCycle = function(options) {
         var currentBehaviour = businessBehaviourQueue.execute();
         if (currentBehaviour) {
 
-            if (!currentBehaviour.state) {
-
-                currentBehaviour.state = {};
-                currentBehaviour.state.modelOperations = copy(modelOperations);
-                currentBehaviour.state.serviceOperations = copy(serviceOperations);
-                currentBehaviour.state.businessOperations = copy(businessOperations);
-            }
+            currentBehaviour.prepareOperations(serviceOperations, modelOperations, businessOperations);
             switch (currentBehaviour.getType()) {
 
                 case BusinessBehaviourTypes.ONLINESYNC:
