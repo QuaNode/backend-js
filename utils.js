@@ -20,7 +20,8 @@ module.exports = {
 
         if (typeof parameters !== 'object') {
 
-            return req.body;
+            callback(req.body);
+            return;
         }
         var keys = Object.keys(parameters);
         var inputObjects = {};
