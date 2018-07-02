@@ -8,11 +8,11 @@ var getRequestDelegate = function(serviceOperation, serviceOperations, serviceMe
     var self = this;
     return function(getServiceParameters, getEndPoint, setServiceObjects) {
 
-        if (!self.serviceController) throw new Error('no service controller for online behaviour');
+        if (!self.serviceController) throw new Error('No service controller for online behaviour');
         for (var t = 0; t < serviceOperations.length; t++) {
 
             if (typeof self.serviceController[serviceMethods[serviceOperations[t]]] !== 'function')
-                throw new Error('invalid service method');
+                throw new Error('Invalid service method');
         }
         var requestHandler = function(serviceObjects, error) {
 
@@ -39,8 +39,8 @@ var getFetchDelegate = function(fetchMethod, setCancel, callback) {
     var self = this;
     return function(getResourceInfo, getResume, setResourceInfo) {
 
-        if (!self.cacheController) throw new Error('no cache controller for cache behaviour');
-        if (typeof self.cacheController[fetchMethod] !== 'function') throw new Error('invalid fetch method');
+        if (!self.cacheController) throw new Error('No cache controller for cache behaviour');
+        if (typeof self.cacheController[fetchMethod] !== 'function') throw new Error('Invalid fetch method');
         var resource = null;
         var fetchHandler = function(finished, bytesLoaded, error) {
 
@@ -102,7 +102,7 @@ var ServiceOperationDelegate = function(options) {
     if (serviceController) {
 
         if (typeof getServiceMethods !== 'function' || !(Array.isArray(getServiceMethods())) ||
-            getServiceMethods().length !== 2) throw new Error('invalid service methods');
+            getServiceMethods().length !== 2) throw new Error('Invalid service methods');
         for (var t = 0; t < serviceOperations.length; t++) {
 
             serviceMethods[serviceOperations[t]] = getServiceMethods(t, serviceOperations[t]);
@@ -110,7 +110,7 @@ var ServiceOperationDelegate = function(options) {
     }
     if (cacheController) {
 
-        if (typeof fetchMethod !== 'string') throw new Error('invalid fetch methods');
+        if (typeof fetchMethod !== 'string') throw new Error('Invalid fetch methods');
     }
     self.serviceController = serviceController;
     self.cacheController = cacheController;

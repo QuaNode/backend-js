@@ -25,10 +25,10 @@ var encodeServiceParameters = function(serviceParameters, request) {
             case ServiceParameterType.METHOD:
                 request.method = serviceParameters[i].value();
                 break;
-            case ServiceParameterType.URLQUERY:
+            case ServiceParameterType.URIQUERY:
                 request.path += (q++ > 0 ? '&' : '?') + serviceParameters[i].key() + '=' + encodeURIComponent(serviceParameters[i].value());
                 break;
-            case ServiceParameterType.URLPARAMETER:
+            case ServiceParameterType.URIPARAMETER:
                 request.path = request.path.replace(':' + serviceParameters[i].key(), encodeURIComponent(serviceParameters[i].value()));
                 break;
             default:
@@ -158,7 +158,7 @@ var createRequest = function(servicePrameters, serviceEndPoint, type, callback, 
 
         type: type,
         path: serviceEndPoint.path,
-        attributes: serviceEndPoint.attributes
+        context: serviceEndPoint.context
     };
     encodeServiceParameters(servicePrameters, request);
     if (!serviceEndPoint.consumableByAdapter(serviceAdapter)) {
@@ -185,6 +185,6 @@ module.exports.ServiceController = function(options) {
     };
     self.request = function(servicePrameters, serviceEndPoint, callback) {
 
-        serviceAdapter = createRequest(servicePrameters, serviceEndPoint, '', callback, serviceAdapter, options);
+        serviceAdapter = createRequest(servicePrameters, serviceEndPoint, 'request', callback, serviceAdapter, options);
     };
 };

@@ -1,13 +1,13 @@
 /*jslint node: true */
 'use strict';
 
-module.exports.ServiceAdapter = function(baseURL) {
+module.exports.ServiceAdapter = function(baseURI) {
 
   var self = this;
-  if (typeof baseURL !== 'string') throw new Error('invalid baseURL');
-  self.getBaseURL = function() {
+  if (typeof baseURI !== 'string') throw new Error('Invalid base URI');
+  self.getBaseURI = function() {
 
-    return baseURL;
+    return baseURI;
   };
   self.authenticator = null;
   self.sendRequest = null;

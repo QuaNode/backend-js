@@ -2,100 +2,201 @@
 'use strict';
 
 var define = require('define-js');
+var parse = require('parseparams');
 var ServiceAdapter = require('./service/ServiceAdapter.js').ServiceAdapter;
 var ServiceEndPoint = require('./service/ServiceEndPoint.js').ServiceEndPoint;
-var ServiceAuthanticator = require('./service/ServiceAuthanticator.js').ServiceAuthanticator;
+var ServiceAuthenticator = require('./service/ServiceAuthenticator.js').ServiceAuthenticator;
+var ServiceObjectMetadata = require('./service/ServiceResponseMetadata.js').ServiceObjectMetadata;
 
+module.exports.service = function(baseURI, serve, authenticate, authenticated) {
 
-module.exports.service = function (baseURL, path, sendRequest, endPointOptions, authanticatorOptions) {
+    if (typeof serve !== 'function') {
 
-
-    if (typeof baseURL !== 'string') {
-
-        throw new Error('Invalid baseURL object');
+        throw new Error('Invalid service function');
     }
-    if (typeof endPointOptions !== 'object') {
+    if (typeof parse(serve).length < 2) {
 
-        throw new Error('Invalid endpoint options');
+        throw new Error('Invalid service function');
     }
-    if (typeof path !== 'string') {
+    if (typeof authenticate === 'function' && typeof parse(authenticate).length < 2) {
 
-        throw new Error('Invalid path');
+        throw new Error('Invalid authentication function');
     }
-    if (typeof authanticatorOptions !== 'object') {
+    var Authenticator = null;
+    if (typeof authenticator === 'object') {
 
-        throw new Error('Invalid authanticator options');
-    }
-    if (typeof sendRequest !== 'function') {
+        Authenticator = define(function(init) {
 
-        throw new Error('Invalid sendRequest definition');
-    }
-    if (typeof sendRequest.lenght !== 2) {
+            return function() {
 
-        throw new Error('Invalid sendRequest parameter must be 2');
-    }
-    var Authenticator = define(function (init) {
-
-        return function () {
-
-            var self = init.apply(this, arguments).self();
-            for (var key in authanticatorOptions) {
-
-                if (authanticatorOptions.hasOwnProperty(key)) {
-
-                    self.key = authanticatorOptions[key];
-                }
-            }
-        }
-    }).extend(ServiceAuthenticator).parameters();
-
-    var Adapter = define(function (init) {
-
-        return function (baseURL, options) {
-
-            var self = init.apply(this, arguments).self();
-            
-            self.authanticator = new Authenticator();
-            self.sendRequest = function (request, callback) {
-
-                sendRequest(request, callback, baseURL, options);
-             };
-        }
-    }).extend(ServiceAdapter).parameters(baseURL);
-
-    var EndPoint = define(function (init) {
-
-        return function(options, adapterOptions) {
-
-           /* var responseMetadata = new ServiceObjectMetadata({
-
-                model: 'Book',
-                name: '',
-                id: 'SKU'
-            });
-            options.responseMetadata = responseMetadata;
-            */
-            options.modelAttributes = options.model || endPointOptions.model;
-            options.serviceAttributes = options.service || endPointOptions.service;
-            options.baseURL = baseURL;
-            options.Adapter = Adapter;
-
-            var self = init.apply(this, arguments).self();
-            self.path = path;
-            self.adapter = function () {
-
-                return sṵper.adapter(adapterOptions);
+                var self = init.apply(this, arguments).self();
+                self.authenticate = authenticate;
             };
-        }
-    }).extend(ServiceEndPoint).parameters({
+        }).extend(ServiceAuthenticator).parameters();
+    }
+    var Adapter = define(function(init) {
 
-        baseURL: baseURL,
-        Adapter: Adapter,
-        responseMetadata: endPointOptions.response,
-        modelAttributes: endPointOptions.model,
-        serviceAttributes: endPointOptions.service
-    });
+        return function(base, constants) {
 
+            var self = init.apply(this, arguments).self();
+            var authenticator = null;
+            if (typeof Authenticator === 'function') authenticator = new Authenticator();
+            var send = function(request, callback) {
 
+                switch (request) {
+
+                    case 'authentication':
+                        if (!authenticator) throw new Error('Missing authentication function');
+                        self.authenticator.authenticate(request, callback);
+                        break;
+                    case 'request':
+                        serve(request, callback);
+                        break;
+                }
+            };
+            self.sendRequest = function(request, callback) {
+
+                request.baseURI = baseURI;
+                request.constants = constants || {};
+                var serializedRequest = request;
+                if (typeof request.context === 'object' && typeof request.context.serialize === 'function') {
+
+                    serializedRequest = request.context.serialize(request);
+                }
+                var deserializeCallback = callback;
+                if (typeof request.context === 'object' && typeof request.context.deserialize === 'function') {
+
+                    deserializeCallback = function(response, error) {
+
+                        callback(request.context.deserialize(response), error);
+                    };
+                }
+                if (authenticated === 'function') {
+
+                    authenticated(serializedRequest, function(success, error) {
+
+                        if (success && !error) send(serializedRequest, deserializeCallback);
+                        else callback(null, error || new Error('Authentication needed'));
+                    });
+                } else {
+
+                    if (typeof request.context === 'object' && typeof request.context.authenticate === 'function')
+                        request.context.authenticate(serializedRequest, function(req) {
+
+                            send(req, deserializeCallback);
+                        });
+                    else send(serializedRequest, deserializeCallback);
+                }
+            };
+        };
+    }).extend(ServiceAdapter).parameters(baseURI);
+    return function(path, opt) {
+
+        var options = typeof path === 'object' ? path : opt || {};
+        var EndPoint = define(function(init, sṵper) {
+
+            return function(context, constants, mappings) {
+
+                var getMetadata = function(mapping, modelAttrs, serviceAttrs) {
+
+                    var map = mapping;
+                    var name = '';
+                    var model = '';
+                    var key;
+                    var value;
+                    var id;
+                    var storeId;
+                    var getMap = function(m, k) {
+
+                        var mm = {};
+                        if (typeof m !== 'string') name = k;
+                        if (typeof m === 'object') return m;
+                        if (Array.isArray(m)) {
+
+                            if (typeof m[0] === 'string') model = m[0];
+                            else throw new Error('Invalid nested mapping');
+                            if (typeof m[1] === 'object') return m[1];
+                            else if (typeof m[1] === 'function') {
+
+                                name = '';
+                                model = '';
+                                mm[k] = m;
+                                return mm;
+                            } else if (typeof m[0] === 'string' && typeof m[1] === 'string') {
+
+                                model = '';
+                                mm[m[0]] = m[1];
+                                return mm;
+                            } else throw new Error('Invalid nested mapping');
+                        }
+                    };
+                    if (typeof mapping === 'object' && Object.keys(mapping).length === 1)
+                        map = getMap(mapping[Object.keys(mapping)[0]], Object.keys(mapping)[0]) || map;
+                    else if (Array.isArray(mapping) && mapping.length > 0) {
+
+                        map = getMap(mapping[1], mapping[0]) || map;
+                        if (Array.isArray(mapping[1])) {
+
+                            key = mapping[1].length > 0 ? mapping[1][0] : key;
+                            value = mapping[1].length > 1 ? mapping[1][1] : value;
+                            id = mapping[1].length > 2 ? mapping[1][2] : id;
+                            storeId = mapping[1].length > 3 ? mapping[1][3] : value;
+                        }
+                    }
+                    var modelAttributes = (typeof map === 'object' && Object.values(map)).map(function(attribute) {
+
+                        if (typeof attribute === 'string') return attribute;
+                        if (Array.isArray(attribute) && typeof attribute[0] === 'string') return attribute[0];
+                        throw new Error('Invalid mapping');
+                    }) || modelAttrs;
+                    var metadata = new ServiceObjectMetadata({
+
+                        model: model,
+                        name: name,
+                        'attributesKeyName': key,
+                        'attributesValueName': value,
+                        'id': id,
+                        'storeID': storeId,
+                        modelAttributes: modelAttributes,
+                        serviceAttributes: (typeof map === 'object' && Object.keys(map)) || serviceAttrs,
+                    });
+                    for (var i = 0; metadata.attributes && i < modelAttributes.length; i++) {
+
+                        var attribute = metadata.attributes[i];
+                        if (Array.isArray(modelAttributes[i])) {
+
+                            if (typeof modelAttributes[i][1] === 'object')
+                                attribute.metadata = getMetadata(modelAttributes[i][1]);
+                            if (typeof modelAttributes[i][1] === 'function')
+                                attribute.getValue = modelAttributes[i][1];
+                        }
+                    }
+                    return metadata;
+                };
+                var self = init.apply(this, [{
+
+                    responseMetadata: getMetadata(mappings, options.model, options.service),
+                    baseURI: baseURI,
+                    Adapter: Adapter
+                }]).self();
+                self.path = path;
+                self.context = context || {};
+                self.context.serialize = self.context.serialize || options.serialize;
+                self.context.deserialize = self.context.deserialize || options.deserialize;
+                self.context.authenticate = self.context.authenticate || options.authenticate;
+                self.adapter = function() {
+
+                    return sṵper.adapter(constants);
+                };
+            };
+        }).extend(ServiceEndPoint).parameters({
+
+            baseURI: baseURI,
+            Adapter: Adapter,
+            responseMetadata: options.response,
+            modelAttributes: options.model,
+            serviceAttributes: options.service
+        });
+        return EndPoint;
+    };
 };
-``

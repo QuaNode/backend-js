@@ -89,7 +89,7 @@ var BusinessController = function(options) {
 
         if (!(behaviour instanceof BusinessBehaviour)) {
 
-            throw new Error('Behaviour Missing');
+            throw new Error('Behaviour missing');
         }
         if (ignoreBehaviours || businessBehaviourQueue.isEnqueued(behaviour)) return function() {};
         behaviour.getProperty = getProperty || function(property) {

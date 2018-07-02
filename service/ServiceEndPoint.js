@@ -8,47 +8,28 @@ var ServiceAttributeMetadata = require('./ServiceResponseMetadata.js').ServiceAt
 module.exports.ServiceEndPoint = function(options) {
 
     var self = this;
-    var baseURL = options.baseURL;
+    var baseURI = options.baseURI;
     var Adapter = options.Adapter;
     var responseMetadata = options.responseMetadata;
-    var modelAttributes = options.modelAttributes;
-    var serviceAttributes = options.serviceAttributes;
-    if (typeof baseURL !== 'string') {
+    if (typeof baseURI !== 'string') {
 
-        throw new Error('invalid URL');
+        throw new Error('Invalid URI');
     }
     if (typeof Adapter !== 'function' || !(Adapter.prototype instanceof ServiceAdapter)) {
 
-        throw new Error('invalid service provider');
+        throw new Error('Invalid service provider');
     }
     if (responseMetadata && !(responseMetadata instanceof ServiceObjectMetadata)) {
 
-        throw new Error('invalid response metadata');
+        throw new Error('Invalid response metadata');
     }
+    self.responseMetadata = responseMetadata;
     self.adapter = function(param) {
 
-        return new Adapter(baseURL, param);
+        return new Adapter(baseURI, param);
     };
     self.consumableByAdapter = function(serviceAdapter) {
 
-        return serviceAdapter instanceof ServiceAdapter && serviceAdapter instanceof Adapter && serviceAdapter.getBaseURL() === baseURL;
+        return serviceAdapter instanceof Adapter && serviceAdapter.getBaseURI() === baseURI;
     };
-    if (responseMetadata) {
-
-        self.responseMetadata = responseMetadata;
-        if (Array.isArray(modelAttributes) && Array.isArray(serviceAttributes)) {
-
-            if (modelAttributes.length !== serviceAttributes.length) throw new Error('invalid attributes count');
-            self.responseMetadata.attributes = [];
-            for (var i = 0; i < modelAttributes.length; i++) {
-
-                var attribute = new ServiceAttributeMetadata({
-
-                    model: modelAttributes[i],
-                    name: serviceAttributes[i],
-                });
-                self.responseMetadata.attributes.push(attribute);
-            }
-        }
-    }
 };

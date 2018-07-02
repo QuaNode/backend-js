@@ -76,7 +76,7 @@ module.exports.BusinessBehaviour = define(function(init) {
                     }
                 }
             }
-            throw new Error('invalid behaviour type');
+            throw new Error('Invalid behaviour type');
         };
         self.setType(options.type);
         self.beginServiceOperation = function(serviceOperation) {

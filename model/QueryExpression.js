@@ -64,7 +64,7 @@ var QueryExpression = function(options) {
         self.comparisonOperatorOptions = options.comparisonOperatorOptions;
     } else {
 
-        throw new TypeError('the comparison operator is not one of the allowed comparisonOperators, Please use ComparisonOperators');
+        throw new TypeError('The comparison operator is not one of the allowed comparisonOperators, please use ComparisonOperators');
     }
     self.fieldValue = fieldValue;
     if (isValidOperator(LogicalOperators, logicalOperator)) {
@@ -74,7 +74,7 @@ var QueryExpression = function(options) {
 
         if (logicalOperator) { //logical operator is optional
 
-            throw new TypeError('the logical operator is not one of the allowed logicalOperators, Please use LogicalOperators');
+            throw new TypeError('The logical operator is not one of the allowed logicalOperators, please use LogicalOperators');
         }
     }
 };
