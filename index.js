@@ -10,6 +10,7 @@ var setComparisonOperators = require('./model.js').setComparisonOperators;
 var setLogicalOperators = require('./model.js').setLogicalOperators;
 var setModelController = require('./model.js').setModelController;
 var model = require('./model.js').model;
+var service = require('./service.js').service;
 var allowCrossOrigins = require('./utils.js').allowCrossOrigins;
 var respond = require('./utils.js').respond;
 var backend = require('./behaviour.js');
@@ -30,6 +31,10 @@ module.exports = {
     model: function() {
 
         return model;
+    },
+    service: function() {
+
+        return service;
     },
     behaviour: behaviour,
     app: function(path, options) {

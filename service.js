@@ -132,7 +132,7 @@ module.exports.service = function(baseURI, serve, authenticate, authenticated) {
                     };
                     if (typeof mapping === 'object' && Object.keys(mapping).length === 1)
                         map = getMap(mapping[Object.keys(mapping)[0]], Object.keys(mapping)[0]) || map;
-                    else if (Array.isArray(mapping) && mapping.length > 0) {
+                    else if (Array.isArray(mapping) && mapping.length > 1) {
 
                         map = getMap(mapping[1], mapping[0]) || map;
                         if (Array.isArray(mapping[1])) {
@@ -142,7 +142,7 @@ module.exports.service = function(baseURI, serve, authenticate, authenticated) {
                             id = mapping[1].length > 2 ? mapping[1][2] : id;
                             storeId = mapping[1].length > 3 ? mapping[1][3] : value;
                         }
-                    }
+                    } else if (mapping && typeof mapping !== 'object') throw new Error('Invalid mapping');
                     var modelAttributes = (typeof map === 'object' && Object.values(map)).map(function(attribute) {
 
                         if (typeof attribute === 'string') return attribute;
@@ -153,10 +153,10 @@ module.exports.service = function(baseURI, serve, authenticate, authenticated) {
 
                         model: model,
                         name: name,
-                        'attributesKeyName': key,
-                        'attributesValueName': value,
-                        'id': id,
-                        'storeID': storeId,
+                        attributesKeyName: key,
+                        attributesValueName: value,
+                        id: id,
+                        storeID: storeId,
                         modelAttributes: modelAttributes,
                         serviceAttributes: (typeof map === 'object' && Object.keys(map)) || serviceAttrs,
                     });
