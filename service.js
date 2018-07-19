@@ -23,7 +23,7 @@ module.exports.service = function(baseURI, serve, authenticate, authenticated) {
         throw new Error('Invalid authentication function');
     }
     var Authenticator = null;
-    if (typeof authenticator === 'object') {
+    if (typeof authenticate === 'function') {
 
         Authenticator = define(function(init) {
 
@@ -47,7 +47,7 @@ module.exports.service = function(baseURI, serve, authenticate, authenticated) {
 
                     case 'authentication':
                         if (!authenticator) throw new Error('Missing authentication function');
-                        self.authenticator.authenticate(request, callback);
+                        authenticator.authenticate(request, callback);
                         break;
                     case 'request':
                         serve(request, callback);
