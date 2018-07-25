@@ -14,7 +14,7 @@ var service = require('./service.js').service;
 var allowCrossOrigins = require('./utils.js').allowCrossOrigins;
 var respond = require('./utils.js').respond;
 var backend = require('./behaviour.js');
-var ServiceParameters = require('./service/ServiceParameter');
+var ServiceParameters = require('./service/ServiceParameter').ServiceParameters;
 
 var app = backend.app;
 var serve = backend.static;
