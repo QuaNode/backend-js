@@ -32,6 +32,18 @@ var behaviours = {
         path: '/behaviours'
     }
 };
+var compareRoutes = function (route1, route2) {
+
+    var route = (route1 && route1.name && route1.name.indexOf(':') > -1 && route1) || route2;
+    if (route === route2) {
+        
+        route2 = route1;
+        route1 = route;
+    }
+    if (route && route.name) route = new Route(route.name);
+    return route && route.match((route2 && route2.name) || ' ') && (route1.method || '').toLowerCase() === ((route2 && route2.method) || '').toLowerCase();
+
+};
 var types = {
 
     'database': BusinessBehaviourType.OFFLINESYNC,
@@ -170,15 +182,21 @@ backend.behaviour = function (path) {
                             var method = opt.method;
                             var route = typeof prefix === 'string' && request.path.startsWith(prefix) &&
                                 typeof suffix === 'string' ? backend.join(prefix, suffix) : suffix || prefix;
-                            if (route) route = new Route(route);
-                            return route && route.match(request.path) && method.toLowerCase() === request.method.toLowerCase();
+
+                            return compareRoutes({ name: route, method: method }, { name: request.path, method: request.method });
                         }).length > 0;
                     }
                 });
             }
             if (typeof options.path === 'string' && options.path.length > 0 && typeof options.method === 'string' &&
-                typeof app[options.method.toLowerCase()] === 'function') {
 
+                typeof app[options.method.toLowerCase()] === 'function') {
+                    var keys = Object.keys(behaviours);
+                if (keys.some(function (key) {
+
+                    return compareRoutes({ name: behaviours[key].path, method: behaviours[key].method }, { name: options.path, method: options.method });
+                }))
+                    throw new Error('Duplicated behavior path: ' + options.path);
                 var router = null;
                 if (typeof prefix === 'string' && prefix.length > 0) {
 
