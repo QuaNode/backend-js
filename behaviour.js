@@ -14,10 +14,10 @@ var setResponse = require('./utils.js').setResponse;
 var respond = require('./utils.js').respond;
 
 var backend = module.exports;
-var join = backend.join = function() {
+var join = backend.join = function () {
 
     var utility = require('url');
-    return function(s1, s2) {
+    return function (s1, s2) {
 
         return utility.resolve(s1.substr(0, s1.endsWith('/') ? s1.length - 1 : s1.length) + '/', s2.substr(s2.startsWith('/') ? 1 : 0));
     };
@@ -43,15 +43,15 @@ var defaultPrefix = null;
 var app = backend.app = express();
 backend.static = express.static;
 
-backend.behaviour = function(path) {
+backend.behaviour = function (path) {
 
-    return function(options, getConstructor) {
+    return function (options, getConstructor) {
 
         if (typeof options !== 'object') {
 
             throw new Error('Invalid definition object');
         }
-        if (typeof options.type !== 'string' || !types[options.type]) {
+        if (typeof options.type !== 'string' || types[options.type] === undefined) {
 
             options.type = 'database';
         }
@@ -73,10 +73,10 @@ backend.behaviour = function(path) {
                 type: types[options.type],
                 inputObjects: options.defaults
             }) : define(getConstructor).extend(BusinessBehaviour)
-            .parameters({
+                .parameters({
 
-                type: types[options.type]
-            });
+                    type: types[options.type]
+                });
         if (typeof options.name === 'string' && options.name.length > 0) {
 
             if (!defaultPrefix && typeof path === 'string' && path.length > 0) defaultPrefix = path;
@@ -85,7 +85,7 @@ backend.behaviour = function(path) {
 
                 throw new Error('behaviours is a reserved name');
             }
-            var behaviour_runner = function(req, res, next, inputObjects, er) {
+            var behaviour_runner = function (req, res, next, inputObjects, er) {
 
                 if (options.paginate) {
 
@@ -100,7 +100,7 @@ backend.behaviour = function(path) {
                     inputObjects: inputObjects
                 });
                 var cancel = businessController(typeof options.queue === 'function' ? options.queue() : options.queue)
-                    .runBehaviour(behaviour, options.paginate ? function(property, superProperty) {
+                    .runBehaviour(behaviour, options.paginate ? function (property, superProperty) {
 
                         var page = {
 
@@ -108,7 +108,7 @@ backend.behaviour = function(path) {
                             pageCount: 'pageCount'
                         };
                         return typeof options.map === 'function' ? options.map(property, superProperty) || page[property] : page[property];
-                    } : options.map, function(behaviourResponse, error) {
+                    } : options.map, function (behaviourResponse, error) {
 
                         if (typeof error === 'object' || typeof behaviourResponse !== 'object') {
 
@@ -128,24 +128,24 @@ backend.behaviour = function(path) {
                             if (typeof options.returns !== 'function') {
 
                                 if (!setResponse(options.returns, req, res, response)) next();
-                            } else options.returns(req, res, function(outputObjects) {
+                            } else options.returns(req, res, function (outputObjects) {
 
                                 respond(res, outputObjects);
                             });
                         }
                     });
-                req.on('close', function() {
+                req.on('close', function () {
 
                     if (typeof cancel === 'function') cancel();
                 });
             };
-            var req_handler = function(req, res, next) {
+            var req_handler = function (req, res, next) {
 
-                if (typeof options.parameters !== 'function') getInputObjects(options.parameters, req, function(inputObjects) {
+                if (typeof options.parameters !== 'function') getInputObjects(options.parameters, req, function (inputObjects) {
 
                     behaviour_runner(req, res, next, inputObjects);
                 });
-                else options.parameters(req, res, function(inputObjects, er) {
+                else options.parameters(req, res, function (inputObjects, er) {
 
                     behaviour_runner(req, res, next, inputObjects, er);
                 });
@@ -155,17 +155,23 @@ backend.behaviour = function(path) {
                 req_handler.unless = unless;
                 req_handler = req_handler.unless({
 
-                    custom: function(request) {
+                    custom: function (request) {
 
-                        return options.unless.map(function(name) {
+                        return options.unless.map(function (name) {
 
-                            return (behaviours[name] && behaviours[name].path) || name;
-                        }).filter(function(suffix) {
+                            return {
 
+                                name: (behaviours[name] && behaviours[name].path) || name,
+                                method: behaviours[name] && behaviours[name].method
+                            };
+                        }).filter(function (opt) {
+
+                            var suffix = opt.name;
+                            var method = opt.method;
                             var route = typeof prefix === 'string' && request.path.startsWith(prefix) &&
                                 typeof suffix === 'string' ? backend.join(prefix, suffix) : suffix || prefix;
                             if (route) route = new Route(route);
-                            return route && route.match(request.path);
+                            return route && route.match(request.path) && method.toLowerCase() === request.method.toLowerCase();
                         }).length > 0;
                     }
                 });
@@ -213,11 +219,11 @@ backend.behaviour = function(path) {
     };
 };
 
-backend.behaviours = function(path) {
+backend.behaviours = function (path) {
 
     if (!defaultPrefix && typeof path === 'string' && path.length > 0) defaultPrefix = path;
     var prefix = path || defaultPrefix;
-    app.get(typeof prefix === 'string' ? join(prefix + '/', '/behaviours') : '/behaviours', function(req, res) {
+    app.get(typeof prefix === 'string' ? join(prefix + '/', '/behaviours') : '/behaviours', function (req, res) {
 
         res.json(behaviours);
     });
