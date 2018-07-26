@@ -86,8 +86,8 @@ var ServiceOperationDelegate = function(options) {
 
         createModelEntity: options.ModelEntity && options.ModelEntity.createModelEntity,
         getObjectsByID: getObjectsByIDFunc(modelController, options),
-        newObjects: modelController.newObjects,
-        save: modelController.save,
+        newObjects: modelController && modelController.newObjects,
+        save: modelController && modelController.save,
         objectAttributesMethod: 'getObjectAttributes'
     });
     var getServiceMethods = options.getServiceMethods || function(index) {
