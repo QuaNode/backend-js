@@ -74,9 +74,9 @@ module.exports = {
         inStream.end(json);
         inStream.pipe(outStream);
     },
-    respond: function(res, object) {
+    respond: function(res, object, format) {
 
-        res.format({
+        var responders = {
 
             json: function() {
 
@@ -90,7 +90,9 @@ module.exports = {
 
                 utils.sendConverted(res, JSON.stringify(object), 'xml');
             }
-        });
+        };
+        if (typeof format === 'string' && responders[format]) responders[format]();
+        else res.format(responders);
     },
     setResponse: function(returns, req, res, response) {
 
