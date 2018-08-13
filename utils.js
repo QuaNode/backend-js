@@ -66,7 +66,7 @@ module.exports = {
             from: 'json',
             to: format
         });
-        outStream.on("data", function(chunk) {
+        outStream.on('data', function(chunk) {
 
             res.send(chunk);
         });

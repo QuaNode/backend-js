@@ -14,14 +14,14 @@ var setResponse = require('./utils.js').setResponse;
 var respond = require('./utils.js').respond;
 
 var backend = module.exports;
-var join = backend.join = function() {
+var join = backend.join = (function() {
 
     var utility = require('url');
     return function(s1, s2) {
 
         return utility.resolve(s1.substr(0, s1.endsWith('/') ? s1.length - 1 : s1.length) + '/', s2.substr(s2.startsWith('/') ? 1 : 0));
     };
-}();
+})();
 
 var routers = {};
 var behaviours = {

@@ -46,7 +46,7 @@ module.exports = {
                     backend.join(options.path, backend.meta[keys[i]].path) : backend.meta[keys[i]].path || options.path;
                 if (route) route = new Route(route);
                 var method = typeof backend.meta[keys[i]].method === 'string' &&
-                    typeof app[backend.meta[keys[i]].method.toLowerCase()] == 'function' && backend.meta[keys[i]].method.toLowerCase();
+                    typeof app[backend.meta[keys[i]].method.toLowerCase()] === 'function' && backend.meta[keys[i]].method.toLowerCase();
                 var origins = options.origins || backend.meta[keys[i]].origins;
                 origins = typeof origins === 'string' && origins.length > 0 && origins;
                 if (origins && route && route.match(req.path) && (method === req.method.toLowerCase() || req.method === 'OPTIONS')) {

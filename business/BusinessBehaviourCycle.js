@@ -172,11 +172,11 @@ var BusinessBehaviourCycle = function(options) {
 
 BusinessBehaviourCycle.setComplete = function(currentBehaviour, completionDelegate) {
 
-    if (typeof currentBehaviour.callback === 'function') currentBehaviour.callback(function() {
+    if (typeof currentBehaviour.callback === 'function') currentBehaviour.callback((function() {
 
         return currentBehaviour.state.businessObjects || currentBehaviour.state.modelObjects ||
             currentBehaviour.state.serviceObjects || [];
-    }(), currentBehaviour.state.error, completionDelegate);
+    })(), currentBehaviour.state.error, completionDelegate);
 };
 
 BusinessBehaviourCycle.setError = function(behaviour, err) {
