@@ -43,6 +43,7 @@ module.exports.setModelController = function(mc) {
     model.ModelController = ModelController;
     model.modelController = modelController;
 };
+
 module.exports.model = function(options, attributes, plugins) {
 
     if (typeof options === 'string' && !attributes && !plugins) return function(modelName) {

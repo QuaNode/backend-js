@@ -17,7 +17,6 @@ var backend = require('./behaviour.js');
 var ServiceParameter = require('./service/ServiceParameter').ServiceParameter;
 var ServiceParameterType = require('./service/ServiceParameter').ServiceParameterType;
 
-
 var app = backend.app;
 var serve = backend.static;
 var behaviour = backend.behaviour;
