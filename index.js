@@ -10,9 +10,13 @@ var setComparisonOperators = require('./model.js').setComparisonOperators;
 var setLogicalOperators = require('./model.js').setLogicalOperators;
 var setModelController = require('./model.js').setModelController;
 var model = require('./model.js').model;
+var service = require('./service.js').service;
 var allowCrossOrigins = require('./utils.js').allowCrossOrigins;
 var respond = require('./utils.js').respond;
 var backend = require('./behaviour.js');
+var ServiceParameter = require('./service/ServiceParameter').ServiceParameter;
+var ServiceParameterType = require('./service/ServiceParameter').ServiceParameterType;
+
 
 var app = backend.app;
 var serve = backend.static;
@@ -29,9 +33,15 @@ module.exports = {
     setComparisonOperators: setComparisonOperators,
     setLogicalOperators: setLogicalOperators,
     setModelController: setModelController,
+    ServiceParameter: ServiceParameter,
+    ServiceParameterType: ServiceParameterType,
     model: function() {
 
         return model;
+    },
+    service: function() {
+
+        return service;
     },
     behaviour: behaviour,
     app: function(path, options) {

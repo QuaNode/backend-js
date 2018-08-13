@@ -20,23 +20,23 @@ module.exports.setModelController = function(mc) {
     }
     if (typeof mc.removeObjects !== 'function') {
 
-        throw new Error('missing removeObjects method in model controller');
+        throw new Error('Missing removeObjects method in model controller');
     }
     if (typeof mc.newObjects !== 'function') {
 
-        throw new Error('missing newObjects method in model controller');
+        throw new Error('Missing newObjects method in model controller');
     }
     if (typeof mc.getObjects !== 'function') {
 
-        throw new Error('missing getObjects method in model controller');
+        throw new Error('Missing getObjects method in model controller');
     }
     if (typeof mc.constructor !== 'function') {
 
-        throw new Error('missing constructor in model controller');
+        throw new Error('Missing constructor in model controller');
     }
     if (typeof mc.constructor.defineEntity !== 'function') {
 
-        throw new Error('missing defineEntity method in model controller constructor');
+        throw new Error('Missing defineEntity method in model controller constructor');
     }
     modelController = mc;
     ModelController = modelController.constructor;
@@ -82,7 +82,7 @@ module.exports.model = function(options, attributes, plugins) {
 
         Object.keys(attributes).forEach(function(key) {
 
-            if (!attributes[key]) throw new Error('undefined attribute ! try to use model() instead of require() for ' + key + ' in ' + options.name + ' or check attribute datatype');
+            if (!attributes[key]) throw new Error('Undefined attribute ! try to use model() instead of require() for ' + key + ' in ' + options.name + ' or check attribute datatype');
         });
     }
     var EntityConstructor = ModelController.defineEntity(options.name, attributes, plugins, options.constraints);

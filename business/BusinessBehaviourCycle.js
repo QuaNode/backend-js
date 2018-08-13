@@ -146,7 +146,7 @@ var BusinessBehaviourCycle = function(options) {
 
                 return operation === op;
             }).length > 1;
-        })) throw new Error('operations should be an array of unique strings');
+        })) throw new Error('Operations should be an array of unique strings');
     var businessBehaviourQueue = options.businessBehaviourQueue;
     var BusinessBehaviourTypes = options.BusinessBehaviourTypes;
     self.runNextBehaviour = function() {
@@ -187,7 +187,7 @@ BusinessBehaviourCycle.setError = function(behaviour, err) {
             behaviour.state.error = new Error('Behaviour cancelled');
             break;
         case 'failed':
-            behaviour.state.error = new Error('Mandatory Behaviour Failed');
+            behaviour.state.error = new Error('Mandatory behaviour failed');
             break;
     }
 };

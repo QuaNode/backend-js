@@ -19,8 +19,8 @@ var ServiceParameterType = {
     BODY: 'body',
     HEADER: 'header',
     METHOD: 'method',
-    URLQUERY: 'urlquery',
-    URLPARAMETER: 'urlparameter'
+    URIQUERY: 'uriquery',
+    URIPARAMETER: 'uriparameter'
 };
 
 module.exports.ServiceParameter = function(options) {
@@ -64,10 +64,10 @@ module.exports.ServiceParameter = function(options) {
                 case ServiceParameterType.METHOD:
                     type = typeParameter;
                     break;
-                case ServiceParameterType.URLQUERY:
+                case ServiceParameterType.URIQUERY:
                     type = typeParameter;
                     break;
-                case ServiceParameterType.URLPARAMETER:
+                case ServiceParameterType.URIPARAMETER:
                     type = typeParameter;
                     break;
                 default:
