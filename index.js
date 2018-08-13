@@ -99,12 +99,16 @@ module.exports = {
         app.use(function(err, req, res, next) {
 
             console.log(err);
+            if (res.headersSent) {
+
+                return next(err);
+            }
             respond(res.status(err.code || 500), {
 
                 behaviour: err.name,
                 version: err.version,
                 message: err.message
-            });
+            }, options.parser);
         });
         app.set('port', options.port || process.env.PORT || 3000);
         var server = app.listen(app.get('port'), function() {

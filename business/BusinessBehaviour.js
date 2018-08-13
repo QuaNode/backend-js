@@ -88,7 +88,7 @@ module.exports.BusinessBehaviour = define(function(init) {
                 self.state.serviceOperations = copy(serviceOperations);
                 self.state.modelOperations = copy(modelOperations);
                 self.state.businessOperations = copy(businessOperations);
-                languageParameters.delegates.keys().every(function(delegate) {
+                Object.keys(languageParameters.delegates).every(function(delegate) {
 
                     if (businessOperations.concat(serviceOperations).concat(modelOperations).indexOf(delegate) === -1)
                         throw new Error('Invalid operation name: ' + delegate);
