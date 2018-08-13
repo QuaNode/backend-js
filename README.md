@@ -1,4 +1,4 @@
-# backend-js
+# backend-js [![Known Vulnerabilities](https://snyk.io/test/github/QuaNode/backendjs/badge.svg?targetFile=package.json)](https://snyk.io/test/github/QuaNode/backendjs?targetFile=package.json)
 
 ### Made for code generation, designed to understand user requirements.
 
