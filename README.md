@@ -1,4 +1,4 @@
-# backend-js
+# backend-js [![Known Vulnerabilities](https://snyk.io/test/github/QuaNode/backendjs/badge.svg?targetFile=package.json)](https://snyk.io/test/github/QuaNode/backendjs?targetFile=package.json) [![Codacy Badge](https://api.codacy.com/project/badge/Grade/f2f50320606542ffb89bc9fef79dbf3f)](https://www.codacy.com/project/quanode/backendjs/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=quaNode/backendjs&amp;utm_campaign=Badge_Grade_Dashboard)
 
 ### Made for code generation, designed to understand user requirements.
 
@@ -232,6 +232,8 @@ backend.setModelController(new ModelController());
 ```
 
 ## Starter project
+
+A sample project that you can learn from examples how to use BackendJS.
 
 #### [https://github.com/QuaNode/BeamJS-Start](https://github.com/QuaNode/BeamJS-Start)
 

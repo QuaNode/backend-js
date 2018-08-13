@@ -21,7 +21,7 @@ var join = backend.join = function () {
 
         return utility.resolve(s1.substr(0, s1.endsWith('/') ? s1.length - 1 : s1.length) + '/', s2.substr(s2.startsWith('/') ? 1 : 0));
     };
-}();
+})();
 
 var routers = {};
 var behaviours = {
@@ -237,13 +237,13 @@ backend.behaviour = function (path) {
     };
 };
 
-backend.behaviours = function (path) {
+backend.behaviours = function(path, parser) {
 
     if (!defaultPrefix && typeof path === 'string' && path.length > 0) defaultPrefix = path;
     var prefix = path || defaultPrefix;
     app.get(typeof prefix === 'string' ? join(prefix + '/', '/behaviours') : '/behaviours', function (req, res) {
 
-        res.json(behaviours);
+        respond(res, behaviours, parser);
     });
     return behaviours;
 };

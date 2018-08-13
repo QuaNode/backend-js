@@ -22,6 +22,8 @@ var app = backend.app;
 var serve = backend.static;
 var behaviour = backend.behaviour;
 var behaviours = backend.behaviours;
+var meta = backend.meta;
+var join = backend.join;
 var started = false;
 
 module.exports = {
@@ -49,19 +51,19 @@ module.exports = {
         app.use(logger('dev'));
         app.all('/*', function(req, res, next) {
 
-            var keys = Object.keys(backend.meta);
+            var keys = Object.keys(meta);
             for (var i = 0; i < keys.length; i++) {
 
-                var route = typeof options.path === 'string' && typeof backend.meta[keys[i]].path === 'string' ?
-                    backend.join(options.path, backend.meta[keys[i]].path) : backend.meta[keys[i]].path || options.path;
+                var route = typeof options.path === 'string' && typeof meta[keys[i]].path === 'string' ?
+                    join(options.path, meta[keys[i]].path) : meta[keys[i]].path || options.path;
                 if (route) route = new Route(route);
-                var method = typeof backend.meta[keys[i]].method === 'string' &&
-                    typeof app[backend.meta[keys[i]].method.toLowerCase()] == 'function' && backend.meta[keys[i]].method.toLowerCase();
-                var origins = options.origins || backend.meta[keys[i]].origins;
+                var method = typeof meta[keys[i]].method === 'string' &&
+                    typeof app[meta[keys[i]].method.toLowerCase()] === 'function' && meta[keys[i]].method.toLowerCase();
+                var origins = options.origins || meta[keys[i]].origins;
                 origins = typeof origins === 'string' && origins.length > 0 && origins;
                 if (origins && route && route.match(req.path) && (method === req.method.toLowerCase() || req.method === 'OPTIONS')) {
 
-                    allowCrossOrigins(backend.meta[keys[i]], res, origins);
+                    allowCrossOrigins(meta[keys[i]], res, origins);
                     break;
                 }
             }
@@ -79,7 +81,7 @@ module.exports = {
                 next();
             }
         });
-        behaviours(options.path);
+        behaviours(options.path, options.parser);
         if (typeof options.static === 'object') {
 
             if (typeof options.static.route === 'string') app.use(options.static.route, serve(options.static.path, options.static));
