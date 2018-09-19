@@ -6,7 +6,7 @@ Usually, code generators always focus on performing functions or do specific job
 
 That's the idea of our backend.js engine "**continuing development using that generated code**" by making it standardized, reusable, readable and maintainable as if you coded it by yourself.
 
-The relationship between user requirements and the code always exists in documentation or just in the developer mind. Domain Driven Design had put rules to strengthen this relationship by naming the code units based on the domain you're working on.
+Continuing development on same code is depending heavily on the relationship between user requirements and the code. This relation always exists in documentation or just in the developer mind. Domain Driven Design had put rules to strengthen this relationship by naming the code units based on the domain you're working on.
 
 ##### For example; in a banking system, the domain contains terminologies like Account, Transaction, etc... so you should use this for naming your code units \(variables, classes, functions, etc... \).
 
