@@ -1,6 +1,6 @@
 {
   "name": "backend-js",
-  "version": "0.9.9-52",
+  "version": "0.9.9-53",
   "description": "A node module that implements the behaviour-driven design and map-queue algorithm",
   "main": "index.js",
   "scripts": {
@@ -9,16 +9,17 @@
     "prepare": "npm run snyk-protect"
   },
   "dependencies": {
-    "express": "latest",
-    "express-paginate": "latest",
-    "shallow-copy": "latest",
-    "parseparams": "latest",
-    "define-js": "latest",
-    "express-unless": "latest",
     "body-parser": "latest",
     "converter": "https://github.com/QuaNode/converter.git",
+    "define-js": "latest",
+    "express": "latest",
+    "express-paginate": "latest",
+    "express-unless": "latest",
+    "http-status-codes": "https://github.com/QuaNode/node-http-status",
     "morgan": "latest",
+    "parseparams": "latest",
     "route-parser": "latest",
+    "shallow-copy": "latest",
     "snyk": "^1.90.2"
   },
   "repository": {

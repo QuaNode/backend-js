@@ -4,6 +4,7 @@
 var bodyParser = require('body-parser');
 var logger = require('morgan');
 var Route = require('route-parser');
+var HttpStatus = require('http-status-codes');
 var ModelEntity = require('./model/ModelEntity.js').ModelEntity;
 var QueryExpression = require('./model/QueryExpression.js').QueryExpression;
 var setComparisonOperators = require('./model.js').setComparisonOperators;
@@ -103,7 +104,7 @@ module.exports = {
 
                 return next(err);
             }
-            respond(res.status(err.code || 500), {
+            respond(res.status(HttpStatus.getStatus(err.code) || 500), {
 
                 behaviour: err.name,
                 version: err.version,

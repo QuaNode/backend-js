@@ -31,7 +31,7 @@ var getUseReturn = function(middlewares, middleware, useConditions, beginConditi
 
             for (var j = 0; j < arguments.length; j++) {
 
-                if (typeof arguments[j] !== 'function') throw new Error('Invalid parameters');
+                if (typeof arguments[j] !== 'function') throw new Error('Invalid begin parameters');
             }
             begin = arguments;
             return this;
@@ -98,7 +98,7 @@ var BusinessLanguage = function(options) {
     var beginConditions = options.beginConditions;
     self.watch = function(operation, callback) {
 
-        if (typeof operation !== 'string' || typeof callback !== 'function') throw new Error('Invalid parameters');
+        if (typeof operation !== 'string' || typeof callback !== 'function') throw new Error('Invalid watch parameters');
         if (!watchers[operation]) watchers[operation] = [];
         watchers[operation].push(callback);
         return self;
@@ -123,8 +123,8 @@ var BusinessLanguage = function(options) {
                     if (typeof arguments[i] !== 'function') throw new Error('Invalid delegate function');
                     delegates[operations[i - 1]] = arguments[i];
                 }
-            } else throw new Error('Invalid parameters');
-        } else throw new Error('Invalid parameters');
+            } else throw new Error('Invalid begin parameters');
+        } else throw new Error('Invalid begin parameters');
         return self;
     };
     self.use = function(middleware) {
