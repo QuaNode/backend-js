@@ -52,7 +52,7 @@ var types = {
     'database_with_action': BusinessBehaviourType.OFFLINEACTION,
     'integration_with_action': BusinessBehaviourType.ONLINEACTION
 };
-var defaultPrefix = null;
+var defaultPrefix = '/';
 var app = backend.app = express();
 backend.static = express.static;
 
@@ -92,8 +92,8 @@ backend.behaviour = function(path) {
             });
         if (typeof options.name === 'string' && options.name.length > 0) {
 
-            if (!defaultPrefix && typeof path === 'string' && path.length > 0) defaultPrefix = path;
-            var prefix = path || defaultPrefix;
+            var prefix = typeof path === 'string' && path.length > 0 ? join(defaultPrefix, path) :
+                defaultPrefix !== '/' ? defaultPrefix : null;
             if (options.name === 'behaviours') {
 
                 throw new Error('behaviours is a reserved name');
@@ -185,9 +185,11 @@ backend.behaviour = function(path) {
                                 typeof suffix === 'string' ? backend.join(prefix, suffix) : suffix || prefix;
 
                             return compareRoutes({
+
                                 name: route,
                                 method: method
                             }, {
+
                                 name: request.path,
                                 method: request.method
                             });
@@ -198,19 +200,22 @@ backend.behaviour = function(path) {
             if (typeof options.path === 'string' && options.path.length > 0 && typeof options.method === 'string' &&
 
                 typeof app[options.method.toLowerCase()] === 'function') {
+
                 var keys = Object.keys(behaviours);
                 if (keys.some(function(key) {
 
                         return compareRoutes({
+
                             name: behaviours[key].path,
                             method: behaviours[key].method
                         }, {
+
                             name: options.path,
                             method: options.method
                         });
                     }))
                     throw new Error('Duplicated behavior path: ' + options.path);
-                var router = null;
+                var router = app;
                 if (typeof prefix === 'string' && prefix.length > 0) {
 
                     router = routers[prefix];
@@ -230,10 +235,9 @@ backend.behaviour = function(path) {
                         app.use(prefix, router);
                         routers[prefix] = router;
                     }
-                } else router = app;
-                if (typeof options.plugin !== 'function') router[options.method.toLowerCase()](options.path, req_handler);
-                else app[options.method.toLowerCase()](typeof prefix === 'string' && prefix.length > 0 ?
-                    join(prefix, options.path) : options.path, options.plugin, req_handler);
+                }
+                if (typeof options.plugin === 'function') router[options.method.toLowerCase()](options.path, options.plugin, req_handler);
+                else router[options.method.toLowerCase()](options.path, req_handler);
                 behaviours[options.name] = {
 
                     version: options.version,
@@ -252,7 +256,7 @@ backend.behaviour = function(path) {
 
 backend.behaviours = function(path, parser) {
 
-    if (!defaultPrefix && typeof path === 'string' && path.length > 0) defaultPrefix = path;
+    if (defaultPrefix === '/' && typeof path === 'string' && path.length > 0) defaultPrefix = path;
     var prefix = path || defaultPrefix;
     app.get(typeof prefix === 'string' ? join(prefix + '/', '/behaviours') : '/behaviours', function(req, res) {
 
