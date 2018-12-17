@@ -48,7 +48,6 @@ module.exports = {
     server: function(path, options) {
 
         if (started) return server;
-        started = true;
         app.use(logger('dev'));
         app.all('/*', function(req, res, next) {
 
@@ -112,7 +111,7 @@ module.exports = {
                 message: err.message
             }, options.parser);
         });
-        app.set('port', options.port || process.env.PORT || 3000);
+        app.set('port', options.port || process.env.PORT || (typeof options.https === 'object' ? 443 : 80));
         server = require(typeof options.https === 'object' ? 'https' : 'http').createServer(function() {
 
             if (typeof options.https === 'object') return ['key', 'cert', 'ca'].reduce(function(https, prop) {
@@ -126,13 +125,14 @@ module.exports = {
 
             console.log('backend listening on port ' + app.get('port'));
         });
+        started = true;
         return server;
     },
     app: function(path, options) {
 
         if (started) return app;
-        started = true;
         this.server(path, options);
+        started = true;
         return app;
     }
 };
