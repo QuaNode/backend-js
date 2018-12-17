@@ -1,6 +1,7 @@
 /*jslint node: true */
 'use strict';
 
+var fs = require('fs');
 var bodyParser = require('body-parser');
 var logger = require('morgan');
 var Route = require('route-parser');
@@ -18,7 +19,7 @@ var backend = require('./behaviour.js');
 var ServiceParameter = require('./service/ServiceParameter').ServiceParameter;
 var ServiceParameterType = require('./service/ServiceParameter').ServiceParameterType;
 
-var app = backend.app;
+var server, app = backend.app;
 var serve = backend.static;
 var behaviour = backend.behaviour;
 var behaviours = backend.behaviours;
@@ -44,9 +45,9 @@ module.exports = {
         return service;
     },
     behaviour: behaviour,
-    app: function(path, options) {
+    server: function(path, options) {
 
-        if (started) return app;
+        if (started) return server;
         started = true;
         app.use(logger('dev'));
         app.all('/*', function(req, res, next) {
@@ -112,10 +113,26 @@ module.exports = {
             }, options.parser);
         });
         app.set('port', options.port || process.env.PORT || 3000);
-        var server = app.listen(app.get('port'), function() {
+        server = require(typeof options.https === 'object' ? 'https' : 'http').createServer(function() {
 
-            console.log('Express server listening on port ' + server.address().port);
+            if (typeof options.https === 'object') return ['key', 'cert', 'ca'].reduce(function(https, prop) {
+
+                if (typeof options.https[prop] === 'string' && fs.existsSync(options.https[prop]))
+                    https[prop] = fs.readFileSync(options.https[prop]).toString();
+                return https;
+            }, {});
+            else return app;
+        }(), app).listen(app.get('port'), function() {
+
+            console.log('backend listening on port ' + app.get('port'));
         });
+        return server;
+    },
+    app: function(path, options) {
+
+        if (started) return app;
+        started = true;
+        this.server(path, options);
         return app;
     }
 };
