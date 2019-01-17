@@ -59,6 +59,7 @@ backend.static = express.static;
 
 backend.behaviour = function(path, config) {
 
+    if (typeof path === 'object') config = path;
     return function(options, getConstructor) {
 
         if (typeof options !== 'object') {
