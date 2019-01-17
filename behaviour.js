@@ -42,7 +42,8 @@ var compareRoutes = function(route1, route2) {
         route1 = route;
     }
     if (route && route.name) route = new Route(route.name);
-    return route && route.match((route2 && route2.name) || ' ') && (route1.method || '').toLowerCase() === ((route2 && route2.method) || '').toLowerCase();
+    return (route && route.match((route2 && route2.name) || ' ') || route1.name === (route2 && route2.name)) &&
+        (route1.method || '').toLowerCase() === ((route2 && route2.method) || '').toLowerCase();
 
 };
 var types = {
@@ -56,7 +57,7 @@ var defaultPrefix = '/';
 var app = backend.app = express();
 backend.static = express.static;
 
-backend.behaviour = function(path) {
+backend.behaviour = function(path, config) {
 
     return function(options, getConstructor) {
 
@@ -90,7 +91,13 @@ backend.behaviour = function(path) {
 
                 type: types[options.type]
             });
-        if (typeof options.name === 'string' && options.name.length > 0) {
+        if (typeof options.name === 'string' && options.name.length > 0 && function() {
+
+                if (behaviours[options.name] && (typeof config !== 'object' ||
+                        typeof config.skipSameRoutes !== 'boolean' || !config.skipSameRoutes))
+                    throw new Error('Duplicated behavior name: ' + options.name);
+                return !behaviours[options.name];
+            }()) {
 
             var prefix = typeof path === 'string' && path.length > 0 ? join(defaultPrefix, path) :
                 defaultPrefix !== '/' ? defaultPrefix : null;
@@ -182,7 +189,7 @@ backend.behaviour = function(path) {
                             var suffix = opt.name;
                             var method = opt.method;
                             var route = typeof prefix === 'string' && request.path.startsWith(prefix) &&
-                                typeof suffix === 'string' ? backend.join(prefix, suffix) : suffix || prefix;
+                                typeof suffix === 'string' ? join(prefix, suffix) : suffix || prefix;
 
                             return compareRoutes({
 
@@ -198,7 +205,6 @@ backend.behaviour = function(path) {
                 });
             }
             if (typeof options.path === 'string' && options.path.length > 0 && typeof options.method === 'string' &&
-
                 typeof app[options.method.toLowerCase()] === 'function') {
 
                 var keys = Object.keys(behaviours);
