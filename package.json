@@ -1,6 +1,6 @@
 {
   "name": "backend-js",
-  "version": "0.9.9-58",
+  "version": "0.9.9-59",
   "description": "A node module that implements the behaviour-driven design and map-queue algorithm",
   "main": "index.js",
   "scripts": {

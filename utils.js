@@ -157,10 +157,10 @@ module.exports = {
 
             res.header('Access-Control-Expose-Headers', Object.keys(options.returns).map(function(key) {
 
-                return options.returns[key].type === 'header' ? ',' + key : '';
+                return options.returns[key].type === 'header' ? key : '';
             }).reduce(function(accumulator, key) {
 
-                return accumulator + key;
+                return accumulator + (accumulator.length > 0 ? ',' : '') + key;
             }, ''));
         }
     }
