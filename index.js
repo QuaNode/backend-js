@@ -67,13 +67,7 @@ module.exports = {
                     break;
                 }
             }
-            if (/[A-Z]/.test(req.path)) {
-
-                respond(res.status(404), {
-
-                    'message': 'Small letters url required'
-                });
-            } else if (req.method === 'OPTIONS') {
+            if (req.method === 'OPTIONS') {
 
                 res.status(200).end();
             } else {
@@ -93,7 +87,8 @@ module.exports = {
         if (typeof path === 'string' && path.length > 0) require(path);
         app.use(function(req, res, next) {
 
-            var err = new Error('Not Found');
+            var err = new Error('Not found');
+            if (/[A-Z]/.test(req.path)) err = new Error('Not found, may be the case-sensitivity of the path');
             err.code = 404;
             next(err);
         });
