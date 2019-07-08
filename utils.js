@@ -16,6 +16,25 @@ module.exports = {
         }
         return value;
     },
+    getCorrectValue: function(value) {
+
+        switch (value) {
+
+            case 'true':
+            case 'True':
+                return true;
+            case 'false':
+            case 'False':
+                return false;
+            case 'undefined':
+            case 'Undefined':
+                return undefined;
+            case 'null':
+            case 'Null':
+                return null;
+        }
+        return value;
+    },
     getInputObjects: function(parameters, req, callback) {
 
         if (typeof parameters !== 'object') {
@@ -38,19 +57,19 @@ module.exports = {
             switch (parameters[keys[i]].type) {
 
                 case 'header':
-                    inputObjects[keys[i]] = req.get(parameters[keys[i]].key);
+                    inputObjects[keys[i]] = utils.getCorrectValue(req.get(parameters[keys[i]].key));
                     break;
                 case 'body':
-                    inputObjects[keys[i]] = utils.getValueAtPath(parameters[keys[i]].key, req.body);
+                    inputObjects[keys[i]] = utils.getCorrectValue(utils.getValueAtPath(parameters[keys[i]].key, req.body));
                     break;
                 case 'query':
-                    inputObjects[keys[i]] = req.query[parameters[keys[i]].key];
+                    inputObjects[keys[i]] = utils.getCorrectValue(req.query[parameters[keys[i]].key]);
                     break;
                 case 'path':
-                    inputObjects[keys[i]] = req.params[parameters[keys[i]].key];
+                    inputObjects[keys[i]] = utils.getCorrectValue(req.params[parameters[keys[i]].key]);
                     break;
                 case 'middleware':
-                    inputObjects[keys[i]] = req[parameters[keys[i]].key];
+                    inputObjects[keys[i]] = utils.getCorrectValue(req[parameters[keys[i]].key]);
                     break;
                 default:
                     new Error('Invalid parameter type');
