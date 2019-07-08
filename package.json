@@ -20,7 +20,7 @@
     "parseparams": "latest",
     "route-parser": "latest",
     "shallow-copy": "latest",
-    "snyk": "^1.189.0"
+    "snyk": "^1.192.3"
   },
   "repository": {
     "type": "git",
