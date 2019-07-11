@@ -35,6 +35,41 @@ module.exports = {
         }
         return value;
     },
+    setInputObjects: function(inputObjects, req, name, parameter, key, type) {
+
+        switch (type) {
+
+            case 'header':
+                inputObjects[name] = utils.getCorrectValue(req.get(key));
+                break;
+            case 'body':
+                inputObjects[name] = utils.getCorrectValue(utils.getValueAtPath(key, req.body));
+                break;
+            case 'query':
+                inputObjects[name] = utils.getCorrectValue(req.query[key]);
+                break;
+            case 'path':
+                inputObjects[name] = utils.getCorrectValue(req.params[key]);
+                break;
+            case 'middleware':
+                inputObjects[name] = utils.getCorrectValue(req[key]);
+                break;
+            default:
+                new Error('Invalid parameter type');
+                break;
+        }
+        if (inputObjects[name] === undefined || inputObjects[name] === null) {
+
+            if (typeof parameter.alternativeKey === 'string' && parameter.alternativeKey !== key)
+                utils.setInputObjects(inputObjects, req, name, parameter, parameter.alternativeKey, type);
+            else if (typeof parameter.alternativeType === 'string' && parameter.alternativeType !== type)
+                utils.setInputObjects(inputObjects, req, name, parameter, key, parameter.alternativeType);
+            else if (parameter.key !== key) utils.setInputObjects(inputObjects, req, name, {
+
+                key: parameter.key
+            }, parameter.key, type);
+        }
+    },
     getInputObjects: function(parameters, req, callback) {
 
         if (typeof parameters !== 'object') {
@@ -54,27 +89,8 @@ module.exports = {
 
                 throw new Error('Invalid parameter type');
             }
-            switch (parameters[keys[i]].type) {
-
-                case 'header':
-                    inputObjects[keys[i]] = utils.getCorrectValue(req.get(parameters[keys[i]].key));
-                    break;
-                case 'body':
-                    inputObjects[keys[i]] = utils.getCorrectValue(utils.getValueAtPath(parameters[keys[i]].key, req.body));
-                    break;
-                case 'query':
-                    inputObjects[keys[i]] = utils.getCorrectValue(req.query[parameters[keys[i]].key]);
-                    break;
-                case 'path':
-                    inputObjects[keys[i]] = utils.getCorrectValue(req.params[parameters[keys[i]].key]);
-                    break;
-                case 'middleware':
-                    inputObjects[keys[i]] = utils.getCorrectValue(req[parameters[keys[i]].key]);
-                    break;
-                default:
-                    new Error('Invalid parameter type');
-                    break;
-            }
+            var parameter = parameters[keys[i]];
+            utils.setInputObjects(inputObjects, req, keys[i], parameter, parameter.key, parameter.type);
         }
         callback(inputObjects);
     },
