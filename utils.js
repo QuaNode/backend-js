@@ -60,7 +60,7 @@ module.exports = {
                         var values = route.match(req.path);
                         if (values) {
 
-                            value = value[key];
+                            value = values[key];
                             return true;
                         }
                     }
