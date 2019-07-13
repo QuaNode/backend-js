@@ -3,6 +3,7 @@
 
 var stream = require('stream');
 var converter = require('converter');
+var Route = require('route-parser');
 
 module.exports = {
 
@@ -36,7 +37,7 @@ module.exports = {
         }
         return value;
     },
-    setInputObjects: function(inputObjects, req, name, parameter, key, type) {
+    setInputObjects: function(inputObjects, paths, req, name, parameter, key, type) {
 
         switch (type) {
 
@@ -50,7 +51,22 @@ module.exports = {
                 inputObjects[name] = utils.getCorrectValue(req.query[key]);
                 break;
             case 'path':
-                inputObjects[name] = utils.getCorrectValue(req.params[key]);
+                var value = req.params[key];
+                if (!value && Array.isArray(paths)) paths.some(function(path) {
+
+                    if (path) {
+
+                        var route = new Route(path);
+                        var values = route.match(req.path);
+                        if (values) {
+
+                            value = value[key];
+                            return true;
+                        }
+                    }
+                    return false;
+                });
+                inputObjects[name] = utils.getCorrectValue(value);
                 break;
             case 'middleware':
                 inputObjects[name] = utils.getCorrectValue(req[key]);
@@ -62,16 +78,16 @@ module.exports = {
         if (inputObjects[name] === undefined || inputObjects[name] === null) {
 
             if (typeof parameter.alternativeKey === 'string' && parameter.alternativeKey !== key)
-                utils.setInputObjects(inputObjects, req, name, parameter, parameter.alternativeKey, type);
+                utils.setInputObjects(inputObjects, paths, req, name, parameter, parameter.alternativeKey, type);
             else if (typeof parameter.alternativeType === 'string' && parameter.alternativeType !== type)
-                utils.setInputObjects(inputObjects, req, name, parameter, key, parameter.alternativeType);
-            else if (parameter.key !== key) utils.setInputObjects(inputObjects, req, name, {
+                utils.setInputObjects(inputObjects, paths, req, name, parameter, key, parameter.alternativeType);
+            else if (parameter.key !== key) utils.setInputObjects(inputObjects, paths, req, name, {
 
                 key: parameter.key
             }, parameter.key, type);
         }
     },
-    getInputObjects: function(parameters, req, callback) {
+    getInputObjects: function(parameters, paths, req, callback) {
 
         if (typeof parameters !== 'object') {
 
@@ -91,7 +107,7 @@ module.exports = {
                 throw new Error('Invalid parameter type');
             }
             var parameter = parameters[keys[i]];
-            utils.setInputObjects(inputObjects, req, keys[i], parameter, parameter.key, parameter.type);
+            utils.setInputObjects(inputObjects, paths, req, keys[i], parameter, parameter.key, parameter.type);
         }
         callback(inputObjects);
     },
@@ -130,11 +146,12 @@ module.exports = {
         if (typeof format === 'string' && responders[format]) responders[format]();
         else res.format(responders);
     },
-    setResponse: function(returns, req, res, response) {
+    setResponse: function(returns, middleware, req, res, response) {
 
         if (typeof returns !== 'object' || typeof response !== 'object' || typeof response.response !== 'object' ||
             Array.isArray(response.response)) {
 
+            if (middleware && (typeof response !== 'object' || !Array.isArray(response.response))) return false;
             utils.respond(res, response || {});
             return true;
         }
@@ -146,7 +163,8 @@ module.exports = {
 
                 throw new Error('Invalid return type');
             }
-            var value = utils.getValueAtPath(typeof returns[keys[i]].key === 'string' ? returns[keys[i]].key : keys[i], response.response);
+            var value = utils.getValueAtPath(typeof returns[keys[i]].key === 'string' ? returns[keys[i]].key :
+                keys[i], response.response);
             switch (returns[keys[i]].type) {
 
                 case 'header':
