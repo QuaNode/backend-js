@@ -28,6 +28,7 @@ module.exports = {
                 return false;
             case 'undefined':
             case 'Undefined':
+            case '*':
                 return undefined;
             case 'null':
             case 'Null':
