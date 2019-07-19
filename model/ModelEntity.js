@@ -10,7 +10,10 @@ module.exports.ModelEntity = function(options) {
     var attributes = options.attributes;
     var features = options.features;
     var query = options.query;
-    if (typeof constructor !== 'function' || Array.isArray(attributes) === 0) throw new Error('Invalid entity parameters');
+    var aggregate = options.aggregate;
+    if (typeof constructor !== 'function' || typeof attributes !== 'object' || (features !== undefined &&
+            typeof attributes !== 'object') || (aggregate !== undefined && !Array.isArray(aggregate)) ||
+        (query !== undefined && !Array.isArray(query))) throw new Error('Invalid entity parameters');
     self.getObjectConstructor = function() {
 
         return constructor;
@@ -26,6 +29,10 @@ module.exports.ModelEntity = function(options) {
     self.getObjectQuery = function() {
 
         return query;
+    };
+    self.getObjectAggregate = function() {
+
+        return aggregate;
     };
 };
 

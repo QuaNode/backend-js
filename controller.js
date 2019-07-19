@@ -3,23 +3,25 @@
 
 var BusinessController = require('./business/BusinessController.js').BusinessController;
 var QueryExpression = require('./model.js').QueryExpression;
+var getComparisonOperators = require('./model.js').getComparisonOperators;
 var ModelEntity = require('./model.js').ModelEntity;
+var getModelController = require('./model.js').getModelController;
 
 var businessControllerSharedInstances = {};
 
-var businessController = function(key) {
+var businessController = function (key) {
 
     var businessControllerSharedInstance = typeof key === 'string' && businessControllerSharedInstances[key];
     if (!businessControllerSharedInstance) {
 
         businessControllerSharedInstance = new BusinessController({
 
-            modelController: require('./model.js').modelController,
+            modelController: getModelController(),
             ModelEntity: ModelEntity,
             QueryExpression: QueryExpression,
-            ComparisonOperators: require('./model/QueryExpression.js').ComparisonOperators,
+            ComparisonOperators: getComparisonOperators(),
             //cacheController : cacheController,
-            operationCallback: function( /*data, operationType , operationSubtype*/ ) {
+            operationCallback: function ( /*data, operationType , operationSubtype*/ ) {
 
                 /*if (data && data.error) {
 

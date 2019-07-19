@@ -125,7 +125,7 @@ backend.behaviour = function(path, config) {
                     priority: options.priority || 0,
                     inputObjects: inputObjects
                 });
-                var cancel = businessController(typeof options.queue === 'function' ? options.queue() : options.queue)
+                var cancel = businessController(typeof options.queue === 'function' ? options.queue(options.name) : options.queue)
                     .runBehaviour(behaviour, options.paginate ? function(property, superProperty) {
 
                         var page = {

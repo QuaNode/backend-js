@@ -21,12 +21,6 @@ module.exports = {
 
         switch (value) {
 
-            case 'true':
-            case 'True':
-                return true;
-            case 'false':
-            case 'False':
-                return false;
             case 'undefined':
             case 'Undefined':
             case '*':

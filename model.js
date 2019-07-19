@@ -2,15 +2,20 @@
 'use strict';
 
 var define = require('define-js');
-var ModelEntity = require('./model/ModelEntity.js').ModelEntity;
 
-module.exports.setComparisonOperators = require('./model/QueryExpression.js').setComparisonOperators;
-module.exports.setLogicalOperators = require('./model/QueryExpression.js').setLogicalOperators;
 module.exports.QueryExpression = require('./model/QueryExpression.js').QueryExpression;
+module.exports.setComparisonOperators = require('./model/QueryExpression.js').setComparisonOperators;
+module.exports.getComparisonOperators = function() {
 
+    return require('./model/QueryExpression.js').ComparisonOperators;
+};
+module.exports.setLogicalOperators = require('./model/QueryExpression.js').setLogicalOperators;
+module.exports.AggregateExpression = require('./model/AggregateExpression.js').AggregateExpression;
+module.exports.setComputationOperators = require('./model/AggregateExpression.js').setComputationOperators;
+
+var ModelEntity = module.exports.ModelEntity = require('./model/ModelEntity.js').ModelEntity;
 var ModelController = null;
 var modelController = null;
-var model = module.exports;
 
 module.exports.setModelController = function(mc) {
 
@@ -40,8 +45,11 @@ module.exports.setModelController = function(mc) {
     }
     modelController = mc;
     ModelController = modelController.constructor;
-    model.ModelController = ModelController;
-    model.modelController = modelController;
+};
+
+module.exports.getModelController = function() {
+
+    return modelController;
 };
 
 module.exports.model = function(options, attributes, plugins) {
@@ -76,6 +84,10 @@ module.exports.model = function(options, attributes, plugins) {
 
         options.query = [];
     }
+    if (!Array.isArray(options.aggregate)) {
+
+        options.aggregate = [];
+    }
     if (typeof attributes !== 'object') {
 
         throw new Error('Invalid attributes');
@@ -83,24 +95,22 @@ module.exports.model = function(options, attributes, plugins) {
 
         Object.keys(attributes).forEach(function(key) {
 
-            if (!attributes[key]) throw new Error('Undefined attribute ! try to use model() instead of require() for ' + key + ' in ' + options.name + ' or check attribute datatype');
+            if (!attributes[key]) throw new Error('Undefined attribute! try to use model() instead of require() for ' +
+                key + ' in ' + options.name + ' or check attribute datatype');
         });
     }
     var EntityConstructor = ModelController.defineEntity(options.name, attributes, plugins, options.constraints);
     var Entity = define(function(init) {
 
-        return function(features, query) {
+        return function(features, query, aggregate) {
 
-            if (!Array.isArray(query)) {
-
-                query = [];
-            }
             init.apply(this, [{
 
                 constructor: EntityConstructor,
                 attributes: attributes,
-                features: Object.assign(features || {}, options.features),
-                query: options.query.concat(query)
+                features: Object.assign((typeof features === 'object' && features) || {}, options.features),
+                query: options.query.concat((Array.isArray(query) && query) || []),
+                aggregate: options.aggregate.concat((Array.isArray(aggregate) && aggregate) || [])
             }]).self();
         };
     }).extend(ModelEntity).parameters({
@@ -108,7 +118,8 @@ module.exports.model = function(options, attributes, plugins) {
         constructor: EntityConstructor,
         attributes: attributes,
         features: options.features,
-        query: options.query
+        query: options.query,
+        aggregate: options.aggregate
     });
     ModelEntity.registerModelEntity({
 

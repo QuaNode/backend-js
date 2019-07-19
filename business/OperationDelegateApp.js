@@ -52,10 +52,14 @@ var getModelContinue = function(delegate) {
     var that = this;
     return function() {
 
-        delegate(typeof that.data.query === 'function' ? that.data.query : function() {
+        var getQuery = typeof that.data.query === 'function' ? that.data.query : function() {
 
             return that.data.query;
-        }, typeof that.data.entity === 'function' ? that.data.entity : function() {
+        };
+        delegate(that.data.aggregate ? [getQuery, typeof that.data.aggregate === 'function' ? that.data.aggregate : function() {
+
+            return that.data.aggregate;
+        }] : getQuery, typeof that.data.entity === 'function' ? that.data.entity : function() {
 
             return that.data.entity;
         }, function() {

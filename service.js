@@ -8,6 +8,9 @@ var ServiceEndPoint = require('./service/ServiceEndPoint.js').ServiceEndPoint;
 var ServiceAuthenticator = require('./service/ServiceAuthenticator.js').ServiceAuthenticator;
 var ServiceObjectMetadata = require('./service/ServiceResponseMetadata.js').ServiceObjectMetadata;
 
+module.exports.ServiceParameter = require('./service/ServiceParameter').ServiceParameter;
+module.exports.ServiceParameterType = require('./service/ServiceParameter').ServiceParameterType;
+
 module.exports.service = function(baseURI, serve, authenticate, authenticated) {
 
     if (typeof serve !== 'function') {

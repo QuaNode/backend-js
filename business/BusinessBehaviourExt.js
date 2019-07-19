@@ -85,6 +85,7 @@ var getModelOperation = function(operationDelegateApp, modelOperation, delegate)
 
             append: null,
             query: null,
+            aggregate: null,
             objects: null,
             entity: null,
             callback: null
@@ -95,6 +96,7 @@ var getModelOperation = function(operationDelegateApp, modelOperation, delegate)
         },
         objects: getOperationFunc('objects'),
         query: getOperationFunc('query'),
+        aggregate: getOperationFunc('aggregate'),
         entity: getOperationFunc('entity'),
         append: getOperationFunc('append'),
         callback: getOperationFunc('callback'),
