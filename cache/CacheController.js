@@ -220,7 +220,7 @@ var CacheController = function() {
             var downloadProgress = resource.downloadProgress || function() {};
             if (!resource.url || resource.url.length === 0) {
 
-                throw new Error('invalid resource');
+                throw new Error('Invalid resource');
             } else {
 
                 resource.url = encodeURI(resource.url);
@@ -236,7 +236,7 @@ var CacheController = function() {
                     path = getUserResourcePath(resource.username);
                     break;
                 default:
-                    throw new Error('invalid resource Type');
+                    throw new Error('Invalid resource Type');
             }
             if (path) {
 

@@ -24,7 +24,7 @@ var BusinessController = function(options) {
     var serviceOperations = BusinessBehaviourCycle.validateServiceOperations(options.serviceOperations);
     var modelOperations = BusinessBehaviourCycle.validateModelOperations(options.modelOperations);
     var operationCallback = options.operationCallback;
-    if (FetchBehaviour && !(FetchBehaviour.prototype instanceof BusinessBehaviour)) throw new Error('invalid fetch behaviour type');
+    if (FetchBehaviour && !(FetchBehaviour.prototype instanceof BusinessBehaviour)) throw new Error('Invalid fetch behaviour type');
     var modelOperationDelegate = new ModelOperationDelegate({
 
         modelController: modelController,
