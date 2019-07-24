@@ -1,25 +1,26 @@
 /*jslint node: true */
+/*jshint esversion: 6 */
 'use strict';
 
-var fs = require('fs');
-var bodyParser = require('body-parser');
-var logger = require('morgan');
-var Route = require('route-parser');
-var HttpStatus = require('http-status-codes');
-var ModelEntity = require('./model.js').ModelEntity;
-var QueryExpression = require('./model.js').QueryExpression;
-var setComparisonOperators = require('./model.js').setComparisonOperators;
-var setLogicalOperators = require('./model.js').setLogicalOperators;
-var AggregateExpression = require('./model.js').AggregateExpression;
-var setComputationOperators = require('./model.js').setComputationOperators;
-var setModelController = require('./model.js').setModelController;
-var model = require('./model.js').model;
-var ServiceParameter = require('./service.js').ServiceParameter;
-var ServiceParameterType = require('./service.js').ServiceParameterType;
-var service = require('./service.js').service;
-var allowCrossOrigins = require('./utils.js').allowCrossOrigins;
-var respond = require('./utils.js').respond;
-var backend = require('./behaviour.js');
+let fs = require('fs');
+let bodyParser = require('body-parser');
+let logger = require('morgan');
+let Route = require('route-parser');
+let HttpStatus = require('http-status-codes');
+let ModelEntity = require('./model.js').ModelEntity;
+let QueryExpression = require('./model.js').QueryExpression;
+let setComparisonOperators = require('./model.js').setComparisonOperators;
+let setLogicalOperators = require('./model.js').setLogicalOperators;
+let AggregateExpression = require('./model.js').AggregateExpression;
+let setComputationOperators = require('./model.js').setComputationOperators;
+let setModelController = require('./model.js').setModelController;
+let model = require('./model.js').model;
+let ServiceParameter = require('./service.js').ServiceParameter;
+let ServiceParameterType = require('./service.js').ServiceParameterType;
+let service = require('./service.js').service;
+let allowCrossOrigins = require('./utils.js').allowCrossOrigins;
+let respond = require('./utils.js').respond;
+let backend = require('./behaviour.js');
 
 var server, app = backend.app;
 var serve = backend.static;

@@ -1,12 +1,13 @@
 /*jslint node: true */
+/*jshint esversion: 6 */
 /*global document*/
 /*global device*/
 /*global window*/
 'use strict';
 
-var raygun = require('./lib/raygun/raygun.js');
-var sendToRaygun = require('./lib/raygun/raygun.transport.js').send;
-var EdushareAppConfig = require('../utils/EdushareAppConfig.js').EdushareAppConfig;
+let raygun = require('./lib/raygun/raygun.js');
+let sendToRaygun = require('./lib/raygun/raygun.transport.js').send;
+let EdushareAppConfig = require('../utils/EdushareAppConfig.js').EdushareAppConfig;
 
 var deviceID = null;
 

@@ -1,7 +1,8 @@
 /*jslint node: true */
+/*jshint esversion: 6 */
 'use strict';
 
-var ServiceController = require('../service/ServiceController.js').ServiceController;
+let ServiceController = require('../service/ServiceController.js').ServiceController;
 
 var getRequestDelegate = function(serviceOperation, serviceOperations, serviceMethods, callback) {
 

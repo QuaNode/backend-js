@@ -1,7 +1,8 @@
 /*jslint node: true */
+/*jshint esversion: 6 */
 'use strict';
 
-var define = require('define-js');
+let define = require('define-js');
 
 module.exports.QueryExpression = require('./model/QueryExpression.js').QueryExpression;
 module.exports.setComparisonOperators = require('./model/QueryExpression.js').setComparisonOperators;
@@ -13,7 +14,7 @@ module.exports.setLogicalOperators = require('./model/QueryExpression.js').setLo
 module.exports.AggregateExpression = require('./model/AggregateExpression.js').AggregateExpression;
 module.exports.setComputationOperators = require('./model/AggregateExpression.js').setComputationOperators;
 
-var ModelEntity = module.exports.ModelEntity = require('./model/ModelEntity.js').ModelEntity;
+let ModelEntity = module.exports.ModelEntity = require('./model/ModelEntity.js').ModelEntity;
 var ModelController = null;
 var modelController = null;
 

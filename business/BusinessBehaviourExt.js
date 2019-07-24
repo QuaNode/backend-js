@@ -1,9 +1,10 @@
 /*jslint node: true */
+/*jshint esversion: 6 */
 'use strict';
 
-var OperationDelegateApp = require('./OperationDelegateApp.js').OperationDelegateApp;
-var BusinessOperation = require('./BusinessBehaviourCycle.js').BusinessOperation;
-var parse = require('parseparams');
+let OperationDelegateApp = require('./OperationDelegateApp.js').OperationDelegateApp;
+let BusinessOperation = require('./BusinessBehaviourCycle.js').BusinessOperation;
+let parse = require('parseparams');
 
 var ifCondition = function(operation, conditions) {
 
@@ -86,6 +87,7 @@ var getModelOperation = function(operationDelegateApp, modelOperation, delegate)
             append: null,
             query: null,
             aggregate: null,
+            filter: null,
             objects: null,
             entity: null,
             callback: null
@@ -97,6 +99,7 @@ var getModelOperation = function(operationDelegateApp, modelOperation, delegate)
         objects: getOperationFunc('objects'),
         query: getOperationFunc('query'),
         aggregate: getOperationFunc('aggregate'),
+        filter: getOperationFunc('filter'),
         entity: getOperationFunc('entity'),
         append: getOperationFunc('append'),
         callback: getOperationFunc('callback'),

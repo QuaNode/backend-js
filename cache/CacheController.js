@@ -1,12 +1,13 @@
 /*jslint node: true */
+/*jshint esversion: 6 */
 /*global window*/
 /*global device*/
 /*global Blob*/
 /*global BlobBuilder*/
 'use strict';
 
-var CacheFileSystem = require('./CacheFileSystem.js').CacheFileSystem;
-var ResourceType = require('./CacheResourceInfo.js').ResourceType;
+let CacheFileSystem = require('./CacheFileSystem.js').CacheFileSystem;
+let ResourceType = require('./CacheResourceInfo.js').ResourceType;
 
 var STATUS_CODES = {
 

@@ -77,7 +77,7 @@ var BusinessBehaviourQueue = function(setComplete, setError) {
     };
     self.isEnqueued = function(behaviour) {
 
-        return !!behaviourQueue.some(function(bhv) {
+        return behaviourQueue.some(function(bhv) {
 
             return behaviour.isEqualToBehaviour(bhv);
         });

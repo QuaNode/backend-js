@@ -17,13 +17,15 @@ module.exports = {
         }
         return value;
     },
-    getCorrectValue: function(value) {
+    getCorrectValue: function(value, type) {
 
         switch (value) {
 
+            case '*':
+                if (type === 'path') return undefined;
+                break;
             case 'undefined':
             case 'Undefined':
-            case '*':
                 return undefined;
             case 'null':
             case 'Null':
@@ -60,7 +62,7 @@ module.exports = {
                     }
                     return false;
                 });
-                inputObjects[name] = utils.getCorrectValue(value);
+                inputObjects[name] = utils.getCorrectValue(value, 'path');
                 break;
             case 'middleware':
                 inputObjects[name] = utils.getCorrectValue(req[key]);

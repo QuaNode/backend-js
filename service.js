@@ -1,12 +1,13 @@
 /*jslint node: true */
+/*jshint esversion: 6 */
 'use strict';
 
-var define = require('define-js');
-var parse = require('parseparams');
-var ServiceAdapter = require('./service/ServiceAdapter.js').ServiceAdapter;
-var ServiceEndPoint = require('./service/ServiceEndPoint.js').ServiceEndPoint;
-var ServiceAuthenticator = require('./service/ServiceAuthenticator.js').ServiceAuthenticator;
-var ServiceObjectMetadata = require('./service/ServiceResponseMetadata.js').ServiceObjectMetadata;
+let define = require('define-js');
+let parse = require('parseparams');
+let ServiceAdapter = require('./service/ServiceAdapter.js').ServiceAdapter;
+let ServiceEndPoint = require('./service/ServiceEndPoint.js').ServiceEndPoint;
+let ServiceAuthenticator = require('./service/ServiceAuthenticator.js').ServiceAuthenticator;
+let ServiceObjectMetadata = require('./service/ServiceResponseMetadata.js').ServiceObjectMetadata;
 
 module.exports.ServiceParameter = require('./service/ServiceParameter').ServiceParameter;
 module.exports.ServiceParameterType = require('./service/ServiceParameter').ServiceParameterType;

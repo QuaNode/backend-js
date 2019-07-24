@@ -47,6 +47,7 @@ var AggregateExpression = function(options) {
     self.fieldName = options.fieldName;
     self.fieldValue = fieldValue;
     self.contextualLevels = (Array.isArray(options.contextualLevels) && options.contextualLevels) || [];
+    self.computationOrder = options.computationOrder || 0;
 };
 
 module.exports.AggregateExpression = AggregateExpression;

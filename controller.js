@@ -1,11 +1,12 @@
 /*jslint node: true */
+/*jshint esversion: 6 */
 'use strict';
 
-var BusinessController = require('./business/BusinessController.js').BusinessController;
-var QueryExpression = require('./model.js').QueryExpression;
-var getComparisonOperators = require('./model.js').getComparisonOperators;
-var ModelEntity = require('./model.js').ModelEntity;
-var getModelController = require('./model.js').getModelController;
+let BusinessController = require('./business/BusinessController.js').BusinessController;
+let QueryExpression = require('./model.js').QueryExpression;
+let getComparisonOperators = require('./model.js').getComparisonOperators;
+let ModelEntity = require('./model.js').ModelEntity;
+let getModelController = require('./model.js').getModelController;
 
 var businessControllerSharedInstances = {};
 

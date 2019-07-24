@@ -1,7 +1,8 @@
 /*jslint node: true */
+/*jshint esversion: 6 */
 'use strict';
 
-var http = require('../../../service/lib/http-browserify/http.js');
+let http = require('../../../service/lib/http-browserify/http.js');
 
 var send = function (options) {
 

@@ -1,7 +1,8 @@
 /*jslint node: true */
+/*jshint esversion: 6 */
 'use strict';
 
-var parse = require('parseparams');
+let parse = require('parseparams');
 
 var watch = function(operation, data, index, continṵe, watchers) {
 
@@ -52,14 +53,10 @@ var getModelContinue = function(delegate) {
     var that = this;
     return function() {
 
-        var getQuery = typeof that.data.query === 'function' ? that.data.query : function() {
+        delegate(typeof that.data.wrapper === 'function' ? that.data.wrapper : function() {
 
-            return that.data.query;
-        };
-        delegate(that.data.aggregate ? [getQuery, typeof that.data.aggregate === 'function' ? that.data.aggregate : function() {
-
-            return that.data.aggregate;
-        }] : getQuery, typeof that.data.entity === 'function' ? that.data.entity : function() {
+            return that.data.wrapper;
+        }, typeof that.data.entity === 'function' ? that.data.entity : function() {
 
             return that.data.entity;
         }, function() {
@@ -127,8 +124,22 @@ var OperationDelegateApp = function(options) {
     self.modelApply = function(modelOperation, delegate, queryOrObjects, entity, callback, append) {
 
         var that = this;
-        that.data.query = (Array.isArray(queryOrObjects) && queryOrObjects) || that.data.query ||
-            that.data.objects;
+        that.data.wrapper = that.data.objects || {
+
+            getObjectQuery: !Array.isArray(queryOrObjects) && typeof that.data.query === 'function' ?
+                that.data.query : function() {
+
+                    return queryOrObjects || that.data.query;
+                },
+            getObjectAggregate: typeof that.data.aggregate === 'function' ? that.data.aggregate : function() {
+
+                return that.data.aggregate;
+            },
+            getObjectFilter: typeof that.data.filter === 'function' ? that.data.filter : function() {
+
+                return that.data.filter;
+            }
+        };
         that.data.entity = entity || that.data.entity;
         that.data.callback = callback || that.data.callback;
         that.data.append = typeof queryOrObjects === 'boolean' ? queryOrObjects : ((typeof append === 'boolean' &&

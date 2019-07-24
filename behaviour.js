@@ -1,17 +1,18 @@
 /*jslint node: true */
+/*jshint esversion: 6 */
 'use strict';
 
-var express = require('express');
-var paginate = require('express-paginate');
-var Route = require('route-parser');
-var define = require('define-js');
-var unless = require('express-unless');
-var businessController = require('./controller.js').businessController;
-var BusinessBehaviourType = require('./business/BusinessBehaviour.js').BusinessBehaviourType;
-var BusinessBehaviour = require('./business/BusinessBehaviour.js').BusinessBehaviour;
-var getInputObjects = require('./utils.js').getInputObjects;
-var setResponse = require('./utils.js').setResponse;
-var respond = require('./utils.js').respond;
+let express = require('express');
+let paginate = require('express-paginate');
+let Route = require('route-parser');
+let define = require('define-js');
+let unless = require('express-unless');
+let businessController = require('./controller.js').businessController;
+let BusinessBehaviourType = require('./business/BusinessBehaviour.js').BusinessBehaviourType;
+let BusinessBehaviour = require('./business/BusinessBehaviour.js').BusinessBehaviour;
+let getInputObjects = require('./utils.js').getInputObjects;
+let setResponse = require('./utils.js').setResponse;
+let respond = require('./utils.js').respond;
 
 var backend = module.exports;
 
@@ -125,7 +126,7 @@ backend.behaviour = function(path, config) {
                     priority: options.priority || 0,
                     inputObjects: inputObjects
                 });
-                var cancel = businessController(typeof options.queue === 'function' ? options.queue(options.name) : options.queue)
+                var cancel = businessController(typeof options.queue === 'function' ? options.queue(options.name, inputObjects) : options.queue)
                     .runBehaviour(behaviour, options.paginate ? function(property, superProperty) {
 
                         var page = {

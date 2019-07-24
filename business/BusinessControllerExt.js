@@ -1,8 +1,9 @@
 /*jslint node: true */
+/*jshint esversion: 6 */
 'use strict';
 
-var BehaviourTypes = require('./BusinessBehaviour.js').BusinessBehaviourType;
-var BusinessOperation = require('./BusinessBehaviourCycle.js').BusinessOperation;
+let BehaviourTypes = require('./BusinessBehaviour.js').BusinessBehaviourType;
+let BusinessOperation = require('./BusinessBehaviourCycle.js').BusinessOperation;
 
 var OperationType = {
 

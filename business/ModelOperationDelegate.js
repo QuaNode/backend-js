@@ -4,7 +4,7 @@
 var getManipulateDelegate = function(modelOperation, modelOperations, modelMethods, callback) {
 
     var self = this;
-    return function(getExpressionsOrAttributes, getModelEntity, setModelObjects) {
+    return function(getObjWrapperOrObjAttributes, getModelEntity, setModelObjects) {
 
         if (!self.modelController) throw new Error('No model controller for offline behaviour');
         for (var c = 0; c < modelOperations.length; c++) {
@@ -20,15 +20,11 @@ var getManipulateDelegate = function(modelOperation, modelOperations, modelMetho
                 callback(modelObjects, error);
             } else callback(null, error);
         };
-        var expOrAttr = typeof getExpressionsOrAttributes === 'function' ? getExpressionsOrAttributes() || [] :
-            Array.isArray(getExpressionsOrAttributes) ? getExpressionsOrAttributes.map(function(getExprOrAttr) {
-
-                return (typeof getExprOrAttr === 'function' && getExprOrAttr()) || [];
-            }) : [];
+        var wp = (typeof getObjWrapperOrObjAttributes === 'function' && getObjWrapperOrObjAttributes()) || [];
         if (typeof getModelEntity === 'function') {
 
             var md = getModelEntity();
-            self.modelController[modelMethods[modelOperation]](expOrAttr, md, modelCallback);
+            self.modelController[modelMethods[modelOperation]](wp, md, modelCallback);
         } else {
 
             modelCallback();

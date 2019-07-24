@@ -1,4 +1,5 @@
 /*jslint node: true */
+/*jshint esversion: 6 */
 /*global window*/
 /*global document*/
 /*global LocalFileSystem*/
@@ -7,7 +8,7 @@
 /*global Windows*/
 'use strict';
 
-var CacheFileSystem = require('./CacheFileSystem.js').CacheFileSystem;
+let CacheFileSystem = require('./CacheFileSystem.js').CacheFileSystem;
 
 var CacheFileSystemWorker = function(cb) {
 

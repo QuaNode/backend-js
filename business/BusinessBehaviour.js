@@ -1,10 +1,11 @@
 /*jslint node: true */
+/*jshint esversion: 6 */
 'use strict';
 
-var copy = require('shallow-copy');
-var BusinessBehaviourExt = require('./BusinessBehaviourExt.js').BusinessBehaviourExt;
-var BusinessLanguage = require('./BusinessLanguage.js').BusinessLanguage;
-var define = require('define-js');
+let copy = require('shallow-copy');
+let BusinessBehaviourExt = require('./BusinessBehaviourExt.js').BusinessBehaviourExt;
+let BusinessLanguage = require('./BusinessLanguage.js').BusinessLanguage;
+let define = require('define-js');
 
 var BusinessBehaviourType = {
 
@@ -55,6 +56,7 @@ module.exports.BusinessBehaviour = define(function(init) {
                 parameters = params;
             }
         });
+        self.state = {};
         self.searchText = options.searchText;
         self.mandatoryBehaviour = options.mandatoryBehaviour;
         self.getType = function() {
@@ -82,18 +84,14 @@ module.exports.BusinessBehaviour = define(function(init) {
         self.setType(options.type);
         self.prepareOperations = function(serviceOperations, modelOperations, businessOperations) {
 
-            if (!self.state) {
+            self.state.serviceOperations = copy(serviceOperations);
+            self.state.modelOperations = copy(modelOperations);
+            self.state.businessOperations = copy(businessOperations);
+            Object.keys(languageParameters.delegates).every(function(delegate) {
 
-                self.state = {};
-                self.state.serviceOperations = copy(serviceOperations);
-                self.state.modelOperations = copy(modelOperations);
-                self.state.businessOperations = copy(businessOperations);
-                Object.keys(languageParameters.delegates).every(function(delegate) {
-
-                    if (businessOperations.concat(serviceOperations).concat(modelOperations).indexOf(delegate) === -1)
-                        throw new Error('Invalid operation name: ' + delegate);
-                });
-            }
+                if (businessOperations.concat(serviceOperations).concat(modelOperations).indexOf(delegate) === -1)
+                    throw new Error('Invalid operation name: ' + delegate);
+            });
         };
         self.beginServiceOperation = function(serviceOperation) {
 
@@ -127,30 +125,7 @@ module.exports.BusinessBehaviour.prototype.hasMandatoryBehaviour = function(beha
 
 module.exports.BusinessBehaviour.prototype.isEqualToBehaviour = function(behaviour) {
 
-    var self = this;
-    if (self === behaviour) {
-
-        return true;
-    } else {
-
-        if (self instanceof behaviour.constructor) {
-
-            if (self.getType() === behaviour.getType()) {
-
-                if (self.priority === behaviour.priority) {
-
-                    if (JSON.stringify(self.inputObjects) === JSON.stringify(behaviour.inputObjects)) {
-
-                        if (self.searchText === behaviour.searchText) {
-
-                            return true;
-                        }
-                    }
-                }
-            }
-        }
-    }
-    return false;
+    return this === behaviour;
 };
 
 module.exports.BusinessBehaviourType = BusinessBehaviourType;

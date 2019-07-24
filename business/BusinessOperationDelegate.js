@@ -1,7 +1,8 @@
 /*jslint node: true */
+/*jshint esversion: 6 */
 'use strict';
 
-var BusinessObjectMapping = require('./BusinessObjectMapping.js').BusinessObjectMapping;
+let BusinessObjectMapping = require('./BusinessObjectMapping.js').BusinessObjectMapping;
 
 var getInputObjectsReturn = function(objects, superProperty, getSubProperty, getInputObject) {
 

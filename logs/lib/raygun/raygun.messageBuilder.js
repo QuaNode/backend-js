@@ -1,8 +1,9 @@
 /*jslint node: true */
+/*jshint esversion: 6 */
 'use strict';
 
-var stackTrace = require('stacktrace-parser');
-var os = require('os');
+let stackTrace = require('stacktrace-parser');
+let os = require('os');
 
 function filterKeys(obj, filters) {
 

@@ -1,8 +1,9 @@
 /*jslint node: true */
+/*jshint esversion: 6 */
 'use strict';
 
-var raygunTransport = require('./raygun.transport');
-var MessageBuilder = require('./raygun.messageBuilder');
+let raygunTransport = require('./raygun.transport');
+let MessageBuilder = require('./raygun.messageBuilder');
 
 var Raygun = function () {
 

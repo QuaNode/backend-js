@@ -1,14 +1,15 @@
 /*jslint node: true */
+/*jshint esversion: 6 */
 'use strict';
 
-var BusinessBehaviour = require('./BusinessBehaviour.js').BusinessBehaviour;
-var BusinessBehaviourTypes = require('./BusinessBehaviour.js').BusinessBehaviourType;
-var ModelOperationDelegate = require('./ModelOperationDelegate.js').ModelOperationDelegate;
-var ServiceOperationDelegate = require('./ServiceOperationDelegate.js').ServiceOperationDelegate;
-var BusinessOperationDelegate = require('./BusinessOperationDelegate.js').BusinessOperationDelegate;
-var BusinessBehaviourQueue = require('./BusinessBehaviourQueue.js').BusinessBehaviourQueue;
-var BusinessBehaviourCycle = require('./BusinessBehaviourCycle.js').BusinessBehaviourCycle;
-var BusinessControllerExt = require('./BusinessControllerExt.js').BusinessControllerExt;
+let BusinessBehaviour = require('./BusinessBehaviour.js').BusinessBehaviour;
+let BusinessBehaviourTypes = require('./BusinessBehaviour.js').BusinessBehaviourType;
+let ModelOperationDelegate = require('./ModelOperationDelegate.js').ModelOperationDelegate;
+let ServiceOperationDelegate = require('./ServiceOperationDelegate.js').ServiceOperationDelegate;
+let BusinessOperationDelegate = require('./BusinessOperationDelegate.js').BusinessOperationDelegate;
+let BusinessBehaviourQueue = require('./BusinessBehaviourQueue.js').BusinessBehaviourQueue;
+let BusinessBehaviourCycle = require('./BusinessBehaviourCycle.js').BusinessBehaviourCycle;
+let BusinessControllerExt = require('./BusinessControllerExt.js').BusinessControllerExt;
 
 var BusinessController = function(options) {
 
@@ -89,7 +90,7 @@ var BusinessController = function(options) {
 
         if (!(behaviour instanceof BusinessBehaviour)) {
 
-            throw new Error('Behaviour missing');
+            throw new Error('Invalid behaviour');
         }
         if (ignoreBehaviours || businessBehaviourQueue.isEnqueued(behaviour)) return function() {};
         behaviour.getProperty = getProperty || function(property) {
