@@ -23,33 +23,33 @@ var ServiceParameterType = {
     URIPARAMETER: 'uriparameter'
 };
 
-module.exports.ServiceParameter = function (options) {
+module.exports.ServiceParameter = function(options) {
 
     var self = this;
     var key = options.key;
     var value = options.value;
     var type = null;
-    self.key = function () {
+    self.key = function() {
 
         return key;
     };
-    self.value = function () {
+    self.value = function() {
 
         return value;
     };
-    self.type = function () {
+    self.type = function() {
 
         return type;
     };
-    self.setKey = function (keyParameter) {
+    self.setKey = function(keyParameter) {
 
         key = keyParameter;
     };
-    self.setValue = function (valueParameter) {
+    self.setValue = function(valueParameter) {
 
         value = valueParameter;
     };
-    self.setType = function (typeParameter) {
+    self.setType = function(typeParameter) {
 
         if (type !== typeParameter) {
 

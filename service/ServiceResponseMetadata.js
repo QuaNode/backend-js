@@ -1,7 +1,7 @@
 /*jslint node: true */
 'use strict';
 
-module.exports.ServiceObjectMetadata = function (options) {
+module.exports.ServiceObjectMetadata = function(options) {
 
     var self = this;
     var modelAttributes = options.modelAttributes;
@@ -43,7 +43,7 @@ module.exports.ServiceObjectMetadata = function (options) {
     self.storeID = options.storeID;
 };
 
-module.exports.ServiceAttributeMetadata = function (options) {
+module.exports.ServiceAttributeMetadata = function(options) {
 
     var self = this;
     if (typeof options.model === 'string') {

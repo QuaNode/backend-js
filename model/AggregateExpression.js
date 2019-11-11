@@ -3,7 +3,7 @@
 
 var ComputationOperators = null;
 
-module.exports.setComputationOperators = function (co) {
+module.exports.setComputationOperators = function(co) {
 
     if (typeof co !== 'object') {
 
@@ -13,7 +13,7 @@ module.exports.setComputationOperators = function (co) {
     module.exports.ComputationOperators = ComputationOperators;
 };
 
-var isValidOperator = function (object, value) {
+var isValidOperator = function(object, value) {
 
     for (var prop in object) {
 
@@ -28,7 +28,7 @@ var isValidOperator = function (object, value) {
     return false;
 };
 
-var AggregateExpression = function (options) {
+var AggregateExpression = function(options) {
 
     if (!ComputationOperators) {
 
@@ -36,7 +36,7 @@ var AggregateExpression = function (options) {
     }
     var fieldValue = options.fieldValue;
     if (!Array.isArray(fieldValue)) fieldValue = [fieldValue];
-    fieldValue.forEach(function (computationOperator) {
+    fieldValue.forEach(function(computationOperator) {
 
         if (typeof computationOperator === 'function' && !isValidOperator(ComputationOperators, computationOperator)) {
 

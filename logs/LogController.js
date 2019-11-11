@@ -11,7 +11,7 @@ let EdushareAppConfig = require('../utils/EdushareAppConfig.js').EdushareAppConf
 
 var deviceID = null;
 
-var LogController = function () {
+var LogController = function() {
 
     var self = this;
     var callback = null;
@@ -20,7 +20,7 @@ var LogController = function () {
         apiKey: 'wyP8GUKC1z1sWW3ikueT1w=='
     });
     raygunClient.setVersion('' + EdushareAppConfig.ServerVersion);
-    if (!deviceID) document.addEventListener('deviceready', function () {
+    if (!deviceID) document.addEventListener('deviceready', function() {
 
         deviceID = device.platform.toLowerCase();
         raygunClient.withTags([deviceID]);
@@ -28,16 +28,16 @@ var LogController = function () {
         if (typeof callback === 'function') callback();
         callback = null;
     });
-    var load = function (afterLoad) {
+    var load = function(afterLoad) {
 
         if (!deviceID) callback = afterLoad;
         else if (typeof afterLoad === 'function') afterLoad();
     };
-    var sendSavedErrors = function () {
+    var sendSavedErrors = function() {
 
-        var callback = function (data, res) {
+        var callback = function(data, res) {
 
-            res.on('end', function () {
+            res.on('end', function() {
 
                 window.localStorage.removeItem(key);
             });
@@ -54,7 +54,7 @@ var LogController = function () {
             }
         }
     };
-    var offlineSave = function (data) {
+    var offlineSave = function(data) {
 
         var dateTime = new Date().toJSON();
         try {
@@ -69,13 +69,13 @@ var LogController = function () {
             console.log('Raygun: LocalStorage full, cannot save exception');
         }
     };
-    self.log = function (error, user) {
+    self.log = function(error, user) {
 
-        load(function () {
+        load(function() {
 
-            if (user && user.id) raygunClient.user = function () {
+            if (user && user.id) raygunClient.user = function() {
 
-                return function () {
+                return function() {
 
                     return {
 
@@ -85,13 +85,13 @@ var LogController = function () {
                     };
                 };
             };
-            raygunClient.send(error, null, function (data, res) {
+            raygunClient.send(error, null, function(data, res) {
 
-                res.on('end', function () {
+                res.on('end', function() {
 
                     sendSavedErrors();
                 });
-                res.on('error', function (error) {
+                res.on('error', function(error) {
 
                     if (error && error.code > 300 && error.code !== 403 && error.code !== 400) offlineSave(data);
                 });

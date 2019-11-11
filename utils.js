@@ -7,7 +7,7 @@ var Route = require('route-parser');
 
 module.exports = {
 
-    getValueAtPath: function (path, object) {
+    getValueAtPath: function(path, object) {
 
         var pathComponents = path.split('.');
         var value = object;
@@ -17,7 +17,7 @@ module.exports = {
         }
         return value;
     },
-    getCorrectValue: function (value, type) {
+    getCorrectValue: function(value, type) {
 
         switch (value) {
 
@@ -33,7 +33,7 @@ module.exports = {
         }
         return value;
     },
-    setInputObjects: function (inputObjects, paths, req, name, parameter, key, type) {
+    setInputObjects: function(inputObjects, paths, req, name, parameter, key, type) {
 
         switch (type) {
 
@@ -48,7 +48,7 @@ module.exports = {
                 break;
             case 'path':
                 var value = req.params[key];
-                if (!value && Array.isArray(paths)) paths.some(function (path) {
+                if (!value && Array.isArray(paths)) paths.some(function(path) {
 
                     if (path) {
 
@@ -83,7 +83,7 @@ module.exports = {
             }, parameter.key, type);
         }
     },
-    getInputObjects: function (parameters, paths, req, callback) {
+    getInputObjects: function(parameters, paths, req, callback) {
 
         if (typeof parameters !== 'object') {
 
@@ -107,14 +107,14 @@ module.exports = {
         }
         callback(inputObjects);
     },
-    sendConverted: function (res, json, format) {
+    sendConverted: function(res, json, format) {
 
         var outStream = converter({
 
             from: 'json',
             to: format
         });
-        outStream.on('data', function (chunk) {
+        outStream.on('data', function(chunk) {
 
             res.send(chunk);
         });
@@ -122,19 +122,19 @@ module.exports = {
         inStream.end(json);
         inStream.pipe(outStream);
     },
-    respond: function (res, object, format) {
+    respond: function(res, object, format) {
 
         var responders = {
 
-            json: function () {
+            json: function() {
 
                 res.json(object);
             },
-            text: function () {
+            text: function() {
 
                 utils.sendConverted(res, JSON.stringify(object), 'csv');
             },
-            xml: function () {
+            xml: function() {
 
                 utils.sendConverted(res, JSON.stringify(object), 'xml');
             }
@@ -142,7 +142,7 @@ module.exports = {
         if (typeof format === 'string' && responders[format]) responders[format]();
         else res.format(responders);
     },
-    setResponse: function (returns, middleware, req, res, response) {
+    setResponse: function(returns, middleware, req, res, response) {
 
         if (typeof returns !== 'object' || typeof response !== 'object' || typeof response.response !== 'object' ||
             Array.isArray(response.response)) {
@@ -185,7 +185,7 @@ module.exports = {
         }
         return false;
     },
-    allowCrossOrigins: function (options, res, origins) {
+    allowCrossOrigins: function(options, res, origins) {
 
         res.header('Access-Control-Allow-Origin', origins || options.origins || '*');
         if (typeof options.method === 'string' && options.method.length > 0) {
@@ -195,20 +195,20 @@ module.exports = {
         if (typeof options.parameters === 'object') {
 
             res.header('Access-Control-Allow-Headers', 'Content-type,Accept' +
-                Object.keys(options.parameters).map(function (key) {
+                Object.keys(options.parameters).map(function(key) {
 
                     return options.parameters[key].type === 'header' ? ',' + options.parameters[key].key : '';
-                }).reduce(function (accumulator, key) {
+                }).reduce(function(accumulator, key) {
 
                     return accumulator + key;
                 }, ''));
         }
         if (typeof options.returns === 'object') {
 
-            res.header('Access-Control-Expose-Headers', Object.keys(options.returns).map(function (key) {
+            res.header('Access-Control-Expose-Headers', Object.keys(options.returns).map(function(key) {
 
                 return options.returns[key].type === 'header' ? key : '';
-            }).reduce(function (accumulator, key) {
+            }).reduce(function(accumulator, key) {
 
                 return accumulator + (accumulator.length > 0 ? ',' : '') + key;
             }, ''));
