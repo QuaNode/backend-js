@@ -16,10 +16,10 @@ let respond = require('./utils.js').respond;
 
 var backend = module.exports;
 
-var join = backend.join = (function() {
+var join = backend.join = (function () {
 
     var utility = require('url');
-    return function(s1, s2) {
+    return function (s1, s2) {
 
         return utility.resolve(s1.substr(0, s1.endsWith('/') ? s1.length - 1 : s1.length) + '/', s2.substr(s2.startsWith('/') ? 1 : 0));
     };
@@ -36,7 +36,7 @@ var behaviours = {
     }
 };
 
-var compareRoutes = function(route1, route2) {
+var compareRoutes = function (route1, route2) {
 
     var route = (route1 && route1.name && route1.name.indexOf(':') > -1 && route1) || route2;
     if (route === route2) {
@@ -51,10 +51,10 @@ var compareRoutes = function(route1, route2) {
 
 var types = {
 
-    'database': BusinessBehaviourType.OFFLINESYNC,
-    'integration': BusinessBehaviourType.ONLINESYNC,
-    'database_with_action': BusinessBehaviourType.OFFLINEACTION,
-    'integration_with_action': BusinessBehaviourType.ONLINEACTION
+    database: BusinessBehaviourType.OFFLINESYNC,
+    integration: BusinessBehaviourType.ONLINESYNC,
+    database_with_action: BusinessBehaviourType.OFFLINEACTION,
+    integration_with_action: BusinessBehaviourType.ONLINEACTION
 };
 
 var defaultPrefix = '/';
@@ -63,10 +63,10 @@ var app = backend.app = express();
 
 backend.static = express.static;
 
-backend.behaviour = function(path, config) {
+backend.behaviour = function (path, config) {
 
     if (typeof path === 'object') config = path;
-    return function(options, getConstructor) {
+    return function (options, getConstructor) {
 
         if (typeof options !== 'object') {
 
@@ -94,17 +94,17 @@ backend.behaviour = function(path, config) {
                 type: types[options.type],
                 inputObjects: options.defaults
             }) : define(getConstructor).extend(BusinessBehaviour)
-            .parameters({
+                .parameters({
 
-                type: types[options.type]
-            });
-        if (typeof options.name === 'string' && options.name.length > 0 && function() {
+                    type: types[options.type]
+                });
+        if (typeof options.name === 'string' && options.name.length > 0 && function () {
 
-                if (behaviours[options.name] && (typeof config !== 'object' ||
-                        typeof config.skipSameRoutes !== 'boolean' || !config.skipSameRoutes))
-                    throw new Error('Duplicated behavior name: ' + options.name);
-                return !behaviours[options.name];
-            }()) {
+            if (behaviours[options.name] && (typeof config !== 'object' ||
+                typeof config.skipSameRoutes !== 'boolean' || !config.skipSameRoutes))
+                throw new Error('Duplicated behavior name: ' + options.name);
+            return !behaviours[options.name];
+        }()) {
 
             var prefix = typeof path === 'string' && path.length > 0 ? join(defaultPrefix, path) :
                 defaultPrefix !== '/' ? defaultPrefix : null;
@@ -112,7 +112,7 @@ backend.behaviour = function(path, config) {
 
                 throw new Error('behaviours is a reserved name');
             }
-            var behaviour_runner = function(req, res, next, inputObjects, er) {
+            var behaviour_runner = function (req, res, next, inputObjects, er) {
 
                 if (options.paginate) {
 
@@ -127,7 +127,7 @@ backend.behaviour = function(path, config) {
                     inputObjects: inputObjects
                 });
                 var cancel = businessController(typeof options.queue === 'function' ? options.queue(options.name, inputObjects) : options.queue)
-                    .runBehaviour(behaviour, options.paginate ? function(property, superProperty) {
+                    .runBehaviour(behaviour, options.paginate ? function (property, superProperty) {
 
                         var page = {
 
@@ -135,7 +135,7 @@ backend.behaviour = function(path, config) {
                             pageCount: 'pageCount'
                         };
                         return typeof options.map === 'function' ? options.map(property, superProperty) || page[property] : page[property];
-                    } : options.map, function(behaviourResponse, error) {
+                    } : options.map, function (behaviourResponse, error) {
 
                         if (typeof error === 'object' || typeof behaviourResponse !== 'object') {
 
@@ -155,30 +155,30 @@ backend.behaviour = function(path, config) {
                             if (typeof options.returns !== 'function') {
 
                                 if (!setResponse(options.returns, typeof options.method === 'string' &&
-                                        typeof app[options.method.toLowerCase()] === 'function', req, res, response)) next();
-                            } else options.returns(req, res, function(outputObjects) {
+                                    typeof app[options.method.toLowerCase()] === 'function', req, res, response)) next();
+                            } else options.returns(req, res, function (outputObjects) {
 
                                 respond(res, outputObjects);
                             });
                         }
                     });
-                req.on('close', function() {
+                req.on('close', function () {
 
                     if (typeof cancel === 'function') cancel();
                 });
             };
-            var req_handler = function(req, res, next) {
+            var req_handler = function (req, res, next) {
 
-                if (typeof options.parameters !== 'function') getInputObjects(options.parameters, Object.keys(behaviours).map(function(name) {
+                if (typeof options.parameters !== 'function') getInputObjects(options.parameters, Object.keys(behaviours).map(function (name) {
 
                     var suffix = behaviours[name] && behaviours[name].path;
                     return typeof prefix === 'string' && req.path.startsWith(prefix) && typeof suffix === 'string' ?
                         join(prefix, suffix) : suffix || prefix;
-                }), req, function(inputObjects) {
+                }), req, function (inputObjects) {
 
                     behaviour_runner(req, res, next, inputObjects);
                 });
-                else options.parameters(req, res, function(inputObjects, er) {
+                else options.parameters(req, res, function (inputObjects, er) {
 
                     behaviour_runner(req, res, next, inputObjects, er);
                 });
@@ -188,16 +188,16 @@ backend.behaviour = function(path, config) {
                 req_handler.unless = unless;
                 req_handler = req_handler.unless({
 
-                    custom: function(request) {
+                    custom: function (request) {
 
-                        return options.unless.map(function(name) {
+                        return options.unless.map(function (name) {
 
                             return {
 
                                 name: (behaviours[name] && behaviours[name].path) || name,
                                 method: behaviours[name] && behaviours[name].method
                             };
-                        }).filter(function(opt) {
+                        }).filter(function (opt) {
 
                             var suffix = opt.name;
                             var method = opt.method;
@@ -220,18 +220,18 @@ backend.behaviour = function(path, config) {
                 typeof app[options.method.toLowerCase()] === 'function') {
 
                 var keys = Object.keys(behaviours);
-                if (keys.some(function(key) {
+                if (keys.some(function (key) {
 
-                        return compareRoutes({
+                    return compareRoutes({
 
-                            name: behaviours[key].path,
-                            method: behaviours[key].method
-                        }, {
+                        name: behaviours[key].path,
+                        method: behaviours[key].method
+                    }, {
 
-                            name: options.path,
-                            method: options.method
-                        });
-                    }))
+                        name: options.path,
+                        method: options.method
+                    });
+                }))
                     throw new Error('Duplicated behavior path: ' + options.path);
                 var router = app;
                 if (typeof prefix === 'string' && prefix.length > 0) {
@@ -272,11 +272,11 @@ backend.behaviour = function(path, config) {
     };
 };
 
-backend.behaviours = function(path, parser) {
+backend.behaviours = function (path, parser) {
 
     if (defaultPrefix === '/' && typeof path === 'string' && path.length > 0) defaultPrefix = path;
     var prefix = path || defaultPrefix;
-    app.get(typeof prefix === 'string' ? join(prefix, '/behaviours') : '/behaviours', function(req, res) {
+    app.get(typeof prefix === 'string' ? join(prefix, '/behaviours') : '/behaviours', function (req, res) {
 
         respond(res, behaviours, parser);
     });

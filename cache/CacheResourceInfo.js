@@ -7,7 +7,7 @@ var ResourceType = {
     RESOURCE: 'resource'
 };
 
-var ResourceInfo = function() {
+var ResourceInfo = function () {
 
     this.id = null;
     this.username = null;
@@ -15,7 +15,7 @@ var ResourceInfo = function() {
     this.path = null;
     this.type = null;
     this.bytesLength = null;
-    this.downloadProgress = function() {};
+    this.downloadProgress = function () { };
 };
 
 module.exports.ResourceType = ResourceType;

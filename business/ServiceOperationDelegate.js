@@ -4,10 +4,10 @@
 
 let ServiceController = require('../service/ServiceController.js').ServiceController;
 
-var getRequestDelegate = function(serviceOperation, serviceOperations, serviceMethods, callback) {
+var getRequestDelegate = function (serviceOperation, serviceOperations, serviceMethods, callback) {
 
     var self = this;
-    return function(getServiceParameters, getEndPoint, setServiceObjects) {
+    return function (getServiceParameters, getEndPoint, setServiceObjects) {
 
         if (!self.serviceController) throw new Error('No service controller for online behaviour');
         for (var t = 0; t < serviceOperations.length; t++) {
@@ -15,7 +15,7 @@ var getRequestDelegate = function(serviceOperation, serviceOperations, serviceMe
             if (typeof self.serviceController[serviceMethods[serviceOperations[t]]] !== 'function')
                 throw new Error('Invalid service method');
         }
-        var requestHandler = function(serviceObjects, error) {
+        var requestHandler = function (serviceObjects, error) {
 
             if (typeof setServiceObjects === 'function' && setServiceObjects(serviceObjects, error) &&
                 serviceObjects) {
@@ -35,15 +35,15 @@ var getRequestDelegate = function(serviceOperation, serviceOperations, serviceMe
     };
 };
 
-var getFetchDelegate = function(fetchMethod, setCancel, callback) {
+var getFetchDelegate = function (fetchMethod, setCancel, callback) {
 
     var self = this;
-    return function(getResourceInfo, getResume, setResourceInfo) {
+    return function (getResourceInfo, getResume, setResourceInfo) {
 
         if (!self.cacheController) throw new Error('No cache controller for cache behaviour');
         if (typeof self.cacheController[fetchMethod] !== 'function') throw new Error('Invalid fetch method');
         var resource = null;
-        var fetchHandler = function(finished, bytesLoaded, error) {
+        var fetchHandler = function (finished, bytesLoaded, error) {
 
             if (typeof setResourceInfo === 'function') setResourceInfo(resource, bytesLoaded, error);
             callback(finished && resource, error);
@@ -61,25 +61,25 @@ var getFetchDelegate = function(fetchMethod, setCancel, callback) {
     };
 };
 
-var getObjectsByIDFunc = function(modelController, options) {
+var getObjectsByIDFunc = function (modelController, options) {
 
-    return function(id, value, modelEntity, callback) {
+    return function (id, value, modelEntity, callback) {
 
-        var queryByID = typeof options.QueryExpression === 'function' && [new(options.QueryExpression)({
+        var queryByID = typeof options.QueryExpression === 'function' && [new (options.QueryExpression)({
 
             fieldName: id,
             comparisonOperator: options.ComparisonOperators && options.ComparisonOperators.EQUAL,
             fieldValue: value
         })];
         if (modelController && typeof modelController.getObjects === 'function') modelController.getObjects(queryByID, modelEntity,
-            function(mObjects, error) {
+            function (mObjects, error) {
 
                 callback(Array.isArray(mObjects) ? mObjects : mObjects && mObjects.modelObjects, error);
             });
     };
 };
 
-var ServiceOperationDelegate = function(options) {
+var ServiceOperationDelegate = function (options) {
 
     var self = this;
     var modelController = options.modelController;
@@ -91,7 +91,7 @@ var ServiceOperationDelegate = function(options) {
         save: modelController && modelController.save,
         objectAttributesMethod: 'getObjectAttributes'
     });
-    var getServiceMethods = options.getServiceMethods || function(index) {
+    var getServiceMethods = options.getServiceMethods || function (index) {
 
         var methods = ['request', 'authenticate'];
         return index === undefined ? methods : methods[index];
@@ -115,11 +115,11 @@ var ServiceOperationDelegate = function(options) {
     }
     self.serviceController = serviceController;
     self.cacheController = cacheController;
-    self.request = function(serviceOperation, callback) {
+    self.request = function (serviceOperation, callback) {
 
         return getRequestDelegate.apply(self, [serviceOperation, serviceOperations, serviceMethods, callback]);
     };
-    self.fetch = function(callback, setCancel) {
+    self.fetch = function (callback, setCancel) {
 
         return getFetchDelegate.apply(self, [fetchMethod, setCancel, callback]);
     };
