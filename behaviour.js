@@ -51,10 +51,10 @@ var compareRoutes = function(route1, route2) {
 
 var types = {
 
-    'database': BusinessBehaviourType.OFFLINESYNC,
-    'integration': BusinessBehaviourType.ONLINESYNC,
-    'database_with_action': BusinessBehaviourType.OFFLINEACTION,
-    'integration_with_action': BusinessBehaviourType.ONLINEACTION
+    database: BusinessBehaviourType.OFFLINESYNC,
+    integration: BusinessBehaviourType.ONLINESYNC,
+    database_with_action: BusinessBehaviourType.OFFLINEACTION,
+    integration_with_action: BusinessBehaviourType.ONLINEACTION
 };
 
 var defaultPrefix = '/';
