@@ -38,7 +38,7 @@ var ModelOperationDelegate = function(options) {
     var modelController = options.modelController;
     var getModelMethods = options.getModelMethods || function(index) {
 
-        var methods = ['newObjects', 'getObjects', 'removeObjects'];
+        var methods = ['newObjects', 'removeObjects', 'getObjects'];
         return index === undefined ? methods : methods[index];
     };
     var modelOperations = options.modelOperations;
