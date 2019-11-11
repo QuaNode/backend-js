@@ -1,12 +1,12 @@
 /*jslint node: true */
 'use strict';
 
-var forEachProperty = function(rightObject, getProperty, callback, finạlly) {
+var forEachProperty = function (rightObject, getProperty, callback, finạlly) {
 
     var properties = typeof getProperty === 'function' ? getProperty() : getProperty;
     var useProperties = typeof properties === 'object' && !Array.isArray(properties);
     if (!useProperties) properties = rightObject;
-    var getMappedProperty = function(property, superProperty) {
+    var getMappedProperty = function (property, superProperty) {
 
         return useProperties ? properties[property] : typeof getProperty === 'function' ?
             getProperty(property, superProperty) : property;
@@ -14,13 +14,13 @@ var forEachProperty = function(rightObject, getProperty, callback, finạlly) {
     if (typeof callback === 'function' && rightObject) {
 
         var keys = Object.keys(properties);
-        var next = function(index) {
+        var next = function (index) {
 
             var property = keys[index];
             if (property) {
 
                 var cb = callback(property, getMappedProperty);
-                var continṵe = function() {
+                var continṵe = function () {
 
                     if (keys[index + 1]) next(index + 1);
                     else if (typeof finạlly === 'function') finạlly();
@@ -34,22 +34,22 @@ var forEachProperty = function(rightObject, getProperty, callback, finạlly) {
     return getMappedProperty;
 };
 
-var getRelateReturn = function(leftObject, rightObject, superProperty, getObjects, getObject, getProperty, superProperties) {
+var getRelateReturn = function (leftObject, rightObject, superProperty, getObjects, getObject, getProperty, superProperties) {
 
     var self = this;
-    return function() {
+    return function () {
 
         var callback = arguments[0];
-        if (leftObject) self.forEachRelation(rightObject, superProperty, getProperty, function(property, mappedProperty,
+        if (leftObject) self.forEachRelation(rightObject, superProperty, getProperty, function (property, mappedProperty,
             getSubProperty) {
 
             if (superProperties.indexOf(superProperty) === -1) {
 
-                return function() {
+                return function () {
 
                     var cb = arguments[0];
                     if (superProperty) superProperties.push(superProperty);
-                    var relate = function(businessObject) {
+                    var relate = function (businessObject) {
 
                         if (mappedProperty) {
 
@@ -64,10 +64,10 @@ var getRelateReturn = function(leftObject, rightObject, superProperty, getObject
                     };
                     if (rightObject[property] && typeof getObjects === 'function' && typeof getObject === 'function')
                         (Array.isArray(rightObject[property]) ? getObjects : getObject)(rightObject[property], property,
-                            getSubProperty)(function(businessObject) {
+                            getSubProperty)(function (businessObject) {
 
-                            relate(businessObject);
-                        });
+                                relate(businessObject);
+                            });
                     else relate(null);
                 };
             }
@@ -76,15 +76,15 @@ var getRelateReturn = function(leftObject, rightObject, superProperty, getObject
     };
 };
 
-var BusinessObjectMapping = function() {
+var BusinessObjectMapping = function () {
 
     var self = this;
     var superProperties = [];
-    self.reset = function() {
+    self.reset = function () {
 
         superProperties = [];
     };
-    self.relate = function(leftObject, rightObject, superProperty, getObjects, getObject, getProperty) {
+    self.relate = function (leftObject, rightObject, superProperty, getObjects, getObject, getProperty) {
 
         return getRelateReturn.apply(self, [leftObject, rightObject, superProperty, getObjects, getObject, getProperty,
             superProperties
@@ -92,7 +92,7 @@ var BusinessObjectMapping = function() {
     };
 };
 
-BusinessObjectMapping.prototype.getAttributeValue = function(inputObject, getProperty, property, superProperty) {
+BusinessObjectMapping.prototype.getAttributeValue = function (inputObject, getProperty, property, superProperty) {
 
     if (typeof property !== 'string') throw new Error('Invalid property name');
     var mappedIdAttr = forEachProperty(null, getProperty)(property, superProperty);
@@ -103,20 +103,20 @@ BusinessObjectMapping.prototype.getAttributeValue = function(inputObject, getPro
     else return inputObject && inputObject[mappedIdAttr];
 };
 
-BusinessObjectMapping.prototype.forEachAttribute = function(rightObject, superProperty, getProperty, callback, finạlly) {
+BusinessObjectMapping.prototype.forEachAttribute = function (rightObject, superProperty, getProperty, callback, finạlly) {
 
-    var isValidValue = function(value) {
+    var isValidValue = function (value) {
 
         if (value === null) return true;
         if (value instanceof Date) return true;
-        if (Array.isArray(value) && value.length > 0 && value.every(function(subValue) {
+        if (Array.isArray(value) && value.length > 0 && value.every(function (subValue) {
 
-                return isValidValue(subValue);
-            })) return true;
+            return isValidValue(subValue);
+        })) return true;
         return !!(typeof value !== 'object' && typeof value !== 'function');
 
     };
-    forEachProperty(rightObject, getProperty, function(property, getMappedProperty) {
+    forEachProperty(rightObject, getProperty, function (property, getMappedProperty) {
 
         var mappedProperty = getMappedProperty(property, superProperty);
         if (mappedProperty && isValidValue(rightObject[property])) {
@@ -126,14 +126,14 @@ BusinessObjectMapping.prototype.forEachAttribute = function(rightObject, superPr
     }, finạlly);
 };
 
-BusinessObjectMapping.prototype.forEachRelation = function(rightObject, superProperty, getProperty, callback, finạlly) {
+BusinessObjectMapping.prototype.forEachRelation = function (rightObject, superProperty, getProperty, callback, finạlly) {
 
-    var isValidObject = function(object) {
+    var isValidObject = function (object) {
 
-        if (Array.isArray(object) && object.every(function(subObject) {
+        if (Array.isArray(object) && object.every(function (subObject) {
 
-                return isValidObject(subObject);
-            })) {
+            return isValidObject(subObject);
+        })) {
 
             return true;
         }
@@ -141,7 +141,7 @@ BusinessObjectMapping.prototype.forEachRelation = function(rightObject, superPro
             typeof object !== 'function');
 
     };
-    forEachProperty(rightObject, getProperty, function(property, getMappedProperty) {
+    forEachProperty(rightObject, getProperty, function (property, getMappedProperty) {
 
         var mappedProperty = getMappedProperty(property, superProperty);
         if (mappedProperty !== undefined && isValidObject(rightObject[property])) {
@@ -158,10 +158,10 @@ BusinessObjectMapping.prototype.forEachRelation = function(rightObject, superPro
     }, finạlly);
 };
 
-BusinessObjectMapping.prototype.map = function(leftObject, rightObject, rtl, superProperty, getProperty) {
+BusinessObjectMapping.prototype.map = function (leftObject, rightObject, rtl, superProperty, getProperty) {
 
     var self = this;
-    if (leftObject) self.forEachAttribute(rightObject, superProperty, getProperty, function(property, mappedProperty) {
+    if (leftObject) self.forEachAttribute(rightObject, superProperty, getProperty, function (property, mappedProperty) {
 
         if (typeof mappedProperty !== 'string' && typeof mappedProperty !== 'function') throw new Error('Invalid property name');
         if (rtl) {
@@ -176,10 +176,10 @@ BusinessObjectMapping.prototype.map = function(leftObject, rightObject, rtl, sup
     });
 };
 
-BusinessObjectMapping.prototype.deepMap = function(leftObject, rightObject, superProperty, getProperty) {
+BusinessObjectMapping.prototype.deepMap = function (leftObject, rightObject, superProperty, getProperty) {
 
     var self = this;
-    if (leftObject) self.forEachRelation(rightObject, superProperty, getProperty, function(property, mappedProperty) {
+    if (leftObject) self.forEachRelation(rightObject, superProperty, getProperty, function (property, mappedProperty) {
 
         if (typeof mappedProperty === 'function') {
 

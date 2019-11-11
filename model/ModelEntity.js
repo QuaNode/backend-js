@@ -3,7 +3,7 @@
 
 var ModelEntities = {};
 
-module.exports.ModelEntity = function(options) {
+module.exports.ModelEntity = function (options) {
 
     var self = this;
     var constructor = options.constructor;
@@ -12,31 +12,31 @@ module.exports.ModelEntity = function(options) {
     var query = options.query;
     var aggregate = options.aggregate;
     if (typeof constructor !== 'function' || typeof attributes !== 'object' || (features !== undefined &&
-            typeof attributes !== 'object') || (aggregate !== undefined && !Array.isArray(aggregate)) ||
+        typeof attributes !== 'object') || (aggregate !== undefined && !Array.isArray(aggregate)) ||
         (query !== undefined && !Array.isArray(query))) throw new Error('Invalid entity parameters');
-    self.getObjectConstructor = function() {
+    self.getObjectConstructor = function () {
 
         return constructor;
     };
-    self.getObjectAttributes = function() {
+    self.getObjectAttributes = function () {
 
         return attributes;
     };
-    self.getObjectFeatures = function() {
+    self.getObjectFeatures = function () {
 
         return features;
     };
-    self.getObjectQuery = function() {
+    self.getObjectQuery = function () {
 
         return query;
     };
-    self.getObjectAggregate = function() {
+    self.getObjectAggregate = function () {
 
         return aggregate;
     };
 };
 
-module.exports.ModelEntity.registerModelEntity = function(options) {
+module.exports.ModelEntity.registerModelEntity = function (options) {
 
     var entity = options.entity;
     var entityName = options.entityName;
@@ -46,12 +46,12 @@ module.exports.ModelEntity.registerModelEntity = function(options) {
     else throw new Error('Invalid entity parameters');
 };
 
-module.exports.ModelEntity.createModelEntity = function(entityName, options) {
+module.exports.ModelEntity.createModelEntity = function (entityName, options) {
 
     return ModelEntities[entityName] && new ModelEntities[entityName](options);
 };
 
-module.exports.ModelEntity.getModelEntity = function(entityName) {
+module.exports.ModelEntity.getModelEntity = function (entityName) {
 
     return ModelEntities[entityName];
 };

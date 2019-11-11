@@ -6,7 +6,7 @@ let define = require('define-js');
 
 module.exports.QueryExpression = require('./model/QueryExpression.js').QueryExpression;
 module.exports.setComparisonOperators = require('./model/QueryExpression.js').setComparisonOperators;
-module.exports.getComparisonOperators = function() {
+module.exports.getComparisonOperators = function () {
 
     return require('./model/QueryExpression.js').ComparisonOperators;
 };
@@ -18,7 +18,7 @@ let ModelEntity = module.exports.ModelEntity = require('./model/ModelEntity.js')
 var ModelController = null;
 var modelController = null;
 
-module.exports.setModelController = function(mc) {
+module.exports.setModelController = function (mc) {
 
     if (typeof mc !== 'object') {
 
@@ -48,14 +48,14 @@ module.exports.setModelController = function(mc) {
     ModelController = modelController.constructor;
 };
 
-module.exports.getModelController = function() {
+module.exports.getModelController = function () {
 
     return modelController;
 };
 
-module.exports.model = function(options, attributes, plugins) {
+module.exports.model = function (options, attributes, plugins) {
 
-    if (typeof options === 'string' && !attributes && !plugins) return function(modelName) {
+    if (typeof options === 'string' && !attributes && !plugins) return function (modelName) {
 
         var modelEntity = ModelEntity.getModelEntity(options);
         if (!modelEntity) throw new Error('Use require() instead of model() for ' + options + ' in ' + modelName);
@@ -94,16 +94,16 @@ module.exports.model = function(options, attributes, plugins) {
         throw new Error('Invalid attributes');
     } else {
 
-        Object.keys(attributes).forEach(function(key) {
+        Object.keys(attributes).forEach(function (key) {
 
             if (!attributes[key]) throw new Error('Undefined attribute! try to use model() instead of require() for ' +
                 key + ' in ' + options.name + ' or check attribute datatype');
         });
     }
     var EntityConstructor = ModelController.defineEntity(options.name, attributes, plugins, options.constraints);
-    var Entity = define(function(init) {
+    var Entity = define(function (init) {
 
-        return function(features, query, aggregate) {
+        return function (features, query, aggregate) {
 
             init.apply(this, [{
 

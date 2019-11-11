@@ -25,46 +25,46 @@ var ErrorCodes = {
 
 var deviceready = false;
 
-var CacheFileSystem = function(cb) {
+var CacheFileSystem = function (cb) {
 
     var self = this;
     var fileSystem = null;
     var isCanceled = {};
-    var load = function(callback) {
+    var load = function (callback) {
 
-        window.requestFileSystem(LocalFileSystem.PERSISTENT, 0, function(fs) {
+        window.requestFileSystem(LocalFileSystem.PERSISTENT, 0, function (fs) {
 
             fileSystem = fs;
             if (typeof callback === 'function') callback();
-        }, function(error) {
+        }, function (error) {
 
             if (typeof callback === 'function') callback(new Error(ErrorCodes[error.code]));
         });
     };
-    if (!deviceready) document.addEventListener('deviceready', function() {
+    if (!deviceready) document.addEventListener('deviceready', function () {
 
         deviceready = true;
         load(cb);
     });
     else load(cb);
-    self.getRootPath = function() {
+    self.getRootPath = function () {
 
         var nativePath = fileSystem.root.toInternalURL();
         return nativePath;
     };
-    var getDirectory = function(pathComponents, create, callback) {
+    var getDirectory = function (pathComponents, create, callback) {
 
-        var fail = function(error) {
+        var fail = function (error) {
 
             callback(null, new Error(ErrorCodes[error.code]));
         };
-        var checkDir = function(dirEntry, index) {
+        var checkDir = function (dirEntry, index) {
 
             dirEntry.getDirectory(pathComponents[index], {
 
                 create: create,
                 exclusive: false
-            }, function(directoryEntry) {
+            }, function (directoryEntry) {
 
                 if (directoryEntry) {
 
@@ -85,31 +85,31 @@ var CacheFileSystem = function(cb) {
         };
         checkDir(fileSystem.root, 0);
     };
-    self.readFile = function(path, callback) {
+    self.readFile = function (path, callback) {
 
-        var fail = function(error) {
+        var fail = function (error) {
 
             callback(null, new Error(ErrorCodes[error.code]));
         };
         var dirs = [];
         if (device.platform.toLowerCase() !== 'windows8') dirs = (self.removeRootPath(path)).split('\/');
-        else(dirs = (self.removeRootPath(path)).split('\\')).splice(0, 1);
+        else (dirs = (self.removeRootPath(path)).split('\\')).splice(0, 1);
         var filename = dirs.splice(dirs.length - 1)[0];
         if (filename) {
 
-            getDirectory(dirs, false, function(directoryEntry, error) {
+            getDirectory(dirs, false, function (directoryEntry, error) {
 
                 if (error) callback(false, error);
                 else if (directoryEntry) directoryEntry.getFile(filename, {
 
                     create: false,
                     exclusive: false
-                }, function(fileEntry) {
+                }, function (fileEntry) {
 
-                    fileEntry.file(function(file) {
+                    fileEntry.file(function (file) {
 
                         var reader = new FileReader();
-                        reader.onloadend = function(evt) {
+                        reader.onloadend = function (evt) {
 
                             if (evt.target.result) callback(evt.target.result, null);
                             else fail({
@@ -122,83 +122,83 @@ var CacheFileSystem = function(cb) {
             });
         }
     };
-    var writeFileWindows8 = function(path, data, callback) {
+    var writeFileWindows8 = function (path, data, callback) {
 
-        var fail = function(error) {
+        var fail = function (error) {
 
             callback(false, new Error(ErrorCodes[error.code]));
         };
-        Windows.Storage.StorageFolder.getFolderFromPathAsync(path.substring(0, path.lastIndexOf('\\'))).done(function(storageFolder) {
+        Windows.Storage.StorageFolder.getFolderFromPathAsync(path.substring(0, path.lastIndexOf('\\'))).done(function (storageFolder) {
 
-            storageFolder.createFileAsync(path.split('\\').pop(), Windows.Storage.CreationCollisionOption.openIfExists).done(function(storageFile) {
+            storageFolder.createFileAsync(path.split('\\').pop(), Windows.Storage.CreationCollisionOption.openIfExists).done(function (storageFile) {
 
-                storageFile.openAsync(Windows.Storage.FileAccessMode.readWrite).done(function(output) {
+                storageFile.openAsync(Windows.Storage.FileAccessMode.readWrite).done(function (output) {
 
                     var input = data.msDetachStream();
-                    Windows.Storage.Streams.RandomAccessStream.copyAsync(input, output).then(function() {
+                    Windows.Storage.Streams.RandomAccessStream.copyAsync(input, output).then(function () {
 
-                        output.flushAsync().done(function() {
+                        output.flushAsync().done(function () {
 
                             input.close();
                             output.close();
                             callback(true, null);
-                        }, function() {
+                        }, function () {
 
                             fail({
                                 code: 9
                             });
                         });
-                    }, function() {
+                    }, function () {
 
                         fail({
                             code: 9
                         });
                     });
-                }, function() {
+                }, function () {
 
                     fail({
                         code: 9
                     });
                 });
-            }, function() {
+            }, function () {
 
                 fail({
                     code: 9
                 });
             });
-        }, function() {
+        }, function () {
 
             fail({
                 code: 1
             });
         });
     };
-    self.writeFile = function(path, data, callback) {
+    self.writeFile = function (path, data, callback) {
 
-        var fail = function(error) {
+        var fail = function (error) {
 
             callback(false, new Error(ErrorCodes[error.code]));
         };
         var dirs = [];
         if (device.platform.toLowerCase() !== 'windows8') dirs = (self.removeRootPath(path)).split('\/');
-        else(dirs = (self.removeRootPath(path)).split('\\')).splice(0, 1);
+        else (dirs = (self.removeRootPath(path)).split('\\')).splice(0, 1);
         var filename = dirs.splice(dirs.length - 1)[0];
         if (filename) {
 
-            getDirectory(dirs, true, function(directoryEntry, error) {
+            getDirectory(dirs, true, function (directoryEntry, error) {
 
                 if (error) callback(false, error);
                 else if (directoryEntry) directoryEntry.getFile(filename, {
 
                     create: true,
                     exclusive: false
-                }, function(fileEntry) {
+                }, function (fileEntry) {
 
                     if (device.platform.toLowerCase() !== 'windows8') {
 
-                        fileEntry.createWriter(function(writer) {
+                        fileEntry.createWriter(function (writer) {
 
-                            var write = function(start) {
+                            var write = function (start) {
 
                                 if (isCanceled[path]) {
 
@@ -213,7 +213,7 @@ var CacheFileSystem = function(cb) {
                                 }
                                 data.slice = data.slice || data.webkitSlice;
                                 var blob = data.size <= SEGMENTSIZE ? data : data.slice(start, end, data.type);
-                                writer.onwriteend = function(evt) {
+                                writer.onwriteend = function (evt) {
 
                                     if (evt.target.error === null) {
 
@@ -229,7 +229,7 @@ var CacheFileSystem = function(cb) {
                                             callback(true, null);
                                         } else {
 
-                                            window.setTimeout(function() {
+                                            window.setTimeout(function () {
 
                                                 write(end);
                                             }, 200);
@@ -248,34 +248,34 @@ var CacheFileSystem = function(cb) {
                 }, fail);
             });
         }
-        return function() {
+        return function () {
 
             isCanceled[path] = true;
         };
     };
-    self.removeRootPath = function(path) {
+    self.removeRootPath = function (path) {
 
         return path.replace(self.getRootPath(), '');
     };
-    self.isFileExisted = function(path, callback) {
+    self.isFileExisted = function (path, callback) {
 
         var dirs = [];
         if (device.platform.toLowerCase() !== 'windows8') dirs = (self.removeRootPath(path)).split('\/');
-        else(dirs = (self.removeRootPath(path)).split('\\')).splice(0, 1);
+        else (dirs = (self.removeRootPath(path)).split('\\')).splice(0, 1);
         var filename = dirs.splice(dirs.length - 1)[0];
         if (filename) {
 
-            getDirectory(dirs, false, function(directoryEntry, error) {
+            getDirectory(dirs, false, function (directoryEntry, error) {
 
                 if (error) callback(false, null, error);
                 else if (directoryEntry) directoryEntry.getFile(filename, {
 
                     create: false,
                     exclusive: false
-                }, function(fileEntry) {
+                }, function (fileEntry) {
 
                     callback(true, fileEntry.file, null);
-                }, function() {
+                }, function () {
 
                     callback(false, null, null);
                 });

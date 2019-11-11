@@ -15,9 +15,9 @@ var OperationType = {
     MAPBETWEEN: 'mapbetween'
 };
 
-var getFetchCallback = function(currentBehaviour, operationCallback, callback) {
+var getFetchCallback = function (currentBehaviour, operationCallback, callback) {
 
-    return function(resource, error) {
+    return function (resource, error) {
 
         if (resource) currentBehaviour.state.serviceObjects = [resource.data || resource.id || resource.path];
         if (error) currentBehaviour.state.error = error;
@@ -30,17 +30,17 @@ var getFetchCallback = function(currentBehaviour, operationCallback, callback) {
     };
 };
 
-var getFetchCancelCallback = function(currentBehaviour) {
+var getFetchCancelCallback = function (currentBehaviour) {
 
-    return function(cancel) {
+    return function (cancel) {
 
         if (cancel) currentBehaviour.cancel = cancel;
     };
 };
 
-var getRequestCallback = function(currentBehaviour, serviceOperation, operationCallback, callback) {
+var getRequestCallback = function (currentBehaviour, serviceOperation, operationCallback, callback) {
 
-    return function(serviceObjects, error) {
+    return function (serviceObjects, error) {
 
         if (serviceObjects) {
 
@@ -59,9 +59,9 @@ var getRequestCallback = function(currentBehaviour, serviceOperation, operationC
     };
 };
 
-var getManipulateCallback = function(currentBehaviour, modelOperation, operationCallback, callback) {
+var getManipulateCallback = function (currentBehaviour, modelOperation, operationCallback, callback) {
 
-    return function(modelObjects, error) {
+    return function (modelObjects, error) {
 
         if (modelObjects) {
 
@@ -80,9 +80,9 @@ var getManipulateCallback = function(currentBehaviour, modelOperation, operation
     };
 };
 
-var getMapFromCallback = function(currentBehaviour, operationCallback, callback) {
+var getMapFromCallback = function (currentBehaviour, operationCallback, callback) {
 
-    return function() {
+    return function () {
 
         if (typeof operationCallback === 'function') operationCallback({
 
@@ -92,10 +92,10 @@ var getMapFromCallback = function(currentBehaviour, operationCallback, callback)
     };
 };
 
-var getMappingCallback = function(operation, operationCallback, callback) {
+var getMappingCallback = function (operation, operationCallback, callback) {
 
 
-    return function(businessObjects) {
+    return function (businessObjects) {
 
         if (typeof operationCallback === 'function') operationCallback({
 
@@ -105,7 +105,7 @@ var getMappingCallback = function(operation, operationCallback, callback) {
     };
 };
 
-var BusinessControllerExt = function(options) {
+var BusinessControllerExt = function (options) {
 
     var self = this;
     var modelOperationDelegate = options.modelOperationDelegate;
@@ -113,25 +113,25 @@ var BusinessControllerExt = function(options) {
     var businessOperationDelegate = options.businessOperationDelegate;
     var FetchBehaviour = options.FetchBehaviour;
     var operationCallback = options.operationCallback;
-    self.serviceDelegate = function(currentBehaviour, serviceOperation, callback) {
+    self.serviceDelegate = function (currentBehaviour, serviceOperation, callback) {
 
         return FetchBehaviour && currentBehaviour instanceof FetchBehaviour ?
             serviceOperationDelegate.fetch(getFetchCallback(currentBehaviour, operationCallback, callback),
                 getFetchCancelCallback(currentBehaviour)) : serviceOperationDelegate.request(serviceOperation,
-                getRequestCallback(currentBehaviour, serviceOperation, operationCallback, callback));
+                    getRequestCallback(currentBehaviour, serviceOperation, operationCallback, callback));
     };
-    self.modelDelegate = function(currentBehaviour, modelOperation, callback) {
+    self.modelDelegate = function (currentBehaviour, modelOperation, callback) {
 
         return modelOperationDelegate.manipulate(modelOperation, getManipulateCallback(currentBehaviour, modelOperation,
             operationCallback, callback));
     };
-    self.serviceMappingDelegate = function(currentBehaviour, callback) {
+    self.serviceMappingDelegate = function (currentBehaviour, callback) {
 
         return businessOperationDelegate.mapFromObjects(currentBehaviour.inputObjects, currentBehaviour.getProperty,
             currentBehaviour.getType() === BehaviourTypes.ONLINEACTION, getMapFromCallback(currentBehaviour,
                 operationCallback, callback));
     };
-    self.modelMappingDelegate = function(currentBehaviour, callback) {
+    self.modelMappingDelegate = function (currentBehaviour, callback) {
 
         var operation = null;
         switch (currentBehaviour.getType()) {
@@ -159,7 +159,7 @@ var BusinessControllerExt = function(options) {
     };
 };
 
-BusinessControllerExt.prototype.cancelRunningBehaviour = function(behaviour) {
+BusinessControllerExt.prototype.cancelRunningBehaviour = function (behaviour) {
 
     if (typeof behaviour.cancel === 'function') {
 
