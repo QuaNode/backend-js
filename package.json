@@ -1,46 +1,46 @@
 {
-    "name": "backend-js",
-    "version": "0.9.9-70",
-    "description": "A node module that implements the behaviour-driven design and map-queue algorithm",
-    "main": "index.js",
-    "scripts": {
-        "test": "test",
-        "snyk-protect": "snyk protect",
-        "prepare": "npm run snyk-protect"
-    },
-    "dependencies": {
-        "body-parser": "latest",
-        "converter": "https://github.com/QuaNode/converter.git",
-        "define-js": "latest",
-        "express": "latest",
-        "express-paginate": "latest",
-        "express-unless": "latest",
-        "http-status-codes": "https://github.com/QuaNode/node-http-status",
-        "morgan": "latest",
-        "parseparams": "latest",
-        "route-parser": "latest",
-        "shallow-copy": "latest",
-        "snyk": "^1.192.6"
-    },
-    "repository": {
-        "type": "git",
-        "url": "git+https://github.com/quaNode/backendjs.git"
-    },
-    "keywords": [
-        "backend",
-        "js",
-        "javascript",
-        "behaviour",
-        "design",
-        "map",
-        "queue",
-        "beam"
-    ],
-    "author": "Ahmed Ragab <ahmed.ragab@me.com> (http://backendjs.com)",
-    "license": "MIT",
-    "bugs": {
-        "url": "https://github.com/quaNode/backendjs/issues"
-    },
-    "homepage": "https://github.com/quaNode/backendjs#readme",
-    "snyk": true
+  "name": "backend-js",
+  "version": "0.9.9-70",
+  "description": "A node module that implements the behaviour-driven design and map-queue algorithm",
+  "main": "index.js",
+  "scripts": {
+    "test": "test",
+    "snyk-protect": "snyk protect",
+    "prepare": "npm run snyk-protect"
+  },
+  "dependencies": {
+    "body-parser": "latest",
+    "converter": "https://github.com/QuaNode/converter.git",
+    "define-js": "latest",
+    "express": "latest",
+    "express-paginate": "latest",
+    "express-unless": "latest",
+    "http-status-codes": "https://github.com/QuaNode/node-http-status",
+    "morgan": "latest",
+    "parseparams": "latest",
+    "route-parser": "latest",
+    "shallow-copy": "latest",
+    "snyk": "^1.258.2"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/quaNode/backendjs.git"
+  },
+  "keywords": [
+    "backend",
+    "js",
+    "javascript",
+    "behaviour",
+    "design",
+    "map",
+    "queue",
+    "beam"
+  ],
+  "author": "Ahmed Ragab <ahmed.ragab@me.com> (http://backendjs.com)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/quaNode/backendjs/issues"
+  },
+  "homepage": "https://github.com/quaNode/backendjs#readme",
+  "snyk": true
 }
