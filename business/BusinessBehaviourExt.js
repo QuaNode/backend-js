@@ -6,24 +6,26 @@ let OperationDelegateApp = require('./OperationDelegateApp.js').OperationDelegat
 let BusinessOperation = require('./BusinessBehaviourCycle.js').BusinessOperation;
 let parse = require('parseparams');
 
-var ifCondition = function(operation, conditions) {
+var ifCondition = function (operation, conditions) {
 
     if (typeof conditions[operation] === 'function' && !conditions[operation]()) return false;
     else if (typeof conditions[operation] === 'boolean' && !conditions[operation]) return false;
     return true;
 };
 
-var middleware = function(operation, businessController, index, next, middlewares, useConditions) {
+var middleware = function (operation, businessController, index, next, middlewares, useConditions) {
 
-    if (middlewares[operation] && index > -1 && index < middlewares[operation].length && ifCondition(operation, useConditions)) {
+    if (middlewares[operation] && index > -1 && index < middlewares[operation].length &&
+        ifCondition(operation, useConditions)) {
 
-        if (parse(middlewares[operation][index])[2] === 'next') middlewares[operation][index](operation, businessController, function() {
+        if (parse(middlewares[operation][index])[2] === 'next')
+            middlewares[operation][index](operation, businessController, function () {
 
-            middleware(operation, businessController, index + 1, next, middlewares, useConditions);
-        }, function() {
+                middleware(operation, businessController, index + 1, next, middlewares, useConditions);
+            }, function () {
 
-            next();
-        });
+                next();
+            });
         else {
 
             for (var i = index; i < middlewares[operation].length; i++) {
@@ -38,24 +40,24 @@ var middleware = function(operation, businessController, index, next, middleware
     }
 };
 
-var getOperationFunc = function(attribute) {
+var getOperationFunc = function (attribute) {
 
-    return function() {
+    return function () {
 
         this.data[attribute] = arguments[0];
         return this;
     };
 };
 
-var getOperationCancelFunc = function(delegate) {
+var getOperationCancelFunc = function (delegate) {
 
-    return function() {
+    return function () {
 
         delegate();
     };
 };
 
-var getServiceOperation = function(operationDelegateApp, serviceOperation, delegate) {
+var getServiceOperation = function (operationDelegateApp, serviceOperation, delegate) {
 
     return {
 
@@ -66,9 +68,10 @@ var getServiceOperation = function(operationDelegateApp, serviceOperation, deleg
             service: null,
             callback: null,
         },
-        apply: function(parameters, service, callback, append) {
+        apply: function (parameters, service, callback, append) {
 
-            operationDelegateApp.serviceApply.apply(this, [serviceOperation, delegate, parameters, service, callback, append]);
+            operationDelegateApp.serviceApply.apply(this, [serviceOperation, delegate, parameters,
+                service, callback, append]);
         },
         parameters: getOperationFunc('parameters'),
         service: getOperationFunc('service'),
@@ -78,7 +81,7 @@ var getServiceOperation = function(operationDelegateApp, serviceOperation, deleg
     };
 };
 
-var getModelOperation = function(operationDelegateApp, modelOperation, delegate) {
+var getModelOperation = function (operationDelegateApp, modelOperation, delegate) {
 
     return {
 
@@ -92,9 +95,10 @@ var getModelOperation = function(operationDelegateApp, modelOperation, delegate)
             entity: null,
             callback: null
         },
-        apply: function(queryOrObjects, entity, callback, append) {
+        apply: function (queryOrObjects, entity, callback, append) {
 
-            operationDelegateApp.modelApply.apply(this, [modelOperation, delegate, queryOrObjects, entity, callback, append]);
+            operationDelegateApp.modelApply.apply(this, [modelOperation, delegate, queryOrObjects,
+                entity, callback, append]);
         },
         objects: getOperationFunc('objects'),
         query: getOperationFunc('query'),
@@ -107,7 +111,7 @@ var getModelOperation = function(operationDelegateApp, modelOperation, delegate)
     };
 };
 
-var getServiceMappingOperation = function(operationDelegateApp, businessOperation, delegate) {
+var getServiceMappingOperation = function (operationDelegateApp, businessOperation, delegate) {
 
     return {
 
@@ -115,7 +119,7 @@ var getServiceMappingOperation = function(operationDelegateApp, businessOperatio
 
             callback: null
         },
-        apply: function(callback) {
+        apply: function (callback) {
 
             operationDelegateApp.serviceInputMappingApply.apply(this, [businessOperation, delegate, callback]);
         },
@@ -124,7 +128,7 @@ var getServiceMappingOperation = function(operationDelegateApp, businessOperatio
     };
 };
 
-var getModelMappingOperation = function(operationDelegateApp, businessOperation, delegate) {
+var getModelMappingOperation = function (operationDelegateApp, businessOperation, delegate) {
 
     return {
 
@@ -133,9 +137,10 @@ var getModelMappingOperation = function(operationDelegateApp, businessOperation,
             identifiers: null,
             callback: null
         },
-        apply: function(identifiers, callback) {
+        apply: function (identifiers, callback) {
 
-            operationDelegateApp.modelOutputMappingApply.apply(this, [businessOperation, delegate, identifiers, callback]);
+            operationDelegateApp.modelOutputMappingApply.apply(this, [businessOperation, delegate,
+                identifiers, callback]);
         },
         identifiers: getOperationFunc('identifiers'),
         callback: getOperationFunc('callback'),
@@ -143,7 +148,7 @@ var getModelMappingOperation = function(operationDelegateApp, businessOperation,
     };
 };
 
-var getErrorHandlingOperation = function(operationDelegateApp, businessOperation, delegate) {
+var getErrorHandlingOperation = function (operationDelegateApp, businessOperation, delegate) {
 
     return {
 
@@ -151,7 +156,7 @@ var getErrorHandlingOperation = function(operationDelegateApp, businessOperation
 
             error: null
         },
-        apply: function(error) {
+        apply: function (error) {
 
             operationDelegateApp.errorHandlingApply.apply(this, [businessOperation, delegate, error]);
         },
@@ -160,7 +165,7 @@ var getErrorHandlingOperation = function(operationDelegateApp, businessOperation
     };
 };
 
-var BusinessBehaviourExt = function(options) {
+var BusinessBehaviourExt = function (options) {
 
     var self = this;
     var middlewares = options.middlewares;
@@ -172,34 +177,34 @@ var BusinessBehaviourExt = function(options) {
 
         watchers: watchers
     });
-    self.beginServiceOperation = function(serviceOperation, businessController, delegate) {
+    self.beginServiceOperation = function (serviceOperation, businessController, delegate) {
 
         var delegateExisted = delegates[serviceOperation] && true;
-        middleware(serviceOperation, businessController, 0, function() {
+        middleware(serviceOperation, businessController, 0, function () {
 
             if (delegateExisted && ifCondition(serviceOperation, beginConditions))
-                delegates[serviceOperation](serviceOperation, businessController, getServiceOperation(operationDelegateApp,
-                    serviceOperation, delegate));
+                delegates[serviceOperation](serviceOperation, businessController,
+                    getServiceOperation(operationDelegateApp, serviceOperation, delegate));
             else if (delegateExisted) delegate();
         }, middlewares, useConditions);
         return delegateExisted;
     };
-    self.beginModelOperation = function(modelOperation, businessController, delegate) {
+    self.beginModelOperation = function (modelOperation, businessController, delegate) {
 
         var delegateExisted = delegates[modelOperation] && true;
-        middleware(modelOperation, businessController, 0, function() {
+        middleware(modelOperation, businessController, 0, function () {
 
             if (delegateExisted && ifCondition(modelOperation, beginConditions))
-                delegates[modelOperation](modelOperation, businessController, getModelOperation(operationDelegateApp,
-                    modelOperation, delegate));
+                delegates[modelOperation](modelOperation, businessController,
+                    getModelOperation(operationDelegateApp, modelOperation, delegate));
             else if (delegateExisted) delegate();
         }, middlewares, useConditions);
         return delegateExisted;
     };
-    self.beginBusinessOperation = function(businessOperation, businessController, delegate) {
+    self.beginBusinessOperation = function (businessOperation, businessController, delegate) {
 
         var delegateExisted = delegates[businessOperation] && true;
-        middleware(businessOperation, businessController, 0, function() {
+        middleware(businessOperation, businessController, 0, function () {
 
             if (delegateExisted && ifCondition(businessOperation, beginConditions)) {
 

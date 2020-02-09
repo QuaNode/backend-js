@@ -63,10 +63,12 @@ module.exports = {
                     join(options.path, meta[keys[i]].path) : meta[keys[i]].path || options.path;
                 if (route) route = new Route(route);
                 var method = typeof meta[keys[i]].method === 'string' &&
-                    typeof app[meta[keys[i]].method.toLowerCase()] === 'function' && meta[keys[i]].method.toLowerCase();
+                    typeof app[meta[keys[i]].method.toLowerCase()] === 'function' &&
+                    meta[keys[i]].method.toLowerCase();
                 var origins = options.origins || meta[keys[i]].origins;
                 origins = typeof origins === 'string' && origins.length > 0 && origins;
-                if (origins && route && route.match(req.path) && (method === req.method.toLowerCase() || req.method === 'OPTIONS')) {
+                if (origins && route && route.match(req.path) && (method === req.method.toLowerCase() ||
+                    req.method === 'OPTIONS')) {
 
                     allowCrossOrigins(meta[keys[i]], res, origins);
                     break;
@@ -83,7 +85,8 @@ module.exports = {
         behaviours(options.path, options.parser);
         if (typeof options.static === 'object') {
 
-            if (typeof options.static.route === 'string') app.use(options.static.route, serve(options.static.path, options.static));
+            if (typeof options.static.route === 'string') app.use(options.static.route,
+                serve(options.static.path, options.static));
             else app.use(serve(options.static.path, options.static));
         }
         if (typeof options.parserOptions !== 'object') options.parserOptions = undefined;

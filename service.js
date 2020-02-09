@@ -12,7 +12,7 @@ let ServiceObjectMetadata = require('./service/ServiceResponseMetadata.js').Serv
 module.exports.ServiceParameter = require('./service/ServiceParameter').ServiceParameter;
 module.exports.ServiceParameterType = require('./service/ServiceParameter').ServiceParameterType;
 
-module.exports.service = function(baseURI, serve, authenticate, authenticated) {
+module.exports.service = function (baseURI, serve, authenticate, authenticated) {
 
     if (typeof serve !== 'function') {
 
@@ -29,23 +29,23 @@ module.exports.service = function(baseURI, serve, authenticate, authenticated) {
     var Authenticator = null;
     if (typeof authenticate === 'function') {
 
-        Authenticator = define(function(init) {
+        Authenticator = define(function (init) {
 
-            return function() {
+            return function () {
 
                 var self = init.apply(this, arguments).self();
                 self.authenticate = authenticate;
             };
         }).extend(ServiceAuthenticator).parameters();
     }
-    var Adapter = define(function(init) {
+    var Adapter = define(function (init) {
 
-        return function(base, constants) {
+        return function (base, constants) {
 
             var self = init.apply(this, arguments).self();
             var authenticator = null;
             if (typeof Authenticator === 'function') authenticator = new Authenticator();
-            var send = function(request, callback) {
+            var send = function (request, callback) {
 
                 switch (request) {
 
@@ -58,7 +58,7 @@ module.exports.service = function(baseURI, serve, authenticate, authenticated) {
                         break;
                 }
             };
-            self.sendRequest = function(request, callback) {
+            self.sendRequest = function (request, callback) {
 
                 request.baseURI = baseURI;
                 request.constants = constants || {};
@@ -70,14 +70,14 @@ module.exports.service = function(baseURI, serve, authenticate, authenticated) {
                 var deserializeCallback = callback;
                 if (typeof request.context === 'object' && typeof request.context.deserialize === 'function') {
 
-                    deserializeCallback = function(response, error) {
+                    deserializeCallback = function (response, error) {
 
                         callback(request.context.deserialize(response), error);
                     };
                 }
                 if (authenticated === 'function') {
 
-                    authenticated(serializedRequest, function(success, error) {
+                    authenticated(serializedRequest, function (success, error) {
 
                         if (success && !error) send(serializedRequest, deserializeCallback);
                         else callback(null, error || new Error('Authentication needed'));
@@ -85,7 +85,7 @@ module.exports.service = function(baseURI, serve, authenticate, authenticated) {
                 } else {
 
                     if (typeof request.context === 'object' && typeof request.context.authenticate === 'function')
-                        request.context.authenticate(serializedRequest, function(req) {
+                        request.context.authenticate(serializedRequest, function (req) {
 
                             send(req, deserializeCallback);
                         });
@@ -94,14 +94,14 @@ module.exports.service = function(baseURI, serve, authenticate, authenticated) {
             };
         };
     }).extend(ServiceAdapter).parameters(baseURI);
-    return function(path, opt) {
+    return function (path, opt) {
 
         var options = typeof path === 'object' ? path : opt || {};
-        var EndPoint = define(function(init, sṵper) {
+        var EndPoint = define(function (init, sṵper) {
 
-            return function(context, constants, mappings) {
+            return function (context, constants, mappings) {
 
-                var getMetadata = function(mapping, modelAttrs, serviceAttrs) {
+                var getMetadata = function (mapping, modelAttrs, serviceAttrs) {
 
                     var map = mapping;
                     var name = '';
@@ -110,7 +110,7 @@ module.exports.service = function(baseURI, serve, authenticate, authenticated) {
                     var value;
                     var id;
                     var storeId;
-                    var getMap = function(m, k) {
+                    var getMap = function (m, k) {
 
                         var mm = {};
                         if (typeof m !== 'string') name = k;
@@ -147,7 +147,7 @@ module.exports.service = function(baseURI, serve, authenticate, authenticated) {
                             storeId = mapping[1].length > 3 ? mapping[1][3] : value;
                         }
                     } else if (mapping && typeof mapping !== 'object') throw new Error('Invalid mapping');
-                    var modelAttributes = (typeof map === 'object' && Object.values(map)).map(function(attribute) {
+                    var modelAttributes = (typeof map === 'object' && Object.values(map)).map(function (attribute) {
 
                         if (typeof attribute === 'string') return attribute;
                         if (Array.isArray(attribute) && typeof attribute[0] === 'string') return attribute[0];
@@ -188,7 +188,7 @@ module.exports.service = function(baseURI, serve, authenticate, authenticated) {
                 self.context.serialize = self.context.serialize || options.serialize;
                 self.context.deserialize = self.context.deserialize || options.deserialize;
                 self.context.authenticate = self.context.authenticate || options.authenticate;
-                self.adapter = function() {
+                self.adapter = function () {
 
                     return sṵper.adapter(constants);
                 };

@@ -15,10 +15,11 @@ var BusinessBehaviourType = {
     OFFLINEACTION: 3
 };
 
-module.exports.BusinessBehaviour = define(function(init) {
+module.exports.BusinessBehaviour = define(function (init) {
 
-    return function(options) {
+    return function (options) {
 
+        if (typeof options !== 'object') throw new Error('Invalid behaviour parameters');
         var languageParameters = {
 
             middlewares: {},
@@ -35,11 +36,11 @@ module.exports.BusinessBehaviour = define(function(init) {
         Object.defineProperty(self, 'inputObjects', {
 
             enumerable: true,
-            get: function() {
+            get: function () {
 
                 return parameters;
             },
-            set: function(inputObjects) {
+            set: function (inputObjects) {
 
                 parameters = inputObjects;
             }
@@ -47,11 +48,11 @@ module.exports.BusinessBehaviour = define(function(init) {
         Object.defineProperty(self, 'parameters', {
 
             enumerable: true,
-            get: function() {
+            get: function () {
 
                 return parameters;
             },
-            set: function(params) {
+            set: function (params) {
 
                 parameters = params;
             }
@@ -59,11 +60,11 @@ module.exports.BusinessBehaviour = define(function(init) {
         self.state = {};
         self.searchText = options.searchText;
         self.mandatoryBehaviour = options.mandatoryBehaviour;
-        self.getType = function() {
+        self.getType = function () {
 
             return type;
         };
-        self.setType = function(typeParameter) {
+        self.setType = function (typeParameter) {
 
             if (typeParameter !== undefined) {
 
@@ -82,33 +83,33 @@ module.exports.BusinessBehaviour = define(function(init) {
             throw new Error('Invalid behaviour type');
         };
         self.setType(options.type);
-        self.prepareOperations = function(serviceOperations, modelOperations, businessOperations) {
+        self.prepareOperations = function (serviceOperations, modelOperations, businessOperations) {
 
             self.state.serviceOperations = copy(serviceOperations);
             self.state.modelOperations = copy(modelOperations);
             self.state.businessOperations = copy(businessOperations);
-            Object.keys(languageParameters.delegates).every(function(delegate) {
+            Object.keys(languageParameters.delegates).every(function (delegate) {
 
                 if (businessOperations.concat(serviceOperations).concat(modelOperations).indexOf(delegate) === -1)
                     throw new Error('Invalid operation name: ' + delegate);
             });
         };
-        self.beginServiceOperation = function(serviceOperation) {
+        self.beginServiceOperation = function (serviceOperation) {
 
             return businessBehaviourExt.beginServiceOperation.apply(self, arguments);
         };
-        self.beginModelOperation = function(modelOperation) {
+        self.beginModelOperation = function (modelOperation) {
 
             return businessBehaviourExt.beginModelOperation.apply(self, arguments);
         };
-        self.beginBusinessOperation = function(businessOperation) {
+        self.beginBusinessOperation = function (businessOperation) {
 
             return businessBehaviourExt.beginBusinessOperation.apply(self, arguments);
         };
     };
 }).extend(BusinessLanguage).parameters({});
 
-module.exports.BusinessBehaviour.prototype.hasMandatoryBehaviour = function(behaviour) {
+module.exports.BusinessBehaviour.prototype.hasMandatoryBehaviour = function (behaviour) {
 
     var self = this;
     if (behaviour && self.mandatoryBehaviour === behaviour) {
@@ -123,7 +124,7 @@ module.exports.BusinessBehaviour.prototype.hasMandatoryBehaviour = function(beha
     }
 };
 
-module.exports.BusinessBehaviour.prototype.isEqualToBehaviour = function(behaviour) {
+module.exports.BusinessBehaviour.prototype.isEqualToBehaviour = function (behaviour) {
 
     return this === behaviour;
 };

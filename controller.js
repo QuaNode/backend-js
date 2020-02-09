@@ -22,7 +22,7 @@ var businessController = function (key) {
             QueryExpression: QueryExpression,
             ComparisonOperators: getComparisonOperators(),
             //cacheController : cacheController,
-            operationCallback: function ( /*data, operationType , operationSubtype*/ ) {
+            operationCallback: function ( /*data, operationType , operationSubtype*/) {
 
                 /*if (data && data.error) {
 

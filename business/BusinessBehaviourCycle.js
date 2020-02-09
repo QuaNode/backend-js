@@ -21,49 +21,54 @@ var ModelOperation = {
     INSERT: 'Insert'
 };
 
-var validateServiceOperations = function(serviceOperations) {
+var validateServiceOperations = function (serviceOperations) {
 
-    return (Array.isArray(serviceOperations) && serviceOperations) || [ServiceOperation.REQUEST, ServiceOperation.AUTHENTICATION];
+    return (Array.isArray(serviceOperations) && serviceOperations) || [ServiceOperation.REQUEST,
+    ServiceOperation.AUTHENTICATION];
 };
 
-var validateModelOperations = function(modelOperations) {
+var validateModelOperations = function (modelOperations) {
 
-    return (Array.isArray(modelOperations) && modelOperations) || [ModelOperation.INSERT, ModelOperation.DELETE, ModelOperation.QUERY];
+    return (Array.isArray(modelOperations) && modelOperations) || [ModelOperation.INSERT,
+    ModelOperation.DELETE, ModelOperation.QUERY];
 };
 
-var ignoreBusinessOperation = function(currentBehaviour, businessOperation, remove) {
+var ignoreBusinessOperation = function (currentBehaviour, businessOperation, remove) {
 
     var index = currentBehaviour.state.businessOperations.indexOf(businessOperation);
     if (remove && index > -1) currentBehaviour.state.businessOperations.splice(index, 1);
     return index === -1;
 };
 
-var endRunningBehaviour = function(currentBehaviour, options) {
+var endRunningBehaviour = function (currentBehaviour, options) {
 
     var self = this;
     var businessBehaviourQueue = options.businessBehaviourQueue;
     var businessController = options.businessController;
     ignoreBusinessOperation(currentBehaviour, BusinessOperation.MODELOBJECTMAPPING, true);
     if (businessBehaviourQueue.suspend(currentBehaviour)) return;
-    var businessDelegate = function(getError) {
+    var businessDelegate = function (getError) {
 
-        if (typeof getError === 'function') currentBehaviour.state.error = getError(currentBehaviour.state.error) || undefined;
+        if (typeof getError === 'function')
+            currentBehaviour.state.error = getError(currentBehaviour.state.error) || undefined;
         ignoreBusinessOperation(currentBehaviour, BusinessOperation.ERRORHANDLING, true);
         if (businessBehaviourQueue.suspend(currentBehaviour)) return;
-        if (businessBehaviourQueue.dequeue(currentBehaviour)) businessBehaviourQueue.finish(currentBehaviour, function() {
+        if (businessBehaviourQueue.dequeue(currentBehaviour))
+            businessBehaviourQueue.finish(currentBehaviour, function () {
 
-            self.runNextBehaviour();
-        });
+                self.runNextBehaviour();
+            });
         else console.log('Behaviour already dequeued, may be misuse of next()');
     };
     if (ignoreBusinessOperation(currentBehaviour, BusinessOperation.ERRORHANDLING, false) ||
-        !currentBehaviour.beginBusinessOperation(BusinessOperation.ERRORHANDLING, businessController, businessDelegate)) {
+        !currentBehaviour.beginBusinessOperation(BusinessOperation.ERRORHANDLING, businessController,
+            businessDelegate)) {
 
         businessDelegate();
     }
 };
 
-var continueRunningBehaviour = function(currentBehaviour, options) {
+var continueRunningBehaviour = function (currentBehaviour, options) {
 
     var self = this;
     var businessBehaviourQueue = options.businessBehaviourQueue;
@@ -76,30 +81,30 @@ var continueRunningBehaviour = function(currentBehaviour, options) {
     if (modelOperation) {
 
         if (!currentBehaviour.beginModelOperation(modelOperation, businessController,
-                modelDelegate(currentBehaviour, modelOperation, function() {
+            modelDelegate(currentBehaviour, modelOperation, function () {
 
-                    continueRunningBehaviour.apply(self, [currentBehaviour, options]);
-                }))) {
+                continueRunningBehaviour.apply(self, [currentBehaviour, options]);
+            }))) {
 
             continueRunningBehaviour.apply(self, [currentBehaviour, options]);
         }
     } else {
 
-        var businessCallback = function(businessObjects) {
+        var businessCallback = function (businessObjects) {
 
             if (businessObjects) currentBehaviour.state.businessObjects = businessObjects;
             endRunningBehaviour.apply(self, [currentBehaviour, options]);
         };
         if (ignoreBusinessOperation(currentBehaviour, BusinessOperation.MODELOBJECTMAPPING, false) ||
-            !currentBehaviour.beginBusinessOperation(BusinessOperation.MODELOBJECTMAPPING, businessController,
-                modelMappingDelegate(currentBehaviour, businessCallback))) {
+            !currentBehaviour.beginBusinessOperation(BusinessOperation.MODELOBJECTMAPPING,
+                businessController, modelMappingDelegate(currentBehaviour, businessCallback))) {
 
             businessCallback();
         }
     }
 };
 
-var beginRunnigBehaviour = function(currentBehaviour, options) {
+var beginRunnigBehaviour = function (currentBehaviour, options) {
 
     var self = this;
     var businessBehaviourQueue = options.businessBehaviourQueue;
@@ -108,14 +113,14 @@ var beginRunnigBehaviour = function(currentBehaviour, options) {
     var serviceMappingDelegate = options.serviceMappingDelegate;
     if (businessBehaviourQueue.suspend(currentBehaviour)) return;
     var serviceOperation = currentBehaviour.state.serviceOperations.pop();
-    var businessCallback = function() {
+    var businessCallback = function () {
 
         if (!currentBehaviour.beginServiceOperation(serviceOperation, businessController,
-                serviceDelegate(currentBehaviour, serviceOperation,
-                    function() {
+            serviceDelegate(currentBehaviour, serviceOperation,
+                function () {
 
-                        beginRunnigBehaviour.apply(self, [currentBehaviour, options]);
-                    }))) {
+                    beginRunnigBehaviour.apply(self, [currentBehaviour, options]);
+                }))) {
 
             beginRunnigBehaviour.apply(self, [currentBehaviour, options]);
         }
@@ -123,8 +128,8 @@ var beginRunnigBehaviour = function(currentBehaviour, options) {
     if (serviceOperation) {
 
         if (ignoreBusinessOperation(currentBehaviour, BusinessOperation.SERVICEOBJECTMAPPING, false) ||
-            !currentBehaviour.beginBusinessOperation(BusinessOperation.SERVICEOBJECTMAPPING, businessController,
-                serviceMappingDelegate(currentBehaviour, businessCallback))) {
+            !currentBehaviour.beginBusinessOperation(BusinessOperation.SERVICEOBJECTMAPPING,
+                businessController, serviceMappingDelegate(currentBehaviour, businessCallback))) {
 
             businessCallback();
         }
@@ -134,22 +139,24 @@ var beginRunnigBehaviour = function(currentBehaviour, options) {
     }
 };
 
-var BusinessBehaviourCycle = function(options) {
+var BusinessBehaviourCycle = function (options) {
 
     var self = this;
     var serviceOperations = validateServiceOperations(options.serviceOperations);
     var modelOperations = validateModelOperations(options.modelOperations);
-    var businessOperations = [BusinessOperation.ERRORHANDLING, BusinessOperation.MODELOBJECTMAPPING, BusinessOperation.SERVICEOBJECTMAPPING];
-    if (businessOperations.concat(serviceOperations).concat(modelOperations).some(function(operation, i, operations) {
+    var businessOperations = [BusinessOperation.ERRORHANDLING, BusinessOperation.MODELOBJECTMAPPING,
+    BusinessOperation.SERVICEOBJECTMAPPING];
+    if (businessOperations.concat(serviceOperations).concat(modelOperations).some(function (operation, i,
+        operations) {
 
-            return typeof operation !== 'string' || operations.filter(function(op) {
+        return typeof operation !== 'string' || operations.filter(function (op) {
 
-                return operation === op;
-            }).length > 1;
-        })) throw new Error('Operations should be an array of unique strings');
+            return operation === op;
+        }).length > 1;
+    })) throw new Error('Operations should be an array of unique strings');
     var businessBehaviourQueue = options.businessBehaviourQueue;
     var BusinessBehaviourTypes = options.BusinessBehaviourTypes;
-    self.runNextBehaviour = function() {
+    self.runNextBehaviour = function () {
 
         var currentBehaviour = businessBehaviourQueue.execute();
         if (currentBehaviour) {
@@ -170,16 +177,16 @@ var BusinessBehaviourCycle = function(options) {
     };
 };
 
-BusinessBehaviourCycle.setComplete = function(currentBehaviour, completionDelegate) {
+BusinessBehaviourCycle.setComplete = function (currentBehaviour, completionDelegate) {
 
-    if (typeof currentBehaviour.callback === 'function') currentBehaviour.callback((function() {
+    if (typeof currentBehaviour.callback === 'function') currentBehaviour.callback((function () {
 
         return currentBehaviour.state.businessObjects || currentBehaviour.state.modelObjects ||
             currentBehaviour.state.serviceObjects || [];
     })(), currentBehaviour.state.error, completionDelegate);
 };
 
-BusinessBehaviourCycle.setError = function(behaviour, err) {
+BusinessBehaviourCycle.setError = function (behaviour, err) {
 
     switch (err) {
 

@@ -5,7 +5,7 @@ var LogicalOperators = null;
 
 var ComparisonOperators = null;
 
-module.exports.setComparisonOperators = function(co) {
+module.exports.setComparisonOperators = function (co) {
 
     if (typeof co !== 'object') {
 
@@ -15,7 +15,7 @@ module.exports.setComparisonOperators = function(co) {
     module.exports.ComparisonOperators = ComparisonOperators;
 };
 
-module.exports.setLogicalOperators = function(lo) {
+module.exports.setLogicalOperators = function (lo) {
 
     if (typeof lo !== 'object') {
 
@@ -25,7 +25,7 @@ module.exports.setLogicalOperators = function(lo) {
     module.exports.LogicalOperators = LogicalOperators;
 };
 
-var isValidOperator = function(object, value) {
+var isValidOperator = function (object, value) {
 
     for (var prop in object) {
 
@@ -40,7 +40,7 @@ var isValidOperator = function(object, value) {
     return false;
 };
 
-var QueryExpression = function(options) {
+var QueryExpression = function (options) {
 
     if (!ComparisonOperators) {
 

@@ -5,9 +5,14 @@ var stream = require('stream');
 var converter = require('converter');
 var Route = require('route-parser');
 
+var TIMEOUT = 58;
+var requests = {};
+var responses = {};
+var timeouts = {};
+
 module.exports = {
 
-    getValueAtPath: function(path, object) {
+    getValueAtPath: function (path, object) {
 
         var pathComponents = path.split('.');
         var value = object;
@@ -17,7 +22,7 @@ module.exports = {
         }
         return value;
     },
-    getCorrectValue: function(value, type) {
+    getCorrectValue: function (value, type) {
 
         switch (value) {
 
@@ -33,7 +38,7 @@ module.exports = {
         }
         return value;
     },
-    setInputObjects: function(inputObjects, paths, req, name, parameter, key, type) {
+    setInputObjects: function (inputObjects, paths, req, name, parameter, key, type) {
 
         switch (type) {
 
@@ -48,7 +53,7 @@ module.exports = {
                 break;
             case 'path':
                 var value = req.params[key];
-                if (!value && Array.isArray(paths)) paths.some(function(path) {
+                if (!value && Array.isArray(paths)) paths.some(function (path) {
 
                     if (path) {
 
@@ -83,7 +88,7 @@ module.exports = {
             }, parameter.key, type);
         }
     },
-    getInputObjects: function(parameters, paths, req, callback) {
+    getInputObjects: function (parameters, paths, req, callback) {
 
         if (typeof parameters !== 'object') {
 
@@ -107,14 +112,14 @@ module.exports = {
         }
         callback(inputObjects);
     },
-    sendConverted: function(res, json, format) {
+    sendConverted: function (res, json, format) {
 
         var outStream = converter({
 
             from: 'json',
             to: format
         });
-        outStream.on('data', function(chunk) {
+        outStream.on('data', function (chunk) {
 
             res.send(chunk);
         });
@@ -122,19 +127,19 @@ module.exports = {
         inStream.end(json);
         inStream.pipe(outStream);
     },
-    respond: function(res, object, format) {
+    respond: function (res, object, format) {
 
         var responders = {
 
-            json: function() {
+            json: function () {
 
                 res.json(object);
             },
-            text: function() {
+            text: function () {
 
                 utils.sendConverted(res, JSON.stringify(object), 'csv');
             },
-            xml: function() {
+            xml: function () {
 
                 utils.sendConverted(res, JSON.stringify(object), 'xml');
             }
@@ -142,13 +147,32 @@ module.exports = {
         if (typeof format === 'string' && responders[format]) responders[format]();
         else res.format(responders);
     },
-    setResponse: function(returns, middleware, req, res, response) {
+    setResponse: function (returns, middleware, request, response) {
 
-        if (typeof returns !== 'object' || typeof response !== 'object' || typeof response.response !== 'object' ||
-            Array.isArray(response.response)) {
+        if (arguments.length === 2) {
 
-            if (middleware && (typeof response !== 'object' || !Array.isArray(response.response))) return false;
-            utils.respond(res, response || {});
+            var callback = arguments[0];
+            response = arguments[1];
+            if (typeof callback !== 'function') throw new Error('Invalid behaviour callback');
+            if (typeof response !== 'object' || typeof response.signature !== 'number')
+                throw new Error('Invalid behaviour signature');
+            responses[response.signature] = {
+
+                callback: callback,
+                timeout: setTimeout(function () {
+
+                    delete responses[response.signature];
+                    timeouts[response.signature] = true;
+                }, TIMEOUT * 1000)
+            };
+            return;
+        }
+        if (typeof returns !== 'object' || typeof response !== 'object' ||
+            typeof response.response !== 'object' || Array.isArray(response.response)) {
+
+            if (middleware && (typeof response !== 'object' || !Array.isArray(response.response)))
+                return false;
+            utils.respond(request.res, response || {});
             return true;
         }
         var keys = Object.keys(returns);
@@ -164,13 +188,13 @@ module.exports = {
             switch (returns[keys[i]].type) {
 
                 case 'header':
-                    if (value) res.set(keys[i], value);
+                    if (value) request.res.set(keys[i], value);
                     break;
                 case 'body':
                     body[keys[i]] = value;
                     break;
                 case 'middleware':
-                    req[keys[i]] = value;
+                    request.req[keys[i]] = value;
                     break;
                 default:
                     new Error('Invalid return type');
@@ -180,12 +204,68 @@ module.exports = {
         if (Object.keys(body).length > 0) {
 
             response.response = body;
-            utils.respond(res, response);
+            utils.respond(request.res, response);
             return true;
         }
         return false;
     },
-    allowCrossOrigins: function(options, res, origins) {
+    setSignature: function (req, res, next, response) {
+
+        if (typeof response !== 'object' || typeof response.signature !== 'number')
+            throw new Error('Invalid behaviour signature');
+        if (responses[response.signature]) {
+
+            clearTimeout(responses[response.signature].timeout);
+            var callback = responses[response.signature].callback;
+            delete responses[response.signature];
+            return callback();
+        }
+        if (timeouts[response.signature]) return next(new Error('Request timeout'));
+        if (!requests[response.signature]) requests[response.signature] = [];
+        if (requests[response.signature].length === 0) {
+
+            var request = {
+
+                req: req,
+                res: res,
+                next: next,
+                timeout: setTimeout(function () {
+
+                    if (requests[response.signature]) {
+
+                        var index = requests[response.signature].indexOf(request);
+                        requests[response.signature].splice(index, 1);
+                    }
+                    if (!req.aborted) utils.respond(res, response);
+                }, TIMEOUT * 1000)
+            };
+            requests[response.signature].push(request);
+        } else utils.respond(res, response);
+    },
+    getSignature: function (req) {
+
+        var signature = Number(req.get('Behaviour-Signature') || undefined);
+        if (!isNaN(signature)) return signature;
+        return new Date();
+    },
+    getRequest: function (req, res, next, response) {
+
+        var request = typeof response === 'object' && typeof response.signature === 'number' &&
+            Array.isArray(requests[response.signature]) ? requests[response.signature].pop() : {
+
+                req: req,
+                res: res,
+                next: next
+            };
+        if (request.timeout) {
+
+            clearTimeout(request.timeout);
+            delete request.timeout;
+        }
+        delete requests[response.signature];
+        return !request.req.aborted && request;
+    },
+    allowCrossOrigins: function (options, res, origins) {
 
         res.header('Access-Control-Allow-Origin', origins || options.origins || '*');
         if (typeof options.method === 'string' && options.method.length > 0) {
@@ -194,21 +274,22 @@ module.exports = {
         }
         if (typeof options.parameters === 'object') {
 
-            res.header('Access-Control-Allow-Headers', 'Content-type,Accept' +
-                Object.keys(options.parameters).map(function(key) {
+            res.header('Access-Control-Allow-Headers', 'Content-type,Accept,Behaviour-Signature' +
+                Object.keys(options.parameters).map(function (key) {
 
-                    return options.parameters[key].type === 'header' ? ',' + options.parameters[key].key : '';
-                }).reduce(function(accumulator, key) {
+                    return options.parameters[key].type === 'header' ? ',' +
+                        options.parameters[key].key : '';
+                }).reduce(function (accumulator, key) {
 
                     return accumulator + key;
                 }, ''));
         }
         if (typeof options.returns === 'object') {
 
-            res.header('Access-Control-Expose-Headers', Object.keys(options.returns).map(function(key) {
+            res.header('Access-Control-Expose-Headers', Object.keys(options.returns).map(function (key) {
 
                 return options.returns[key].type === 'header' ? key : '';
-            }).reduce(function(accumulator, key) {
+            }).reduce(function (accumulator, key) {
 
                 return accumulator + (accumulator.length > 0 ? ',' : '') + key;
             }, ''));

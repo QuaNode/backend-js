@@ -13,15 +13,19 @@ let BusinessBehaviour = require('./business/BusinessBehaviour.js').BusinessBehav
 let getInputObjects = require('./utils.js').getInputObjects;
 let setResponse = require('./utils.js').setResponse;
 let respond = require('./utils.js').respond;
+let getSignature = require('./utils.js').getSignature;
+let setSignature = require('./utils.js').setSignature;
+let getRequest = require('./utils.js').getRequest;
 
 var backend = module.exports;
 
-var join = backend.join = (function() {
+var join = backend.join = (function () {
 
     var utility = require('url');
-    return function(s1, s2) {
+    return function (s1, s2) {
 
-        return utility.resolve(s1.substr(0, s1.endsWith('/') ? s1.length - 1 : s1.length) + '/', s2.substr(s2.startsWith('/') ? 1 : 0));
+        return utility.resolve(s1.substr(0, s1.endsWith('/') ? s1.length - 1 :
+            s1.length) + '/', s2.substr(s2.startsWith('/') ? 1 : 0));
     };
 })();
 
@@ -36,7 +40,7 @@ var behaviours = {
     }
 };
 
-var compareRoutes = function(route1, route2) {
+var compareRoutes = function (route1, route2) {
 
     var route = (route1 && route1.name && route1.name.indexOf(':') > -1 && route1) || route2;
     if (route === route2) {
@@ -52,8 +56,8 @@ var compareRoutes = function(route1, route2) {
 var types = {
 
     database: BusinessBehaviourType.OFFLINESYNC,
-    integration: BusinessBehaviourType.ONLINESYNC,
     database_with_action: BusinessBehaviourType.OFFLINEACTION,
+    integration: BusinessBehaviourType.ONLINESYNC,
     integration_with_action: BusinessBehaviourType.ONLINEACTION
 };
 
@@ -63,10 +67,14 @@ var app = backend.app = express();
 
 backend.static = express.static;
 
-backend.behaviour = function(path, config) {
+backend.behaviour = function (path, config) {
 
+    if (typeof app !== 'function' || typeof app.use !== 'function') {
+
+        throw new Error('Invalid express app');
+    }
     if (typeof path === 'object') config = path;
-    return function(options, getConstructor) {
+    return function (options, getConstructor) {
 
         if (typeof options !== 'object') {
 
@@ -80,7 +88,8 @@ backend.behaviour = function(path, config) {
 
             throw new Error('Invalid behaviour version');
         }
-        if (typeof options.inherits === 'function' && !(options.inherits.prototype instanceof BusinessBehaviour)) {
+        if (typeof options.inherits === 'function' &&
+            !(options.inherits.prototype instanceof BusinessBehaviour)) {
 
             throw new Error('Super behaviour constructor does not inherit from BusinessBehaviour');
         }
@@ -88,32 +97,49 @@ backend.behaviour = function(path, config) {
 
             throw new Error('Invalid constructor');
         }
-        var BehaviourConstructor = typeof options.inherits === 'function' ? define(getConstructor)
-            .extend(options.inherits).parameters({
+        var forFrontend = typeof options.name === 'string' && options.name.length > 0;
+        var notDuplicate = function () {
+
+            if (behaviours[options.name] && (typeof config !== 'object' ||
+                typeof config.skipSameRoutes !== 'boolean' || !config.skipSameRoutes))
+                throw new Error('Duplicated behavior name: ' + options.name);
+            return !behaviours[options.name];
+        }();
+        var BehaviourConstructor = typeof options.inherits === 'function' ?
+            define(getConstructor).extend(options.inherits).parameters({
 
                 type: types[options.type],
                 inputObjects: options.defaults
-            }) : define(getConstructor).extend(BusinessBehaviour)
-            .parameters({
+            }) : define(getConstructor).extend(BusinessBehaviour).parameters({
 
                 type: types[options.type]
             });
-        if (typeof options.name === 'string' && options.name.length > 0 && function() {
+        if (forFrontend && notDuplicate) {
 
-                if (behaviours[options.name] && (typeof config !== 'object' ||
-                        typeof config.skipSameRoutes !== 'boolean' || !config.skipSameRoutes))
-                    throw new Error('Duplicated behavior name: ' + options.name);
-                return !behaviours[options.name];
-            }()) {
-
-            var prefix = typeof path === 'string' && path.length > 0 ? join(defaultPrefix, path) :
-                defaultPrefix !== '/' ? defaultPrefix : null;
             if (options.name === 'behaviours') {
 
                 throw new Error('behaviours is a reserved name');
             }
-            var behaviour_runner = function(req, res, next, inputObjects, er) {
+            var isRouterMiddleware = typeof options.path === 'string' && options.path.length > 0;
+            var isRoute = isRouterMiddleware && typeof options.method === 'string' &&
+                typeof app[options.method.toLowerCase()] === 'function';
+            var longPolling = isRoute && Object.keys(types).indexOf(options.type) > 1;
+            var prefix = typeof path === 'string' && path.length > 0 ? join(defaultPrefix, path) :
+                defaultPrefix !== '/' ? defaultPrefix : null;
+            var behaviour_runner = function (req, res, next, inputObjects, er) {
 
+                var signature = getSignature(req);
+                var response = {
+
+                    behaviour: options.name,
+                    version: options.version
+                };
+                if (longPolling) {
+
+                    response.signature = new Date(signature).getTime();
+                    setSignature(req, res, next, response);
+                    if (typeof signature === 'number') return;
+                }
                 if (options.paginate) {
 
                     inputObjects.paginate = true;
@@ -126,78 +152,93 @@ backend.behaviour = function(path, config) {
                     priority: options.priority || 0,
                     inputObjects: inputObjects
                 });
-                var cancel = businessController(typeof options.queue === 'function' ? options.queue(options.name, inputObjects) : options.queue)
-                    .runBehaviour(behaviour, options.paginate ? function(property, superProperty) {
+                var get_behaviour_callback = function () {
 
-                        var page = {
+                    return function (behaviourResponse, error) {
 
-                            modelObjects: 'modelObjects',
-                            pageCount: 'pageCount'
-                        };
-                        return typeof options.map === 'function' ? options.map(property, superProperty) || page[property] : page[property];
-                    } : options.map, function(behaviourResponse, error) {
-
+                        var request = getRequest(req, res, next, response);
+                        if (!request) return setResponse(get_behaviour_callback().bind(null,
+                            behaviourResponse, error), response);
                         if (typeof error === 'object' || typeof behaviourResponse !== 'object') {
 
                             if (error) error.name = options.name;
                             if (error) error.version = options.version;
-                            next(error || er || new Error('Error while executing ' + options.name + ' behaviour, version ' + options.version + '!'));
+                            request.next(error || er || new Error('Error while executing ' + options.name +
+                                ' behaviour, version ' + options.version + '!'));
                         } else {
 
-                            var response = {
-
-                                behaviour: options.name,
-                                version: options.version,
-                                response: options.paginate ? behaviourResponse.modelObjects || behaviourResponse : behaviourResponse
-                            };
-                            if (options.paginate) response.has_more = paginate.hasNextPages(req)(typeof behaviourResponse.pageCount === 'number' ?
-                                behaviourResponse.pageCount : 1);
+                            response.response = options.paginate ? behaviourResponse.modelObjects ||
+                                behaviourResponse : behaviourResponse;
+                            if (options.paginate) response.has_more = paginate.hasNextPages(request.req)
+                                (typeof behaviourResponse.pageCount === 'number' ?
+                                    behaviourResponse.pageCount : 1);
                             if (typeof options.returns !== 'function') {
 
-                                if (!setResponse(options.returns, typeof options.method === 'string' &&
-                                        typeof app[options.method.toLowerCase()] === 'function', req, res, response)) next();
-                            } else options.returns(req, res, function(outputObjects) {
+                                if (!setResponse(options.returns, !isRoute, request, response)) request.next();
+                            } else options.returns(request.req, request.res, function (outputObjects) {
 
-                                respond(res, outputObjects);
+                                respond(request.res, outputObjects);
                             });
                         }
+                    };
+                };
+                var cancel = businessController(typeof options.queue === 'function' ?
+                    options.queue(options.name, inputObjects) : options.queue).runBehaviour(behaviour,
+                        options.paginate ? function (property, superProperty) {
+
+                            var page = {
+
+                                modelObjects: 'modelObjects',
+                                pageCount: 'pageCount'
+                            };
+                            return typeof options.map === 'function' ? options.map(property, superProperty) ||
+                                page[property] : page[property];
+                        } : options.map, get_behaviour_callback());
+                req.on('close', function () {
+
+                    if (typeof cancel === 'function' && !longPolling) cancel();
+                });
+            };
+            var get_req_handler = function () {
+
+                return function (req, res, next) {
+
+                    if (typeof options.parameters !== 'function') {
+
+                        if (req.complete) getInputObjects(options.parameters,
+                            Object.keys(behaviours).map(function (name) {
+
+                                var suffix = behaviours[name] && behaviours[name].path;
+                                return typeof prefix === 'string' && req.path.startsWith(prefix) &&
+                                    typeof suffix === 'string' ? join(prefix, suffix) : suffix || prefix;
+                            }), req, function (inputObjects) {
+
+                                behaviour_runner(req, res, next, inputObjects);
+                            });
+                        else req.socket.on('end', get_req_handler().bind(null, req, res, next));
+                    } else options.parameters(req, res, function (inputObjects, er) {
+
+                        if (req.complete) behaviour_runner(req, res, next, inputObjects, er);
+                        else throw new Error('Parameters callback function called before all request data consumed');
                     });
-                req.on('close', function() {
-
-                    if (typeof cancel === 'function') cancel();
-                });
+                };
             };
-            var req_handler = function(req, res, next) {
-
-                if (typeof options.parameters !== 'function') getInputObjects(options.parameters, Object.keys(behaviours).map(function(name) {
-
-                    var suffix = behaviours[name] && behaviours[name].path;
-                    return typeof prefix === 'string' && req.path.startsWith(prefix) && typeof suffix === 'string' ?
-                        join(prefix, suffix) : suffix || prefix;
-                }), req, function(inputObjects) {
-
-                    behaviour_runner(req, res, next, inputObjects);
-                });
-                else options.parameters(req, res, function(inputObjects, er) {
-
-                    behaviour_runner(req, res, next, inputObjects, er);
-                });
-            };
+            var req_handler = get_req_handler();
             if (Array.isArray(options.unless)) {
 
                 req_handler.unless = unless;
                 req_handler = req_handler.unless({
 
-                    custom: function(request) {
+                    custom: function (request) {
 
-                        return options.unless.map(function(name) {
+                        return options.unless.map(function (name) {
 
                             return {
 
                                 name: (behaviours[name] && behaviours[name].path) || name,
                                 method: behaviours[name] && behaviours[name].method
                             };
-                        }).filter(function(opt) {
+                        }).filter(function (opt) {
 
                             var suffix = opt.name;
                             var method = opt.method;
@@ -216,33 +257,27 @@ backend.behaviour = function(path, config) {
                     }
                 });
             }
-            if (typeof options.path === 'string' && options.path.length > 0 && typeof options.method === 'string' &&
-                typeof app[options.method.toLowerCase()] === 'function') {
+            if (isRoute) {
 
                 var keys = Object.keys(behaviours);
-                if (keys.some(function(key) {
+                if (keys.some(function (key) {
 
-                        return compareRoutes({
+                    return compareRoutes({
 
-                            name: behaviours[key].path,
-                            method: behaviours[key].method
-                        }, {
+                        name: behaviours[key].path,
+                        method: behaviours[key].method
+                    }, {
 
-                            name: options.path,
-                            method: options.method
-                        });
-                    }))
-                    throw new Error('Duplicated behavior path: ' + options.path);
+                        name: options.path,
+                        method: options.method
+                    });
+                })) throw new Error('Duplicated behavior path: ' + options.path);
                 var router = app;
                 if (typeof prefix === 'string' && prefix.length > 0) {
 
                     router = routers[prefix];
                     if (!router) {
 
-                        if (typeof app !== 'function' || typeof app.use !== 'function') {
-
-                            throw new Error('Invalid express app');
-                        }
                         router = express.Router({
 
                             caseSensitive: true,
@@ -254,7 +289,8 @@ backend.behaviour = function(path, config) {
                         routers[prefix] = router;
                     }
                 }
-                if (typeof options.plugin === 'function') router[options.method.toLowerCase()](options.path, options.plugin, req_handler);
+                if (typeof options.plugin === 'function')
+                    router[options.method.toLowerCase()](options.path, options.plugin, req_handler);
                 else router[options.method.toLowerCase()](options.path, req_handler);
                 behaviours[options.name] = {
 
@@ -264,19 +300,19 @@ backend.behaviour = function(path, config) {
                     parameters: options.parameters,
                     returns: options.returns
                 };
-            } else if (typeof options.path === 'string' && options.path.length > 0)
-                app.use(typeof prefix === 'string' && prefix.length > 0 ? join(prefix, options.path) : options.path, req_handler);
+            } else if (isRouterMiddleware) app.use(typeof prefix === 'string' && prefix.length > 0 ?
+                join(prefix, options.path) : options.path, req_handler);
             else app.use(req_handler);
         }
         return BehaviourConstructor;
     };
 };
 
-backend.behaviours = function(path, parser) {
+backend.behaviours = function (path, parser) {
 
     if (defaultPrefix === '/' && typeof path === 'string' && path.length > 0) defaultPrefix = path;
     var prefix = path || defaultPrefix;
-    app.get(typeof prefix === 'string' ? join(prefix, '/behaviours') : '/behaviours', function(req, res) {
+    app.get(typeof prefix === 'string' ? join(prefix, '/behaviours') : '/behaviours', function (req, res) {
 
         respond(res, behaviours, parser);
     });

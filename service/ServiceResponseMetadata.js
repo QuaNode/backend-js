@@ -1,7 +1,7 @@
 /*jslint node: true */
 'use strict';
 
-module.exports.ServiceObjectMetadata = function(options) {
+module.exports.ServiceObjectMetadata = function (options) {
 
     var self = this;
     var modelAttributes = options.modelAttributes;
@@ -24,7 +24,8 @@ module.exports.ServiceObjectMetadata = function(options) {
     }
     if (Array.isArray(modelAttributes) && Array.isArray(serviceAttributes)) {
 
-        if (modelAttributes.length !== serviceAttributes.length) throw new Error('Invalid attributes count');
+        if (modelAttributes.length !== serviceAttributes.length)
+            throw new Error('Invalid attributes count');
         self.attributes = [];
         for (var i = 0; i < modelAttributes.length; i++) {
 
@@ -43,7 +44,7 @@ module.exports.ServiceObjectMetadata = function(options) {
     self.storeID = options.storeID;
 };
 
-module.exports.ServiceAttributeMetadata = function(options) {
+module.exports.ServiceAttributeMetadata = function (options) {
 
     var self = this;
     if (typeof options.model === 'string') {
@@ -61,7 +62,8 @@ module.exports.ServiceAttributeMetadata = function(options) {
     }
     if (options.metadata) {
 
-        if (options.metadata instanceof module.exports.ServiceObjectMetadata) self.metadata = options.metadata;
+        if (options.metadata instanceof module.exports.ServiceObjectMetadata)
+            self.metadata = options.metadata;
         else throw new Error('Invalid service attribute object metadata');
     }
 };

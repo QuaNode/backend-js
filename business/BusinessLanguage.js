@@ -1,12 +1,12 @@
 /*jslint node: true */
 'use strict';
 
-var getIfReturn = function(beginConditions, condition) {
+var getIfReturn = function (beginConditions, condition) {
 
     var self = this;
     return {
 
-        begin: function() {
+        begin: function () {
 
             var operations = arguments[0];
             if (typeof operations === 'string') operations = [operations];
@@ -22,12 +22,12 @@ var getIfReturn = function(beginConditions, condition) {
     };
 };
 
-var getUseReturn = function(middlewares, middleware, useConditions, beginConditions, begin) {
+var getUseReturn = function (middlewares, middleware, useConditions, beginConditions, begin) {
 
     var self = this;
     return {
 
-        begin: function() {
+        begin: function () {
 
             for (var j = 0; j < arguments.length; j++) {
 
@@ -36,13 +36,13 @@ var getUseReturn = function(middlewares, middleware, useConditions, beginConditi
             begin = arguments;
             return this;
         },
-        when: function(operations, condition, options) {
+        when: function (operations, condition, options) {
 
             if (typeof condition === 'object' && typeof options !== 'object') {
 
                 options = condition;
             }
-            var useMiddlewareWhen = function(operation) {
+            var useMiddlewareWhen = function (operation) {
 
                 if (typeof options === 'object') {
 
@@ -88,7 +88,7 @@ var getUseReturn = function(middlewares, middleware, useConditions, beginConditi
     };
 };
 
-var BusinessLanguage = function(options) {
+var BusinessLanguage = function (options) {
 
     var self = this;
     var middlewares = options.middlewares;
@@ -96,19 +96,20 @@ var BusinessLanguage = function(options) {
     var watchers = options.watchers;
     var useConditions = options.useConditions;
     var beginConditions = options.beginConditions;
-    self.watch = function(operation, callback) {
+    self.watch = function (operation, callback) {
 
-        if (typeof operation !== 'string' || typeof callback !== 'function') throw new Error('Invalid watch parameters');
+        if (typeof operation !== 'string' || typeof callback !== 'function')
+            throw new Error('Invalid watch parameters');
         if (!watchers[operation]) watchers[operation] = [];
         watchers[operation].push(callback);
         return self;
     };
-    self.if = function() {
+    self.if = function () {
 
         var condition = arguments[0];
         return getIfReturn.apply(self, [beginConditions, condition]);
     };
-    self.begin = function() {
+    self.begin = function () {
 
         if (arguments.length > 1) {
 
@@ -127,7 +128,7 @@ var BusinessLanguage = function(options) {
         } else throw new Error('Invalid begin parameters');
         return self;
     };
-    self.use = function(middleware) {
+    self.use = function (middleware) {
 
         if (typeof middleware !== 'function') throw new Error('Invalid behaviour middleware function');
         var begin = null;

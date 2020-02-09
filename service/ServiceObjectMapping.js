@@ -3,13 +3,14 @@
 
 var copy = require('shallow-copy');
 
-var getParsedValue = function(value, type) {
+var getParsedValue = function (value, type) {
 
     switch (type) {
         case Number:
             try {
 
-                if (typeof value === 'string') value = value.indexOf('.') > -1 ? parseFloat(value) : parseInt(value);
+                if (typeof value === 'string') value = value.indexOf('.') > -1 ? parseFloat(value) :
+                    parseInt(value);
                 if (isNaN(value)) value = null;
                 else if (typeof value !== 'number') value = null;
             } catch (e) {
@@ -22,7 +23,6 @@ var getParsedValue = function(value, type) {
             if (value === 'true') return true;
             else if (value === 'false') return false;
             else return null;
-            break;
         case Date:
             try {
 
@@ -40,7 +40,7 @@ var getParsedValue = function(value, type) {
                 var isValueString = typeof value === 'string';
                 if (isValueArray || isValueString) {
 
-                    return (isValueString ? value.split(',') : value).map(function(subValue) {
+                    return (isValueString ? value.split(',') : value).map(function (subValue) {
 
                         return (type[0] && getParsedValue(subValue, type[0])) || subValue;
                     });
@@ -60,12 +60,13 @@ var getParsedValue = function(value, type) {
     return value;
 };
 
-var getServiceValue = function(serviceObject, attributeMetadata, modelAttributes, key, value) {
+var getServiceValue = function (serviceObject, attributeMetadata, modelAttributes, key, value) {
 
     var serviceAttributeName = attributeMetadata.name;
     var modelAttributeName = attributeMetadata.model;
-    if (typeof attributeMetadata.getValue === 'function') return getParsedValue(attributeMetadata.getValue(serviceObject),
-        modelAttributes && modelAttributes[modelAttributeName]);
+    if (typeof attributeMetadata.getValue === 'function')
+        return getParsedValue(attributeMetadata.getValue(serviceObject), modelAttributes &&
+            modelAttributes[modelAttributeName]);
     var serviceValue = null;
     if (serviceAttributeName) {
 
@@ -95,7 +96,8 @@ var getServiceValue = function(serviceObject, attributeMetadata, modelAttributes
 
                     var attribMetadata = copy(attributeMetadata);
                     attribMetadata.name = serviceAttributeName.split(attributeName + '.')[1];
-                    if (attribMetadata.name) return getServiceValue(serviceValue, attribMetadata, modelAttributes, key, value);
+                    if (attribMetadata.name) return getServiceValue(serviceValue, attribMetadata,
+                        modelAttributes, key, value);
                 }
             }
         }
@@ -103,13 +105,13 @@ var getServiceValue = function(serviceObject, attributeMetadata, modelAttributes
     return getParsedValue(serviceValue, modelAttributes && modelAttributes[modelAttributeName]);
 };
 
-module.exports.ServiceObjectMapping = function() {};
+module.exports.ServiceObjectMapping = function () { };
 
-module.exports.ServiceObjectMapping.prototype.mapServiceObject = function(serviceObject, objectMetadata, modelAttributes,
-    modelObjects, cb) {
+module.exports.ServiceObjectMapping.prototype.mapServiceObject = function (serviceObject, objectMetadata,
+    modelAttributes, modelObjects, cb) {
 
     var self = this;
-    var mapAndSyncServiceAttributesToModelObject = function(mObject, mOperation) {
+    var mapAndSyncServiceAttributesToModelObject = function (mObject, mOperation) {
 
         for (var n = 0; n < objectMetadata.attributes.length; n++) {
 
@@ -134,27 +136,28 @@ module.exports.ServiceObjectMapping.prototype.mapServiceObject = function(servic
     var modelObject = {};
     var modelOperation = 'insert';
     var idServiceValue = self.getIDServiceValue(serviceObject, objectMetadata, modelAttributes);
-    if (modelObjects.some(function(mObject) {
+    if (modelObjects.some(function (mObject) {
 
-            var isIt = mObject[objectMetadata.id] === idServiceValue;
-            if (isIt) {
+        var isIt = mObject[objectMetadata.id] === idServiceValue;
+        if (isIt) {
 
-                modelObject = mObject;
-                modelOperation = 'update';
-            }
-            return isIt;
-        })) {
+            modelObject = mObject;
+            modelOperation = 'update';
+        }
+        return isIt;
+    })) {
 
         mapAndSyncServiceAttributesToModelObject(modelObject, modelOperation);
     } else mapAndSyncServiceAttributesToModelObject(modelObject, modelOperation);
 };
 
-module.exports.ServiceObjectMapping.prototype.getIDServiceValue = function(serviceObject, objectMetadata, modelAttributes) {
+module.exports.ServiceObjectMapping.prototype.getIDServiceValue = function (serviceObject,
+    objectMetadata, modelAttributes) {
 
     var idServiceValue = null;
     if (objectMetadata.id) {
 
-        var identificationAttributesMetadata = objectMetadata.attributes.filter(function(attributeMetadata) {
+        var identificationAttributesMetadata = objectMetadata.attributes.filter(function (attributeMetadata) {
 
             return attributeMetadata.model === objectMetadata.id;
         });
