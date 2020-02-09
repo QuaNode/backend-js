@@ -23,7 +23,7 @@ let allowCrossOrigins = require('./utils.js').allowCrossOrigins;
 let respond = require('./utils.js').respond;
 let backend = require('./behaviour.js');
 
-debug.enable('backend:index');
+debug.enable('backend:*');
 debug = debug('backend:index');
 
 var server, app = backend.app;

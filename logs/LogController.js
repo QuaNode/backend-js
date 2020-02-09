@@ -5,13 +5,10 @@
 /*global window*/
 'use strict';
 
-let debug = require('debug');
+let debug = require('debug')('backend:LogController');
 let raygun = require('./lib/raygun/raygun.js');
 let sendToRaygun = require('./lib/raygun/raygun.transport.js').send;
 let EdushareAppConfig = require('../utils/EdushareAppConfig.js').EdushareAppConfig;
-
-debug.enable('backend:LogController');
-debug = debug('backend:LogController');
 
 var deviceID = null;
 

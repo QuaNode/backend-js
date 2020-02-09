@@ -1,10 +1,7 @@
 /*jslint node: true */
 'use strict';
 
-let debug = require('debug');
-
-debug.enable('backend:BusinessBehaviourCycle');
-debug = debug('backend:BusinessBehaviourCycle');
+let debug = require('debug')('backend:BusinessBehaviourCycle');
 
 var BusinessOperation = {
 
