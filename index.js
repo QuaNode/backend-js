@@ -7,6 +7,7 @@ let bodyParser = require('body-parser');
 let logger = require('morgan');
 let Route = require('route-parser');
 let HttpStatus = require('http-status-codes');
+let debug = require('debug');
 let ModelEntity = require('./model.js').ModelEntity;
 let QueryExpression = require('./model.js').QueryExpression;
 let setComparisonOperators = require('./model.js').setComparisonOperators;
@@ -21,6 +22,9 @@ let service = require('./service.js').service;
 let allowCrossOrigins = require('./utils.js').allowCrossOrigins;
 let respond = require('./utils.js').respond;
 let backend = require('./behaviour.js');
+
+debug.enable('backend:index');
+debug = debug('backend:index');
 
 var server, app = backend.app;
 var serve = backend.static;
@@ -74,13 +78,8 @@ module.exports = {
                     break;
                 }
             }
-            if (req.method === 'OPTIONS') {
-
-                res.status(200).end();
-            } else {
-
-                next();
-            }
+            if (req.method === 'OPTIONS') res.status(200).end();
+            else next();
         });
         behaviours(options.path, options.parser);
         if (typeof options.static === 'object') {
@@ -102,7 +101,7 @@ module.exports = {
         });
         app.use(function (err, req, res, next) {
 
-            console.log(err);
+            debug(err);
             if (res.headersSent) {
 
                 return next(err);
@@ -126,7 +125,7 @@ module.exports = {
             else return app;
         }(), app).listen(app.get('port'), function () {
 
-            console.log('backend listening on port ' + app.get('port'));
+            debug('backend listening on port ' + app.get('port'));
         });
         started = true;
         return server;

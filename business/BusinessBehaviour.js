@@ -112,16 +112,11 @@ module.exports.BusinessBehaviour = define(function (init) {
 module.exports.BusinessBehaviour.prototype.hasMandatoryBehaviour = function (behaviour) {
 
     var self = this;
-    if (behaviour && self.mandatoryBehaviour === behaviour) {
-
-        return true;
-    } else if (self.mandatoryBehaviour instanceof module.exports.BusinessBehaviour) {
+    if (behaviour && self.mandatoryBehaviour === behaviour) return true;
+    else if (self.mandatoryBehaviour instanceof module.exports.BusinessBehaviour) {
 
         return self.mandatoryBehaviour.hasMandatoryBehaviour(behaviour);
-    } else {
-
-        return false;
-    }
+    } else return false;
 };
 
 module.exports.BusinessBehaviour.prototype.isEqualToBehaviour = function (behaviour) {

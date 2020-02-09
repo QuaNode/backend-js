@@ -15,17 +15,12 @@ var ifCondition = function (operation, conditions) {
 
 var middleware = function (operation, businessController, index, next, middlewares, useConditions) {
 
-    if (middlewares[operation] && index > -1 && index < middlewares[operation].length &&
-        ifCondition(operation, useConditions)) {
+    if (middlewares[operation] && index > -1 && index < middlewares[operation].length && ifCondition(operation, useConditions)) {
 
-        if (parse(middlewares[operation][index])[2] === 'next')
-            middlewares[operation][index](operation, businessController, function () {
+        if (parse(middlewares[operation][index])[2] === 'next') middlewares[operation][index](operation, businessController, function () {
 
-                middleware(operation, businessController, index + 1, next, middlewares, useConditions);
-            }, function () {
-
-                next();
-            });
+            middleware(operation, businessController, index + 1, next, middlewares, useConditions);
+        }, next);
         else {
 
             for (var i = index; i < middlewares[operation].length; i++) {
@@ -34,10 +29,7 @@ var middleware = function (operation, businessController, index, next, middlewar
             }
             next();
         }
-    } else {
-
-        next();
-    }
+    } else next();
 };
 
 var getOperationFunc = function (attribute) {
@@ -70,8 +62,7 @@ var getServiceOperation = function (operationDelegateApp, serviceOperation, dele
         },
         apply: function (parameters, service, callback, append) {
 
-            operationDelegateApp.serviceApply.apply(this, [serviceOperation, delegate, parameters,
-                service, callback, append]);
+            operationDelegateApp.serviceApply.apply(this, [serviceOperation, delegate, parameters, service, callback, append]);
         },
         parameters: getOperationFunc('parameters'),
         service: getOperationFunc('service'),
@@ -97,8 +88,7 @@ var getModelOperation = function (operationDelegateApp, modelOperation, delegate
         },
         apply: function (queryOrObjects, entity, callback, append) {
 
-            operationDelegateApp.modelApply.apply(this, [modelOperation, delegate, queryOrObjects,
-                entity, callback, append]);
+            operationDelegateApp.modelApply.apply(this, [modelOperation, delegate, queryOrObjects, entity, callback, append]);
         },
         objects: getOperationFunc('objects'),
         query: getOperationFunc('query'),
@@ -139,8 +129,7 @@ var getModelMappingOperation = function (operationDelegateApp, businessOperation
         },
         apply: function (identifiers, callback) {
 
-            operationDelegateApp.modelOutputMappingApply.apply(this, [businessOperation, delegate,
-                identifiers, callback]);
+            operationDelegateApp.modelOutputMappingApply.apply(this, [businessOperation, delegate, identifiers, callback]);
         },
         identifiers: getOperationFunc('identifiers'),
         callback: getOperationFunc('callback'),
@@ -183,8 +172,8 @@ var BusinessBehaviourExt = function (options) {
         middleware(serviceOperation, businessController, 0, function () {
 
             if (delegateExisted && ifCondition(serviceOperation, beginConditions))
-                delegates[serviceOperation](serviceOperation, businessController,
-                    getServiceOperation(operationDelegateApp, serviceOperation, delegate));
+                delegates[serviceOperation](serviceOperation, businessController, getServiceOperation(operationDelegateApp,
+                    serviceOperation, delegate));
             else if (delegateExisted) delegate();
         }, middlewares, useConditions);
         return delegateExisted;
@@ -195,8 +184,8 @@ var BusinessBehaviourExt = function (options) {
         middleware(modelOperation, businessController, 0, function () {
 
             if (delegateExisted && ifCondition(modelOperation, beginConditions))
-                delegates[modelOperation](modelOperation, businessController,
-                    getModelOperation(operationDelegateApp, modelOperation, delegate));
+                delegates[modelOperation](modelOperation, businessController, getModelOperation(operationDelegateApp,
+                    modelOperation, delegate));
             else if (delegateExisted) delegate();
         }, middlewares, useConditions);
         return delegateExisted;

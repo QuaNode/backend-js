@@ -124,6 +124,7 @@ backend.behaviour = function (path, config) {
             var isRoute = isRouterMiddleware && typeof options.method === 'string' &&
                 typeof app[options.method.toLowerCase()] === 'function';
             var longPolling = isRoute && Object.keys(types).indexOf(options.type) > 1;
+            var hasPlugin = typeof options.plugin === 'function';
             var prefix = typeof path === 'string' && path.length > 0 ? join(defaultPrefix, path) :
                 defaultPrefix !== '/' ? defaultPrefix : null;
             var behaviour_runner = function (req, res, next, inputObjects, er) {
@@ -152,35 +153,37 @@ backend.behaviour = function (path, config) {
                     priority: options.priority || 0,
                     inputObjects: inputObjects
                 });
-                var get_behaviour_callback = function () {
+                var behaviour_callback = function (behaviourResponse, error) {
 
-                    return function (behaviourResponse, error) {
+                    var request = getRequest(req, res, next, response);
+                    if (!request) {
 
-                        var request = getRequest(req, res, next, response);
-                        if (!request) return setResponse(get_behaviour_callback().bind(null,
-                            behaviourResponse, error), response);
-                        if (typeof error === 'object' || typeof behaviourResponse !== 'object') {
+                        if (longPolling) setResponse(behaviour_callback.bind(null, behaviourResponse,
+                            error), response);
+                        return;
+                    }
+                    if (longPolling) delete response.signature;
+                    if (typeof error === 'object' || typeof behaviourResponse !== 'object') {
 
-                            if (error) error.name = options.name;
-                            if (error) error.version = options.version;
-                            request.next(error || er || new Error('Error while executing ' + options.name +
-                                ' behaviour, version ' + options.version + '!'));
-                        } else {
+                        if (error) error.name = options.name;
+                        if (error) error.version = options.version;
+                        request.next(error || er || new Error('Error while executing ' + options.name +
+                            ' behaviour, version ' + options.version + '!'));
+                    } else {
 
-                            response.response = options.paginate ? behaviourResponse.modelObjects ||
-                                behaviourResponse : behaviourResponse;
-                            if (options.paginate) response.has_more = paginate.hasNextPages(request.req)
-                                (typeof behaviourResponse.pageCount === 'number' ?
-                                    behaviourResponse.pageCount : 1);
-                            if (typeof options.returns !== 'function') {
+                        response.response = options.paginate ? behaviourResponse.modelObjects ||
+                            behaviourResponse : behaviourResponse;
+                        if (options.paginate) response.has_more = paginate.hasNextPages(request.req)
+                            (typeof behaviourResponse.pageCount === 'number' ?
+                                behaviourResponse.pageCount : 1);
+                        if (typeof options.returns !== 'function') {
 
-                                if (!setResponse(options.returns, !isRoute, request, response)) request.next();
-                            } else options.returns(request.req, request.res, function (outputObjects) {
+                            if (!setResponse(options.returns, !isRoute, request, response)) request.next();
+                        } else options.returns(request.req, request.res, function (outputObjects) {
 
-                                respond(request.res, outputObjects);
-                            });
-                        }
-                    };
+                            respond(request.res, outputObjects);
+                        });
+                    }
                 };
                 var cancel = businessController(typeof options.queue === 'function' ?
                     options.queue(options.name, inputObjects) : options.queue).runBehaviour(behaviour,
@@ -193,37 +196,33 @@ backend.behaviour = function (path, config) {
                             };
                             return typeof options.map === 'function' ? options.map(property, superProperty) ||
                                 page[property] : page[property];
-                        } : options.map, get_behaviour_callback());
+                        } : options.map, behaviour_callback);
                 req.on('close', function () {
 
                     if (typeof cancel === 'function' && !longPolling) cancel();
                 });
             };
-            var get_req_handler = function () {
+            var req_handler = function (req, res, next) {
 
-                return function (req, res, next) {
+                if (typeof options.parameters !== 'function') {
 
-                    if (typeof options.parameters !== 'function') {
+                    if (!isRoute || req.complete) getInputObjects(options.parameters,
+                        Object.keys(behaviours).map(function (name) {
 
-                        if (req.complete) getInputObjects(options.parameters,
-                            Object.keys(behaviours).map(function (name) {
+                            var suffix = behaviours[name] && behaviours[name].path;
+                            return typeof prefix === 'string' && req.path.startsWith(prefix) &&
+                                typeof suffix === 'string' ? join(prefix, suffix) : suffix || prefix;
+                        }), req, function (inputObjects) {
 
-                                var suffix = behaviours[name] && behaviours[name].path;
-                                return typeof prefix === 'string' && req.path.startsWith(prefix) &&
-                                    typeof suffix === 'string' ? join(prefix, suffix) : suffix || prefix;
-                            }), req, function (inputObjects) {
+                            behaviour_runner(req, res, next, inputObjects);
+                        });
+                    else req.socket.on('end', req_handler.bind(null, req, res, next));
+                } else options.parameters(req, res, function (inputObjects, er) {
 
-                                behaviour_runner(req, res, next, inputObjects);
-                            });
-                        else req.socket.on('end', get_req_handler().bind(null, req, res, next));
-                    } else options.parameters(req, res, function (inputObjects, er) {
-
-                        if (req.complete) behaviour_runner(req, res, next, inputObjects, er);
-                        else throw new Error('Parameters callback function called before all request data consumed');
-                    });
-                };
+                    if (req.complete) behaviour_runner(req, res, next, inputObjects, er);
+                    else throw new Error('Parameters callback function called before all request data consumed');
+                });
             };
-            var req_handler = get_req_handler();
             if (Array.isArray(options.unless)) {
 
                 req_handler.unless = unless;
@@ -289,9 +288,9 @@ backend.behaviour = function (path, config) {
                         routers[prefix] = router;
                     }
                 }
-                if (typeof options.plugin === 'function')
-                    router[options.method.toLowerCase()](options.path, options.plugin, req_handler);
-                else router[options.method.toLowerCase()](options.path, req_handler);
+                router = router[options.method.toLowerCase()].bind(router);
+                if (hasPlugin) router(options.path, options.plugin, req_handler);
+                else router(options.path, req_handler);
                 behaviours[options.name] = {
 
                     version: options.version,
@@ -300,9 +299,17 @@ backend.behaviour = function (path, config) {
                     parameters: options.parameters,
                     returns: options.returns
                 };
-            } else if (isRouterMiddleware) app.use(typeof prefix === 'string' && prefix.length > 0 ?
-                join(prefix, options.path) : options.path, req_handler);
-            else app.use(req_handler);
+            } else if (isRouterMiddleware) {
+
+                var route = typeof prefix === 'string' && prefix.length > 0 ? join(prefix, options.path) :
+                    options.path;
+                if (hasPlugin) app.use(route, options.plugin, req_handler);
+                else app.use(route, req_handler);
+            } else {
+
+                if (hasPlugin) app.use(options.plugin, req_handler);
+                else app.use(req_handler);
+            }
         }
         return BehaviourConstructor;
     };

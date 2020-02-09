@@ -1,6 +1,11 @@
 /*jslint node: true */
 'use strict';
 
+let debug = require('debug');
+
+debug.enable('backend:BusinessBehaviourCycle');
+debug = debug('backend:BusinessBehaviourCycle');
+
 var BusinessOperation = {
 
     SERVICEOBJECTMAPPING: 'ServiceObjectMapping',
@@ -58,7 +63,7 @@ var endRunningBehaviour = function (currentBehaviour, options) {
 
                 self.runNextBehaviour();
             });
-        else console.log('Behaviour already dequeued, may be misuse of next()');
+        else debug('Behaviour already dequeued, may be misuse of next()');
     };
     if (ignoreBusinessOperation(currentBehaviour, BusinessOperation.ERRORHANDLING, false) ||
         !currentBehaviour.beginBusinessOperation(BusinessOperation.ERRORHANDLING, businessController,
@@ -84,10 +89,7 @@ var continueRunningBehaviour = function (currentBehaviour, options) {
             modelDelegate(currentBehaviour, modelOperation, function () {
 
                 continueRunningBehaviour.apply(self, [currentBehaviour, options]);
-            }))) {
-
-            continueRunningBehaviour.apply(self, [currentBehaviour, options]);
-        }
+            }))) continueRunningBehaviour.apply(self, [currentBehaviour, options]);
     } else {
 
         var businessCallback = function (businessObjects) {
@@ -120,10 +122,7 @@ var beginRunnigBehaviour = function (currentBehaviour, options) {
                 function () {
 
                     beginRunnigBehaviour.apply(self, [currentBehaviour, options]);
-                }))) {
-
-            beginRunnigBehaviour.apply(self, [currentBehaviour, options]);
-        }
+                }))) beginRunnigBehaviour.apply(self, [currentBehaviour, options]);
     };
     if (serviceOperation) {
 
@@ -133,10 +132,7 @@ var beginRunnigBehaviour = function (currentBehaviour, options) {
 
             businessCallback();
         }
-    } else {
-
-        continueRunningBehaviour.apply(self, [currentBehaviour, options]);
-    }
+    } else continueRunningBehaviour.apply(self, [currentBehaviour, options]);
 };
 
 var BusinessBehaviourCycle = function (options) {

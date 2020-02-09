@@ -46,7 +46,8 @@ module.exports = {
                 inputObjects[name] = utils.getCorrectValue(req.get(key));
                 break;
             case 'body':
-                inputObjects[name] = utils.getCorrectValue(utils.getValueAtPath(key, req.body));
+                if (req.complete) inputObjects[name] =
+                    utils.getCorrectValue(utils.getValueAtPath(key, req.body));
                 break;
             case 'query':
                 inputObjects[name] = utils.getCorrectValue(req.query[key]);
@@ -92,7 +93,7 @@ module.exports = {
 
         if (typeof parameters !== 'object') {
 
-            callback(req.body);
+            callback(req.complete ? req.body : {});
             return;
         }
         var keys = Object.keys(parameters);
@@ -262,7 +263,7 @@ module.exports = {
             clearTimeout(request.timeout);
             delete request.timeout;
         }
-        delete requests[response.signature];
+        if (response.signature) delete requests[response.signature];
         return !request.req.aborted && request;
     },
     allowCrossOrigins: function (options, res, origins) {

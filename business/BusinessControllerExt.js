@@ -122,14 +122,14 @@ var BusinessControllerExt = function (options) {
     };
     self.modelDelegate = function (currentBehaviour, modelOperation, callback) {
 
-        return modelOperationDelegate.manipulate(modelOperation, getManipulateCallback(currentBehaviour,
-            modelOperation, operationCallback, callback));
+        return modelOperationDelegate.manipulate(modelOperation, getManipulateCallback(currentBehaviour, modelOperation,
+            operationCallback, callback));
     };
     self.serviceMappingDelegate = function (currentBehaviour, callback) {
 
-        return businessOperationDelegate.mapFromObjects(currentBehaviour.inputObjects,
-            currentBehaviour.getProperty, currentBehaviour.getType() === BehaviourTypes.ONLINEACTION,
-            getMapFromCallback(currentBehaviour, operationCallback, callback));
+        return businessOperationDelegate.mapFromObjects(currentBehaviour.inputObjects, currentBehaviour.getProperty,
+            currentBehaviour.getType() === BehaviourTypes.ONLINEACTION, getMapFromCallback(currentBehaviour,
+                operationCallback, callback));
     };
     self.modelMappingDelegate = function (currentBehaviour, callback) {
 
@@ -149,12 +149,12 @@ var BusinessControllerExt = function (options) {
 
             case OperationType.MAPTO:
                 return businessOperationDelegate.mapToObjects(currentBehaviour.state.modelObjects ||
-                    currentBehaviour.state.serviceObjects, currentBehaviour.getProperty,
-                    getMappingCallback(operation, operationCallback, callback));
+                    currentBehaviour.state.serviceObjects, currentBehaviour.getProperty, getMappingCallback(operation,
+                        operationCallback, callback));
             case OperationType.MAPBETWEEN:
                 return businessOperationDelegate.mapBetweenObjects(currentBehaviour.state.modelObjects ||
-                    currentBehaviour.state.serviceObjects, currentBehaviour.inputObjects,
-                    currentBehaviour.getProperty, getMappingCallback(operation, operationCallback, callback));
+                    currentBehaviour.state.serviceObjects, currentBehaviour.inputObjects, currentBehaviour.getProperty,
+                    getMappingCallback(operation, operationCallback, callback));
         }
     };
 };

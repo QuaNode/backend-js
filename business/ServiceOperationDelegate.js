@@ -71,8 +71,8 @@ var getObjectsByIDFunc = function (modelController, options) {
             comparisonOperator: options.ComparisonOperators && options.ComparisonOperators.EQUAL,
             fieldValue: value
         })];
-        if (modelController && typeof modelController.getObjects === 'function')
-            modelController.getObjects(queryByID, modelEntity, function (mObjects, error) {
+        if (modelController && typeof modelController.getObjects === 'function') modelController.getObjects(queryByID, modelEntity,
+            function (mObjects, error) {
 
                 callback(Array.isArray(mObjects) ? mObjects : mObjects && mObjects.modelObjects, error);
             });
@@ -83,15 +83,14 @@ var ServiceOperationDelegate = function (options) {
 
     var self = this;
     var modelController = options.modelController;
-    var serviceController = options.serviceController ||
-        new ServiceController(options.serviceControllerOptions || {
+    var serviceController = options.serviceController || new ServiceController(options.serviceControllerOptions || {
 
-            createModelEntity: options.ModelEntity && options.ModelEntity.createModelEntity,
-            getObjectsByID: getObjectsByIDFunc(modelController, options),
-            newObjects: modelController && modelController.newObjects,
-            save: modelController && modelController.save,
-            objectAttributesMethod: 'getObjectAttributes'
-        });
+        createModelEntity: options.ModelEntity && options.ModelEntity.createModelEntity,
+        getObjectsByID: getObjectsByIDFunc(modelController, options),
+        newObjects: modelController && modelController.newObjects,
+        save: modelController && modelController.save,
+        objectAttributesMethod: 'getObjectAttributes'
+    });
     var getServiceMethods = options.getServiceMethods || function (index) {
 
         var methods = ['request', 'authenticate'];
