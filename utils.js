@@ -258,13 +258,13 @@ module.exports = {
                 res: res,
                 next: next
             };
-        if (request.timeout) {
+        if (request && request.timeout) {
 
             clearTimeout(request.timeout);
             delete request.timeout;
         }
         if (response.signature) delete requests[response.signature];
-        return !request.req.aborted && request;
+        return request && !request.req.aborted && request;
     },
     allowCrossOrigins: function (options, res, origins) {
 
