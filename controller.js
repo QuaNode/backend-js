@@ -39,7 +39,7 @@ var businessController = function (key, memory) {
     if (!key) {
 
         anonymousBusinessBehaviourCount++;
-        var interval = ((os.freemem() / 1024 / 1025) /
+        var interval = ((os.freemem() / 1024 / 1024) /
             (typeof memory === 'number' && memory ? memory : MEMORY)) - 1;
         if (anonymousBusinessBehaviourCount > interval) {
 

@@ -47,8 +47,8 @@ var getRequestCallback = function (currentBehaviour, serviceOperation, operation
         if (serviceObjects) {
 
             if (!currentBehaviour.state.serviceObjects) currentBehaviour.state.serviceObjects = [];
-            if (Array.isArray(serviceObjects)) Array.prototype.push.apply(currentBehaviour.state.serviceObjects,
-                serviceObjects);
+            if (Array.isArray(serviceObjects))
+                Array.prototype.push.apply(currentBehaviour.state.serviceObjects, serviceObjects);
             else currentBehaviour.state.serviceObjects.push(serviceObjects);
         }
         if (error) currentBehaviour.state.error = error;
@@ -70,8 +70,8 @@ var getManipulateCallback = function (currentBehaviour, modelOperation, operatio
         if (modelObjects) {
 
             if (!currentBehaviour.state.modelObjects) currentBehaviour.state.modelObjects = [];
-            if (Array.isArray(modelObjects)) Array.prototype.push.apply(currentBehaviour.state.modelObjects,
-                modelObjects);
+            if (Array.isArray(modelObjects))
+                Array.prototype.push.apply(currentBehaviour.state.modelObjects, modelObjects);
             else currentBehaviour.state.modelObjects.push(modelObjects);
         }
         if (error) currentBehaviour.state.error = error;
@@ -99,7 +99,7 @@ var getMapFromCallback = function (currentBehaviour, operationCallback, callback
     };
 };
 
-var getMappingCallback = function (operation, operationCallback, callback) {
+var getMappingCallback = function (currentBehaviour, operation, operationCallback, callback) {
 
 
     return function (businessObjects) {
@@ -131,14 +131,14 @@ var BusinessControllerExt = function (options) {
     };
     self.modelDelegate = function (currentBehaviour, modelOperation, callback) {
 
-        return modelOperationDelegate.manipulate(modelOperation, getManipulateCallback(currentBehaviour, modelOperation,
-            operationCallback, callback));
+        return modelOperationDelegate.manipulate(modelOperation, getManipulateCallback(currentBehaviour,
+            modelOperation, operationCallback, callback));
     };
     self.serviceMappingDelegate = function (currentBehaviour, callback) {
 
-        return businessOperationDelegate.mapFromObjects(currentBehaviour.inputObjects, currentBehaviour.getProperty,
-            currentBehaviour.getType() === BehaviourTypes.ONLINEACTION, getMapFromCallback(currentBehaviour,
-                operationCallback, callback));
+        return businessOperationDelegate.mapFromObjects(currentBehaviour.inputObjects,
+            currentBehaviour.getProperty, currentBehaviour.getType() === BehaviourTypes.ONLINEACTION,
+            getMapFromCallback(currentBehaviour, operationCallback, callback));
     };
     self.modelMappingDelegate = function (currentBehaviour, callback) {
 
@@ -158,12 +158,13 @@ var BusinessControllerExt = function (options) {
 
             case OperationType.MAPTO:
                 return businessOperationDelegate.mapToObjects(currentBehaviour.state.modelObjects ||
-                    currentBehaviour.state.serviceObjects, currentBehaviour.getProperty, getMappingCallback(operation,
-                        operationCallback, callback));
+                    currentBehaviour.state.serviceObjects, currentBehaviour.getProperty,
+                    getMappingCallback(currentBehaviour, operation, operationCallback, callback));
             case OperationType.MAPBETWEEN:
                 return businessOperationDelegate.mapBetweenObjects(currentBehaviour.state.modelObjects ||
-                    currentBehaviour.state.serviceObjects, currentBehaviour.inputObjects, currentBehaviour.getProperty,
-                    getMappingCallback(operation, operationCallback, callback));
+                    currentBehaviour.state.serviceObjects, currentBehaviour.inputObjects,
+                    currentBehaviour.getProperty, getMappingCallback(currentBehaviour, operation,
+                        operationCallback, callback));
         }
     };
 };
