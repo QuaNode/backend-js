@@ -23,6 +23,8 @@ var getFetchCallback = function (currentBehaviour, operationCallback, callback) 
         if (error) currentBehaviour.state.error = error;
         if (typeof operationCallback === 'function') operationCallback({
 
+            behaviour: currentBehaviour.name,
+            inputObjects: currentBehaviour.inputObjects,
             resource: resource,
             error: error
         }, OperationType.FETCH);
@@ -52,6 +54,8 @@ var getRequestCallback = function (currentBehaviour, serviceOperation, operation
         if (error) currentBehaviour.state.error = error;
         if (typeof operationCallback === 'function') operationCallback({
 
+            behaviour: currentBehaviour.name,
+            inputObjects: currentBehaviour.inputObjects,
             serviceObjects: serviceObjects,
             error: error
         }, OperationType.REQUEST, serviceOperation);
@@ -73,6 +77,8 @@ var getManipulateCallback = function (currentBehaviour, modelOperation, operatio
         if (error) currentBehaviour.state.error = error;
         if (typeof operationCallback === 'function') operationCallback({
 
+            behaviour: currentBehaviour.name,
+            inputObjects: currentBehaviour.inputObjects,
             modelObjects: modelObjects,
             error: error
         }, OperationType.MANIPULATE, modelOperation);
@@ -86,6 +92,7 @@ var getMapFromCallback = function (currentBehaviour, operationCallback, callback
 
         if (typeof operationCallback === 'function') operationCallback({
 
+            behaviour: currentBehaviour.name,
             inputObjects: currentBehaviour.inputObjects
         }, OperationType.MAPFROM, BusinessOperation.SERVICEOBJECTMAPPING);
         callback();
@@ -99,6 +106,8 @@ var getMappingCallback = function (operation, operationCallback, callback) {
 
         if (typeof operationCallback === 'function') operationCallback({
 
+            behaviour: currentBehaviour.name,
+            inputObjects: currentBehaviour.inputObjects,
             businessObjects: businessObjects
         }, operation, BusinessOperation.MODELOBJECTMAPPING);
         callback(businessObjects);

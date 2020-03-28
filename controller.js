@@ -2,6 +2,7 @@
 /*jshint esversion: 6 */
 'use strict';
 
+let os = require('os');
 let fs = require('fs');
 let bunyan = require('bunyan');
 let BusinessController = require('./business/BusinessController.js').BusinessController;
@@ -11,7 +12,9 @@ let ModelEntity = require('./model.js').ModelEntity;
 let getModelController = require('./model.js').getModelController;
 
 var businessControllerSharedInstances = {};
+
 if (!fs.existsSync('./logs')) fs.mkdirSync('./logs');
+
 var log = bunyan.createLogger({
 
     name: 'backend',
@@ -27,9 +30,29 @@ var log = bunyan.createLogger({
     serializers: bunyan.stdSerializers
 });
 
-var businessController = function (key) {
+var MEMORY = 100;
+var anonymousBusinessBehaviourCount = 0;
+var timeout;
 
-    var businessControllerSharedInstance = typeof key === 'string' && businessControllerSharedInstances[key];
+var businessController = function (key, memory) {
+
+    if (!key) {
+
+        anonymousBusinessBehaviourCount++;
+        var interval = ((os.freemem() / 1024 / 1025) /
+            (typeof memory === 'number' && memory ? memory : MEMORY)) - 1;
+        if (anonymousBusinessBehaviourCount > interval) {
+
+            key = 'AnonymousBusinessBehaviourQueue';
+            if (timeout) clearTimeout(timeout);
+            timeout = setTimeout(function () {
+
+                anonymousBusinessBehaviourCount = 0;
+            }, Math.abs(interval) * 1000);
+        }
+    }
+    var businessControllerSharedInstance = typeof key === 'string' &&
+        businessControllerSharedInstances[key];
     if (!businessControllerSharedInstance) {
 
         businessControllerSharedInstance = new BusinessController({
@@ -43,19 +66,38 @@ var businessController = function (key) {
 
                 if (data && data.error) {
 
-                    log.trace(data.error, 'Queue: ' + (key || 'General'));
+                    log.trace({
+
+                        behaviour: data.behaviour,
+                        err: {
+
+                            message: data.error.message,
+                            name: data.error.name,
+                            stack: data.error.stack.split('\n    ')
+                        }
+                    }, 'Queue -> ' + (key || 'Anonymous'));
                     try {
 
-                        throw new Error('When: ' + operationType + ' at: ' + operationSubtype);
+                        throw new Error('When ' + operationType + ' @ ' + operationSubtype);
                     } catch (e) {
 
-                        log.error(e, 'Queue: ' + (key || 'General'));
-                        // logController.log(e, JSON.parse(window.localStorage.getItem('currentUser')));
+                        log.error({
+
+                            behaviour: data.behaviour,
+                            err: {
+
+                                message: e.message,
+                                name: e.name,
+                                stack: e.stack.split('\n    ')
+                            }
+                        }, 'Queue -> ' + (key || 'Anonymous'));
+                        // logCo n troller . log ( e, JSON.pa r se(window.localStorag e.g etI tem('currentUser')));                
                     }
                 }
             }
         });
-        if (typeof key === 'string') businessControllerSharedInstances[key] = businessControllerSharedInstance;
+        if (typeof key === 'string')
+            businessControllerSharedInstances[key] = businessControllerSharedInstance;
     }
     return businessControllerSharedInstance;
 };

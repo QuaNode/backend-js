@@ -7,6 +7,7 @@ let bodyParser = require('body-parser');
 let logger = require('morgan');
 let Route = require('route-parser');
 let HttpStatus = require('http-status-codes');
+let rateLimit = require("express-rate-limit");
 let debug = require('debug');
 let ModelEntity = require('./model.js').ModelEntity;
 let QueryExpression = require('./model.js').QueryExpression;
@@ -22,6 +23,23 @@ let service = require('./service.js').service;
 let allowCrossOrigins = require('./utils.js').allowCrossOrigins;
 let respond = require('./utils.js').respond;
 let backend = require('./behaviour.js');
+
+var TIMEOUT = 50;
+var limiter = rateLimit({
+
+    windowMs: 200,
+    max: 1,
+    headers: false,
+    handler: function (req, res, next) {
+
+        var timeout = req.rateLimit.limit + (req.rateLimit.resetTime.getTime() -
+            new Date().getTime()) * (req.rateLimit.current - req.rateLimit.limit);
+        if (timeout < (1000 * TIMEOUT)) setTimeout(function () {
+
+            if (!req.aborted) next();
+        }, timeout); else res.status(this.statusCode).send(this.message);
+    }
+});
 
 debug.enable('backend:*');
 debug = debug('backend:index');
@@ -58,6 +76,7 @@ module.exports = {
 
         if (started) return server;
         app.use(logger('dev'));
+        app.use(limiter);
         app.all('/*', function (req, res, next) {
 
             var keys = Object.keys(meta);

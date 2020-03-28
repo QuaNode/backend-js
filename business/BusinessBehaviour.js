@@ -32,6 +32,7 @@ module.exports.BusinessBehaviour = define(function (init) {
         var businessBehaviourExt = new BusinessBehaviourExt(languageParameters);
         var type = null;
         self.priority = options.priority;
+        self.name = options.name;
         var parameters = options.inputObjects;
         Object.defineProperty(self, 'inputObjects', {
 

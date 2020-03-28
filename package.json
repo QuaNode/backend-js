@@ -1,6 +1,6 @@
 {
     "name": "backend-js",
-    "version": "0.9.9-73",
+    "version": "0.9.9-74",
     "description": "A node module that implements the behaviour-driven design and map-queue algorithm",
     "main": "index.js",
     "scripts": {
@@ -16,6 +16,7 @@
         "define-js": "latest",
         "express": "latest",
         "express-paginate": "latest",
+        "express-rate-limit": "latest",
         "express-unless": "latest",
         "http-status-codes": "https://github.com/QuaNode/node-http-status",
         "morgan": "latest",

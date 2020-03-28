@@ -123,7 +123,7 @@ backend.behaviour = function (path, config) {
             var isRouterMiddleware = typeof options.path === 'string' && options.path.length > 0;
             var isRoute = isRouterMiddleware && typeof options.method === 'string' &&
                 typeof app[options.method.toLowerCase()] === 'function';
-            var longPolling = isRoute && Object.keys(types).indexOf(options.type) > 1;
+            var longPolling = isRoute && (options.type in types);
             var hasPlugin = typeof options.plugin === 'function';
             var prefix = typeof path === 'string' && path.length > 0 ? join(defaultPrefix, path) :
                 defaultPrefix !== '/' ? defaultPrefix : null;
@@ -149,6 +149,7 @@ backend.behaviour = function (path, config) {
                 }
                 var behaviour = new BehaviourConstructor({
 
+                    name: options.name,
                     type: types[options.type],
                     priority: options.priority || 0,
                     inputObjects: inputObjects
@@ -186,8 +187,9 @@ backend.behaviour = function (path, config) {
                     }
                 };
                 var cancel = businessController(typeof options.queue === 'function' ?
-                    options.queue(options.name, inputObjects) : options.queue).runBehaviour(behaviour,
-                        options.paginate ? function (property, superProperty) {
+                    options.queue(options.name, inputObjects) : options.queue,
+                    options.memory).runBehaviour(behaviour, options.paginate ?
+                        function (property, superProperty) {
 
                             var page = {
 

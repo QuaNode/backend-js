@@ -162,7 +162,7 @@ module.exports.service = function (baseURI, serve, authenticate, authenticated) 
                         id: id,
                         storeID: storeId,
                         modelAttributes: modelAttributes,
-                        serviceAttributes: (typeof map === 'object' && Object.keys(map)) || serviceAttrs,
+                        serviceAttributes: (typeof map === 'object' && Object.keys(map)) || serviceAttrs
                     });
                     for (var i = 0; metadata.attributes && i < modelAttributes.length; i++) {
 
