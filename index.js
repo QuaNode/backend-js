@@ -36,7 +36,7 @@ var limiter = rateLimit({
             new Date().getTime()) * (req.rateLimit.current - req.rateLimit.limit);
         if (timeout < (1000 * TIMEOUT)) setTimeout(function () {
 
-            if (!req.aborted) next();
+            if (!req.aborted && !res.headersSent) next();
         }, timeout); else res.status(this.statusCode).send(this.message);
     }
 });

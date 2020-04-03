@@ -237,7 +237,7 @@ module.exports = {
                         var index = requests[response.signature].indexOf(request);
                         requests[response.signature].splice(index, 1);
                     }
-                    if (!req.aborted) utils.respond(res, response);
+                    if (!req.aborted && !res.headersSent) utils.respond(res, response);
                 }, TIMEOUT * 1000)
             };
             requests[response.signature].push(request);
@@ -264,7 +264,7 @@ module.exports = {
             delete request.timeout;
         }
         if (response.signature) delete requests[response.signature];
-        return request && !request.req.aborted && request;
+        return request && !request.req.aborted && !request.res.headersSent && request;
     },
     allowCrossOrigins: function (options, res, origins) {
 

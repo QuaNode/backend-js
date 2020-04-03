@@ -123,7 +123,7 @@ backend.behaviour = function (path, config) {
             var isRouterMiddleware = typeof options.path === 'string' && options.path.length > 0;
             var isRoute = isRouterMiddleware && typeof options.method === 'string' &&
                 typeof app[options.method.toLowerCase()] === 'function';
-            var longPolling = isRoute && (options.type in types);
+            var longPolling = isRoute && Object.keys(types).indexOf(options.type) > 1;
             var hasPlugin = typeof options.plugin === 'function';
             var prefix = typeof path === 'string' && path.length > 0 ? join(defaultPrefix, path) :
                 defaultPrefix !== '/' ? defaultPrefix : null;
