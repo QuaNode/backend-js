@@ -266,7 +266,7 @@ module.exports = {
         if (response.signature) delete requests[response.signature];
         return request && !request.req.aborted && !request.res.headersSent && request;
     },
-    allowCrossOrigins: function (options, res, origins) {
+    allowCrossOrigins: function (options, req, res, origins) {
 
         res.header('Access-Control-Allow-Origin', origins || options.origins || '*');
         if (typeof options.method === 'string' && options.method.length > 0) {
@@ -275,25 +275,20 @@ module.exports = {
         }
         if (typeof options.parameters === 'object') {
 
-            res.header('Access-Control-Allow-Headers', 'Content-type,Accept,Behaviour-Signature' +
-                Object.keys(options.parameters).map(function (key) {
+            res.header('Access-Control-Allow-Headers', Object.keys(req.headers)
+                .concat(['Behaviour-Signature']).concat(Object.keys(options.parameters)
+                    .filter(function (key) {
 
-                    return options.parameters[key].type === 'header' ? ',' +
-                        options.parameters[key].key : '';
-                }).reduce(function (accumulator, key) {
-
-                    return accumulator + key;
-                }, ''));
+                        return options.parameters[key].type === 'header';
+                    })).join(','));
         }
         if (typeof options.returns === 'object') {
 
-            res.header('Access-Control-Expose-Headers', Object.keys(options.returns).map(function (key) {
+            res.header('Access-Control-Expose-Headers', Object.keys(options.returns)
+                .filter(function (key) {
 
-                return options.returns[key].type === 'header' ? key : '';
-            }).reduce(function (accumulator, key) {
-
-                return accumulator + (accumulator.length > 0 ? ',' : '') + key;
-            }, ''));
+                    return options.returns[key].type === 'header';
+                }).join(','));
         }
     }
 };

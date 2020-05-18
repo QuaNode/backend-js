@@ -93,7 +93,7 @@ module.exports = {
                 if (origins && route && route.match(req.path) && (method === req.method.toLowerCase() ||
                     req.method === 'OPTIONS')) {
 
-                    allowCrossOrigins(meta[keys[i]], res, origins);
+                    allowCrossOrigins(meta[keys[i]], req, res, origins);
                     break;
                 }
             }
