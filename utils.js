@@ -276,11 +276,21 @@ module.exports = {
         if (typeof options.parameters === 'object') {
 
             res.header('Access-Control-Allow-Headers', Object.keys(req.headers)
-                .concat(['Behaviour-Signature']).concat(Object.keys(options.parameters)
-                    .filter(function (key) {
+                .concat(['Origin,X-Requested-With,Content-Type,Accept,Behaviour-Signature'])
+                .concat(Object.keys(options.parameters).filter(function (key) {
 
-                        return options.parameters[key].type === 'header';
-                    })).join(','));
+                    return options.parameters[key].type === 'header';
+                }).map(function (key) {
+
+                    return options.parameters[key].key;
+                })).map(function (header) {
+
+                    return header.toLowerCase();
+                }).reduce(function (headers, header) {
+
+                    if (headers.indexOf(header) === -1) headers.push(header);
+                    return headers;
+                }, []).join(','));
         }
         if (typeof options.returns === 'object') {
 
@@ -288,6 +298,9 @@ module.exports = {
                 .filter(function (key) {
 
                     return options.returns[key].type === 'header';
+                }).map(function (header) {
+
+                    return header.toLowerCase();
                 }).join(','));
         }
     }
