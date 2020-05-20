@@ -8,14 +8,14 @@ var watch = function (operation, data, index, continṵe, watchers) {
 
     if (watchers[operation] && index > -1 && index < watchers[operation].length) {
 
-        if (parse(watchers[operation][index])[1] === 'continṵe') watchers[operation][index](data, function () {
+        if (parse(watchers[operation][index])[1] === 'continṵe') watchers[operation][index](data,
+            function () {
 
-            watch(operation, data, index + 1, continṵe, watchers);
-        }, function () {
+                watch(operation, data, index + 1, continṵe, watchers);
+            }, function () {
 
-            continṵe();
-        });
-        else {
+                continṵe();
+            }); else {
 
             for (var i = index; i < watchers[operation].length; i++) {
 
@@ -132,19 +132,20 @@ var OperationDelegateApp = function (options) {
 
                     return queryOrObjects || that.data.query;
                 },
-            getObjectAggregate: typeof that.data.aggregate === 'function' ? that.data.aggregate : function () {
+            getObjectAggregate: typeof that.data.aggregate === 'function' ? that.data.aggregate :
+                function () {
 
-                return that.data.aggregate;
-            },
-            getObjectFilter: typeof that.data.filter === 'function' ? that.data.filter : function () {
+                    return that.data.aggregate;
+                }, getObjectFilter: typeof that.data.filter === 'function' ? that.data.filter :
+                    function () {
 
-                return that.data.filter;
-            }
+                        return that.data.filter;
+                    }
         };
         that.data.entity = entity || that.data.entity;
         that.data.callback = callback || that.data.callback;
-        that.data.append = typeof queryOrObjects === 'boolean' ? queryOrObjects : ((typeof append === 'boolean' &&
-            append) || that.data.append);
+        that.data.append = typeof queryOrObjects === 'boolean' ? queryOrObjects :
+            ((typeof append === 'boolean' && append) || that.data.append);
         watch(modelOperation, that.data, 0, getModelContinue.apply(that, [delegate]), watchers);
     };
     self.serviceInputMappingApply = function (businessOperation, delegate, callback) {

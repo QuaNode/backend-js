@@ -10,7 +10,8 @@ var getCancelFunc = function (behaviour, cancelExecutingBehaviour, behaviourQueu
 
             if (behaviour.hasMandatoryBehaviour(bhv)) {
 
-                getCancelFunc.apply(self, [bhv, cancelExecutingBehaviour, behaviourQueue, executingBehaviourQueue])();
+                getCancelFunc.apply(self, [bhv, cancelExecutingBehaviour, behaviourQueue,
+                    executingBehaviourQueue])();
             }
         });
         if (executingBehaviourQueue.indexOf(behaviour) > -1) {
@@ -72,7 +73,8 @@ var BusinessBehaviourQueue = function (setComplete, setError) {
 
         for (var i = 0; i < behaviourQueue.length; i++) {
 
-            getCancelFunc.apply(self, [behaviourQueue[i], cancelExecutingBehaviour, behaviourQueue, executingBehaviourQueue])();
+            getCancelFunc.apply(self, [behaviourQueue[i], cancelExecutingBehaviour, behaviourQueue,
+                executingBehaviourQueue])();
         }
     };
     self.isEnqueued = function (behaviour) {
@@ -98,14 +100,16 @@ var BusinessBehaviourQueue = function (setComplete, setError) {
         for (var i = behaviourQueue.length - 1; true; i--) {
 
             var currentBehaviour = i < 0 ? null : behaviourQueue[i];
-            if (i < 0 || currentBehaviour.hasMandatoryBehaviour(behaviour) || currentBehaviour.priority < behaviour.priority) {
+            if (i < 0 || currentBehaviour.hasMandatoryBehaviour(behaviour) ||
+                currentBehaviour.priority < behaviour.priority) {
 
                 behaviourQueue.splice(i + 1, 0, behaviour);
                 break;
             }
         }
         if (behaviourQueue.indexOf(behaviour) === behaviourQueue.length - 1) next();
-        return getCancelFunc.apply(self, [behaviour, cancelExecutingBehaviour, behaviourQueue, executingBehaviourQueue]);
+        return getCancelFunc.apply(self, [behaviour, cancelExecutingBehaviour, behaviourQueue,
+            executingBehaviourQueue]);
     };
     self.dequeue = function (currentBehaviour, ignoreSetComplete, error) {
 
@@ -116,12 +120,14 @@ var BusinessBehaviourQueue = function (setComplete, setError) {
             var completionDelegate = function (isSuccess, getDependentBehaviours) {
 
                 var success = typeof isSuccess === 'function' && isSuccess();
-                var dependentBehaviours = (typeof getDependentBehaviours === 'function' && getDependentBehaviours()) || [];
+                var dependentBehaviours = (typeof getDependentBehaviours === 'function' &&
+                    getDependentBehaviours()) || [];
                 if (!success) {
 
                     dependentBehaviours.forEach(function (bhv) {
 
-                        if (executingBehaviourQueue.indexOf(bhv) === -1 && behaviourQueue.indexOf(bhv) > -1) {
+                        if (executingBehaviourQueue.indexOf(bhv) === -1 &&
+                            behaviourQueue.indexOf(bhv) > -1) {
 
                             self.dequeue(bhv, false, 'failed');
                         }

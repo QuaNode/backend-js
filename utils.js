@@ -268,40 +268,44 @@ module.exports = {
     },
     allowCrossOrigins: function (options, req, res, origins) {
 
-        res.header('Access-Control-Allow-Origin', origins || options.origins || '*');
-        if (typeof options.method === 'string' && options.method.length > 0) {
+        var origin = (origins || options.origins || '').indexOf('*' || req.headers.origin) > -1 ?
+            req.headers.origin || '*' : 'null';
+        res.header('Access-Control-Allow-Origin', origin);
+        if (origin === '*' || origin === req.headers.origin) {
 
-            res.header('Access-Control-Allow-Methods', options.method.toUpperCase() + ',OPTIONS');
-        }
-        if (typeof options.parameters === 'object') {
+            if (origin === req.headers.origin) res.header('Vary', 'Accept-Encoding,Origin,Accept');
+            var method = ['OPTIONS'].concat(typeof options.method === 'string' &&
+                options.method.length > 0 ? [options.method.toUpperCase()] : []).join(',');
+            if (method) res.header('Access-Control-Allow-Methods', method);
+            var headers = ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Behaviour-Signature']
+                .concat(Object.keys(req.headers).map(function (header) {
 
-            res.header('Access-Control-Allow-Headers', Object.keys(req.headers)
-                .concat(['Origin,X-Requested-With,Content-Type,Accept,Behaviour-Signature'])
-                .concat(Object.keys(options.parameters).filter(function (key) {
+                    return req.rawHeaders.find(function (rawHeader) {
 
-                    return options.parameters[key].type === 'header';
-                }).map(function (key) {
+                        return rawHeader.toLowerCase() === header.toLowerCase();
+                    });
+                })).concat(Object.keys(typeof options.parameters === 'object' ?
+                    options.parameters : {}).filter(function (key) {
 
-                    return options.parameters[key].key;
-                })).map(function (header) {
+                        return options.parameters[key].type === 'header';
+                    }).map(function (key) {
 
-                    return header.toLowerCase();
-                }).reduce(function (headers, header) {
+                        return options.parameters[key].key;
+                    })).reduce(function (headers, header) {
 
-                    if (headers.indexOf(header) === -1) headers.push(header);
-                    return headers;
-                }, []).join(','));
-        }
-        if (typeof options.returns === 'object') {
+                        if (headers.indexOf(header) === -1) headers.push(header);
+                        return headers;
+                    }, []).join(',');
+            if (headers) res.header('Access-Control-Allow-Headers', headers);
+            if (typeof options.returns === 'object') {
 
-            res.header('Access-Control-Expose-Headers', Object.keys(options.returns)
-                .filter(function (key) {
+                var returns = Object.keys(options.returns);
+                if (returns.length > 0) res.header('Access-Control-Expose-Headers',
+                    returns.filter(function (key) {
 
-                    return options.returns[key].type === 'header';
-                }).map(function (header) {
-
-                    return header.toLowerCase();
-                }).join(','));
+                        return options.returns[key].type === 'header';
+                    }).join(','));
+            }
         }
     }
 };

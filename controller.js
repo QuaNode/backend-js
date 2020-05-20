@@ -30,29 +30,41 @@ var log = bunyan.createLogger({
     serializers: bunyan.stdSerializers
 });
 
-var MEMORY = 100;
-var anonymousBusinessBehaviourCount = 0;
-var timeout;
+var FREEMEMORY = os.freemem() / 1024 / 1024;
+var queues = {};
 
-var businessController = function (key, memory) {
+var businessController = function (queue, memory) {
 
-    if (!key) {
+    var theQueue = queue;
+    var freeMemory = os.freemem() / 1024 / 1024;
+    var theMemory = typeof memory === 'number' && memory > 0 ? memory : FREEMEMORY - freeMemory;
+    if (!queues[queue || '']) queues[queue || ''] = {
 
-        anonymousBusinessBehaviourCount++;
-        var interval = ((os.freemem() / 1024 / 1024) /
-            (typeof memory === 'number' && memory ? memory : MEMORY)) - 1;
-        if (anonymousBusinessBehaviourCount > interval) {
+        count: 0,
+        spare: {
 
-            key = 'AnonymousBusinessBehaviourQueue';
-            if (timeout) clearTimeout(timeout);
-            timeout = setTimeout(function () {
-
-                anonymousBusinessBehaviourCount = 0;
-            }, Math.abs(interval) * 1000);
+            count: 0,
+            key: (queue || '') + new Date().getTime()
         }
-    }
-    var businessControllerSharedInstance = typeof key === 'string' &&
-        businessControllerSharedInstances[key];
+    };
+    var count = (freeMemory / theMemory) - 1;
+    if (queues[queue || ''].count > count && count > 0) {
+
+        if (queues[queue || ''].spare.count > count) {
+
+            queues[queue || ''].spare.count = 0;
+            queues[queue || ''].spare.key = (queue || '') + new Date().getTime();
+        }
+        theQueue = queues[queue || ''].spare.key;
+        queues[queue || ''].spare.count++;
+        if (queues[queue || ''].timeout) clearTimeout(queues[queue || ''].timeout);
+        queues[queue || ''].timeout = setTimeout(function () {
+
+            queues[queue || ''].count = 0;
+        }, Math.abs(count) * 1000);
+    } else queues[queue || ''].count++;
+    var businessControllerSharedInstance = typeof theQueue === 'string' &&
+        businessControllerSharedInstances[theQueue];
     if (!businessControllerSharedInstance) {
 
         businessControllerSharedInstance = new BusinessController({
@@ -75,7 +87,7 @@ var businessController = function (key, memory) {
                             name: data.error.name,
                             stack: data.error.stack.split('\n    ')
                         }
-                    }, 'Queue -> ' + (key || 'Anonymous'));
+                    }, 'Queue -> ' + (theQueue || 'Anonymous'));
                     try {
 
                         throw new Error('When ' + operationType + ' @ ' + operationSubtype);
@@ -90,14 +102,14 @@ var businessController = function (key, memory) {
                                 name: e.name,
                                 stack: e.stack.split('\n    ')
                             }
-                        }, 'Queue -> ' + (key || 'Anonymous'));
-                        // logCo n troller . log ( e, JSON.pa r se(window.localStorag e.g etI tem('currentUser')));                
+                        }, 'Queue -> ' + (theQueue || 'Anonymous'));
+                        // logController.log(e, JSON.parse(window.localStorage.getItem('currentUser')));                
                     }
                 }
             }
         });
-        if (typeof key === 'string')
-            businessControllerSharedInstances[key] = businessControllerSharedInstance;
+        if (typeof theQueue === 'string')
+            businessControllerSharedInstances[theQueue] = businessControllerSharedInstance;
     }
     return businessControllerSharedInstance;
 };

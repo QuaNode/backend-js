@@ -58,7 +58,8 @@ var ModelOperationDelegate = function (options) {
     self.modelController = modelController;
     self.manipulate = function (modelOperation, callback) {
 
-        return getManipulateDelegate.apply(self, [modelOperation, modelOperations, modelMethods, callback]);
+        return getManipulateDelegate.apply(self, [modelOperation, modelOperations, modelMethods,
+            callback]);
     };
 };
 

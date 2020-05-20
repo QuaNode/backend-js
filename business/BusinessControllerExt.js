@@ -19,7 +19,8 @@ var getFetchCallback = function (currentBehaviour, operationCallback, callback) 
 
     return function (resource, error) {
 
-        if (resource) currentBehaviour.state.serviceObjects = [resource.data || resource.id || resource.path];
+        if (resource)
+            currentBehaviour.state.serviceObjects = [resource.data || resource.id || resource.path];
         if (error) currentBehaviour.state.error = error;
         if (typeof operationCallback === 'function') operationCallback({
 
