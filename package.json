@@ -10,7 +10,7 @@
     },
     "dependencies": {
         "body-parser": "latest",
-        "bunyan": "latest",
+        "bunyan": "1.8.13",
         "converter": "https://github.com/QuaNode/converter.git",
         "debug": "latest",
         "define-js": "latest",
