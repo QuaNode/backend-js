@@ -7,6 +7,7 @@ let paginate = require('express-paginate');
 let Route = require('route-parser');
 let define = require('define-js');
 let unless = require('express-unless');
+let Behaviours = require('js-behaviours');
 let businessController = require('./controller.js').businessController;
 let BusinessBehaviourType = require('./business/BusinessBehaviour.js').BusinessBehaviourType;
 let BusinessBehaviour = require('./business/BusinessBehaviour.js').BusinessBehaviour;
@@ -40,6 +41,8 @@ var behaviours = {
     }
 };
 
+var BehavioursConstructors = {};
+
 var compareRoutes = function (route1, route2) {
 
     var route = (route1 && route1.name && route1.name.indexOf(':') > -1 && route1) || route2;
@@ -49,7 +52,8 @@ var compareRoutes = function (route1, route2) {
         route1 = route;
     }
     if (route && route.name) route = new Route(route.name);
-    return (route && route.match((route2 && route2.name) || ' ') || route1.name === (route2 && route2.name)) &&
+    return (route && route.match((route2 && route2.name) || ' ') ||
+        route1.name === (route2 && route2.name)) &&
         (route1.method || '').toLowerCase() === ((route2 && route2.method) || '').toLowerCase();
 };
 
@@ -63,6 +67,8 @@ var types = {
 
 var defaultPrefix = '/';
 
+var defaultRemotes = {};
+
 var app = backend.app = express();
 
 backend.static = express.static;
@@ -73,7 +79,11 @@ backend.behaviour = function (path, config) {
 
         throw new Error('Invalid express app');
     }
-    if (typeof path === 'object') config = path;
+    if (typeof path === 'object') {
+
+        config = path;
+        path = config.path;
+    }
     return function (options, getConstructor) {
 
         if (typeof options !== 'object') {
@@ -100,33 +110,119 @@ backend.behaviour = function (path, config) {
         var forFrontend = typeof options.name === 'string' && options.name.length > 0;
         var notDuplicate = function () {
 
-            if (behaviours[options.name] && (typeof config !== 'object' ||
-                typeof config.skipSameRoutes !== 'boolean' || !config.skipSameRoutes))
-                throw new Error('Duplicated behavior name: ' + options.name);
+            var skipSameRoutes;
+            if (typeof config === 'object') skipSameRoutes = config.skipSameRoutes;
+            if (behaviours[options.name] && (typeof skipSameRoutes !== 'boolean' ||
+                !skipSameRoutes)) throw new Error('Duplicated behavior name: ' + options.name);
             return !behaviours[options.name];
         }();
-        var BehaviourConstructor = typeof options.inherits === 'function' ?
-            define(getConstructor).extend(options.inherits).parameters({
+        var getRBCConstructor = function (init) {
+
+            return function () {
+
+                var ȯptions = arguments[0];
+                ȯptions.inputObjects = (ȯptions && ȯptions.parameters) || ȯptions.inputObjects;
+                var self = init.apply(this, arguments).self();
+                Object.defineProperty(self, 'parameters', {
+
+                    enumerable: true,
+                    get: function () {
+
+                        return self.inputObjects;
+                    },
+                    set: function (parameters) {
+
+                        self.inputObjects = parameters;
+                    }
+                });
+                self.run = function (behaviour, parameters, callback) {
+
+                    if (!(behaviour instanceof BusinessBehaviour)) {
+
+                        if (typeof behaviour !== 'string' ||
+                            !BehavioursConstructors[behaviour])
+                            throw new Error('Invalid behaviour name');
+                        behaviour = typeof parameters === 'function' ?
+                            parameters(BehavioursConstructors[behaviour]) :
+                            new BehavioursConstructors[behaviour]({
+
+                                name: behaviour,
+                                type: types[options.type],
+                                priority: options.priority || 0,
+                                inputObjects: parameters
+                            });
+                    } else callback = parameters;
+                    if (typeof callback !== 'function')
+                        throw new Error('Invalid behaviour callback');
+                    if (typeof parameters !== 'function' || callback == parameters)
+                        self.mandatoryBehaviour = behaviour;
+                    businessController(typeof options.queue === 'function' ?
+                        options.queue(options.name, self.inputObjects) : options.queue,
+                        options.memory).runBehaviour(behaviour, null, callback);
+                    return self;
+                };
+                self.remote = function (baseURL) {
+
+                    return {
+
+                        run: function (behaviour, parameters, callback) {
+
+                            if (baseURL === 'local')
+                                return self.run(behaviour, parameters, callback);
+                            if (typeof behaviour !== 'string' || behaviour.length === 0)
+                                throw new Error('Invalid behaviour name');
+                            var remotes;
+                            if (typeof config === 'object') remotes = config.remotes
+                            var remoteURL = Object.assign(typeof remotes === 'object' ?
+                                remotes : {}, defaultRemotes)[baseURL];
+                            var remote_behaviours;
+                            if (remoteURL) baseURL = remoteURL;
+                            if (baseURL instanceof Behaviours) remote_behaviours = baseURL;
+                            else if (typeof baseURL === 'string' && baseURL.length > 0) {
+
+                                remote_behaviours = new Behaviours(baseURL);
+                                if (defaultRemotes[baseURL])
+                                    defaultRemotes[baseURL] = remote_behaviours;
+                                else if (typeof remotes === 'object')
+                                    remotes[baseURL] = remote_behaviours;
+                            } else throw new Error('Invalid RBC remote base URL');
+                            remote_behaviours.ready(function () {
+
+                                remote_behaviours[behaviour](parameters, callback);
+                            });
+                            return self;
+                        }
+                    };
+                };
+            }
+        };
+        var RBCConstructor = typeof options.inherits === 'function' ?
+            define(getRBCConstructor).extend(options.inherits).parameters({
 
                 type: types[options.type],
                 inputObjects: options.defaults
-            }) : define(getConstructor).extend(BusinessBehaviour).parameters({
+            }) : define(getRBCConstructor).extend(BusinessBehaviour).parameters({
 
                 type: types[options.type]
             });
+        var BehaviourConstructor = define(getConstructor).extend(RBCConstructor).parameters({
+
+            type: types[options.type]
+        });
         if (forFrontend && notDuplicate) {
 
             if (options.name === 'behaviours') {
 
                 throw new Error('behaviours is a reserved name');
             }
+            BehavioursConstructors[options.name] = BehaviourConstructor;
             var isRouterMiddleware = typeof options.path === 'string' && options.path.length > 0;
             var isRoute = isRouterMiddleware && typeof options.method === 'string' &&
                 typeof app[options.method.toLowerCase()] === 'function';
             var longPolling = isRoute && Object.keys(types).indexOf(options.type) > 1;
             var hasPlugin = typeof options.plugin === 'function';
-            var prefix = typeof path === 'string' && path.length > 0 ? join(defaultPrefix, path) :
-                defaultPrefix !== '/' ? defaultPrefix : null;
+            var prefix = typeof path === 'string' && path.length > 0 ?
+                join(defaultPrefix, path) : defaultPrefix !== '/' ? defaultPrefix : null;
             var behaviour_runner = function (req, res, next, inputObjects, er) {
 
                 var signature = getSignature(req);
@@ -159,8 +255,8 @@ backend.behaviour = function (path, config) {
                     var request = getRequest(req, res, next, response);
                     if (!request) {
 
-                        if (longPolling) setResponse(behaviour_callback.bind(null, behaviourResponse,
-                            error), response);
+                        if (longPolling) setResponse(behaviour_callback.bind(null,
+                            behaviourResponse, error), response);
                         return;
                     }
                     if (longPolling) delete response.signature;
@@ -168,22 +264,25 @@ backend.behaviour = function (path, config) {
 
                         if (error) error.name = options.name;
                         if (error) error.version = options.version;
-                        request.next(error || er || new Error('Error while executing ' + options.name +
-                            ' behaviour, version ' + options.version + '!'));
+                        request.next(error || er || new Error('Error while executing ' +
+                            options.name + ' behaviour, version ' + options.version + '!'));
                     } else {
 
                         response.response = options.paginate ? behaviourResponse.modelObjects ||
                             behaviourResponse : behaviourResponse;
-                        if (options.paginate) response.has_more = paginate.hasNextPages(request.req)
-                            (typeof behaviourResponse.pageCount === 'number' ?
-                                behaviourResponse.pageCount : 1);
+                        if (options.paginate)
+                            response.has_more = paginate.hasNextPages(request.req)
+                                (typeof behaviourResponse.pageCount === 'number' ?
+                                    behaviourResponse.pageCount : 1);
                         if (typeof options.returns !== 'function') {
 
-                            if (!setResponse(options.returns, !isRoute, request, response)) request.next();
-                        } else options.returns(request.req, request.res, function (outputObjects) {
+                            if (!setResponse(options.returns, !isRoute, request, response))
+                                request.next();
+                        } else options.returns(request.req, request.res,
+                            function (outputObjects) {
 
-                            respond(request.res, outputObjects);
-                        });
+                                respond(request.res, outputObjects);
+                            });
                     }
                 };
                 var cancel = businessController(typeof options.queue === 'function' ?
@@ -196,7 +295,8 @@ backend.behaviour = function (path, config) {
                                 modelObjects: 'modelObjects',
                                 pageCount: 'pageCount'
                             };
-                            return typeof options.map === 'function' ? options.map(property, superProperty) ||
+                            return typeof options.map === 'function' ?
+                                options.map(property, superProperty) ||
                                 page[property] : page[property];
                         } : options.map, behaviour_callback);
                 req.on('close', function () {
@@ -213,7 +313,8 @@ backend.behaviour = function (path, config) {
 
                             var suffix = behaviours[name] && behaviours[name].path;
                             return typeof prefix === 'string' && req.path.startsWith(prefix) &&
-                                typeof suffix === 'string' ? join(prefix, suffix) : suffix || prefix;
+                                typeof suffix === 'string' ?
+                                join(prefix, suffix) : suffix || prefix;
                         }), req, function (inputObjects) {
 
                             behaviour_runner(req, res, next, inputObjects);
@@ -222,7 +323,8 @@ backend.behaviour = function (path, config) {
                 } else options.parameters(req, res, function (inputObjects, er) {
 
                     if (req.complete) behaviour_runner(req, res, next, inputObjects, er);
-                    else throw new Error('Parameters callback function called before all request data consumed');
+                    else throw new Error('Parameters callback function called before all ' +
+                        'request data consumed');
                 });
             };
             if (Array.isArray(options.unless)) {
@@ -243,8 +345,10 @@ backend.behaviour = function (path, config) {
 
                             var suffix = opt.name;
                             var method = opt.method;
-                            var route = typeof prefix === 'string' && request.path.startsWith(prefix) &&
-                                typeof suffix === 'string' ? join(prefix, suffix) : suffix || prefix;
+                            var route = typeof prefix === 'string' &&
+                                request.path.startsWith(prefix) &&
+                                typeof suffix === 'string' ?
+                                join(prefix, suffix) : suffix || prefix;
                             return compareRoutes({
 
                                 name: route,
@@ -303,8 +407,8 @@ backend.behaviour = function (path, config) {
                 };
             } else if (isRouterMiddleware) {
 
-                var route = typeof prefix === 'string' && prefix.length > 0 ? join(prefix, options.path) :
-                    options.path;
+                var route = typeof prefix === 'string' && prefix.length > 0 ?
+                    join(prefix, options.path) : options.path;
                 if (hasPlugin) app.use(route, options.plugin, req_handler);
                 else app.use(route, req_handler);
             } else {
@@ -317,14 +421,17 @@ backend.behaviour = function (path, config) {
     };
 };
 
-backend.behaviours = function (path, parser) {
+backend.behaviours = function (path, parser, remotes) {
 
-    if (defaultPrefix === '/' && typeof path === 'string' && path.length > 0) defaultPrefix = path;
+    if (typeof remotes === 'object') defaultRemotes = remotes;
+    if (defaultPrefix === '/' && typeof path === 'string' && path.length > 0)
+        defaultPrefix = path;
     var prefix = path || defaultPrefix;
-    app.get(typeof prefix === 'string' ? join(prefix, '/behaviours') : '/behaviours', function (req, res) {
+    app.get(typeof prefix === 'string' ? join(prefix, '/behaviours') : '/behaviours',
+        function (req, res) {
 
-        respond(res, behaviours, parser);
-    });
+            respond(res, behaviours, parser);
+        });
     return behaviours;
 };
 

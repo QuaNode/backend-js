@@ -33,31 +33,7 @@ module.exports.BusinessBehaviour = define(function (init) {
         var type = null;
         self.priority = options.priority;
         self.name = options.name;
-        var parameters = options.inputObjects;
-        Object.defineProperty(self, 'inputObjects', {
-
-            enumerable: true,
-            get: function () {
-
-                return parameters;
-            },
-            set: function (inputObjects) {
-
-                parameters = inputObjects;
-            }
-        });
-        Object.defineProperty(self, 'parameters', {
-
-            enumerable: true,
-            get: function () {
-
-                return parameters;
-            },
-            set: function (params) {
-
-                parameters = params;
-            }
-        });
+        self.inputObjects = options.inputObjects;
         self.state = {};
         self.searchText = options.searchText;
         self.mandatoryBehaviour = options.mandatoryBehaviour;

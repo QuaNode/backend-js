@@ -72,7 +72,7 @@ module.exports = {
         return service;
     },
     behaviour: behaviour,
-    server: function (path, options) {
+    server: function (paths, options) {
 
         if (started) return server;
         app.use(logger('dev'));
@@ -82,7 +82,8 @@ module.exports = {
             var keys = Object.keys(meta);
             for (var i = 0; i < keys.length; i++) {
 
-                var route = typeof options.path === 'string' && typeof meta[keys[i]].path === 'string' ?
+                var route = typeof options.path === 'string' &&
+                    typeof meta[keys[i]].path === 'string' ?
                     join(options.path, meta[keys[i]].path) : meta[keys[i]].path || options.path;
                 if (route) route = new Route(route);
                 var method = typeof meta[keys[i]].method === 'string' &&
@@ -90,8 +91,9 @@ module.exports = {
                     meta[keys[i]].method.toLowerCase();
                 var origins = options.origins || meta[keys[i]].origins;
                 origins = typeof origins === 'string' && origins.length > 0 && origins;
-                if (origins && route && route.match(req.path) && (method === req.method.toLowerCase() ||
-                    req.method === 'OPTIONS')) {
+                if (origins && route && route.match(req.path) &&
+                    (method === req.method.toLowerCase() ||
+                        req.method === 'OPTIONS')) {
 
                     allowCrossOrigins(meta[keys[i]], req, res, origins);
                     break;
@@ -100,7 +102,7 @@ module.exports = {
             if (req.method === 'OPTIONS') res.status(200).end();
             else next();
         });
-        behaviours(options.path, options.parser);
+        behaviours(options.path, options.parser, paths);
         if (typeof options.static === 'object') {
 
             if (typeof options.static.route === 'string') app.use(options.static.route,
@@ -108,13 +110,18 @@ module.exports = {
             else app.use(serve(options.static.path, options.static));
         }
         if (typeof options.parserOptions !== 'object') options.parserOptions = undefined;
-        app.use(typeof options.parser === 'string' && typeof bodyParser[options.parser] === 'function' ?
-            bodyParser[options.parser](options.parserOptions) : bodyParser.json(options.parserOptions));
-        if (typeof path === 'string' && path.length > 0) require(path);
+        app.use(typeof options.parser === 'string' &&
+            typeof bodyParser[options.parser] === 'function' ?
+            bodyParser[options.parser](options.parserOptions) :
+            bodyParser.json(options.parserOptions));
+        if (typeof paths === 'string' && paths.length > 0) require(paths);
+        else if (typeof paths === 'object' && typeof paths.local === 'string' &&
+            paths.local.length > 0) require(paths.local);
         app.use(function (req, res, next) {
 
             var err = new Error('Not found');
-            if (/[A-Z]/.test(req.path)) err = new Error('Not found, may be the case-sensitivity of the path');
+            if (/[A-Z]/.test(req.path))
+                err = new Error('Not found, may be the case-sensitivity of the path');
             err.code = 404;
             next(err);
         });
@@ -132,27 +139,31 @@ module.exports = {
                 message: err.message
             }, options.parser);
         });
-        app.set('port', options.port || process.env.PORT || (typeof options.https === 'object' ? 443 : 80));
-        server = require(typeof options.https === 'object' ? 'https' : 'http').createServer(function () {
+        app.set('port', options.port || process.env.PORT ||
+            (typeof options.https === 'object' ? 443 : 80));
+        server = require(typeof options.https === 'object' ?
+            'https' : 'http').createServer(function () {
 
-            if (typeof options.https === 'object') return ['key', 'cert', 'ca'].reduce(function (https, prop) {
+                if (typeof options.https === 'object')
+                    return ['key', 'cert', 'ca'].reduce(function (https, prop) {
 
-                if (typeof options.https[prop] === 'string' && fs.existsSync(options.https[prop]))
-                    https[prop] = fs.readFileSync(options.https[prop]).toString();
-                return https;
-            }, {});
-            else return app;
-        }(), app).listen(app.get('port'), function () {
+                        if (typeof options.https[prop] === 'string' &&
+                            fs.existsSync(options.https[prop]))
+                            https[prop] = fs.readFileSync(options.https[prop]).toString();
+                        return https;
+                    }, {});
+                else return app;
+            }(), app).listen(app.get('port'), function () {
 
-            debug('backend listening on port ' + app.get('port'));
-        });
+                debug('backend listening on port ' + app.get('port'));
+            });
         started = true;
         return server;
     },
-    app: function (path, options) {
+    app: function (paths, options) {
 
         if (started) return app;
-        this.server(path, options);
+        this.server(paths, options);
         started = true;
         return app;
     }
