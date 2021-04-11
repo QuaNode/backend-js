@@ -15,7 +15,6 @@ npm install backend-js
 ```js
 var backend = require('backend-js');
 var App = backend.app(__dirname + '/behaviours', {
-
     path: '/api/v1',
     parser: 'json',
     port: 8383,
@@ -48,10 +47,8 @@ var App = backend.app(__dirname + '/behaviours', {
 var backend = require('backend-js');
 var model = backend.model();
 var User = model({
-
   name: 'User'
 }, {
-
   username: String,
   password: String
 });
@@ -152,18 +149,14 @@ var query = entity.getObjectQuery();
 
 ```js
 var getUsers = behaviour({
-
   name: 'GetUsers',
   version: '1',
   path: '/users',
   method: 'GET'
 }, function(init) {
-
   return function() {
-
     var self = init.apply(this, arguments).self();
     self.begin('Query', function(key, businessController, operation) {
-
         operation
           .entity(new User())
           .append(true)
@@ -188,28 +181,21 @@ you should define your own data access layer like following
 var backend = require('backend-js');
 
 var ModelController = function () {
-
     self.removeObjects = function (queryExprs, entity, callback) {
-
         // do remove
     };
     self.newObjects = function (objsAttributes, entity, callback) {
-
         // do add new
     };
-
     self.getObjects = function (queryExprs, entity, callback) {
-
         // do select
     };
     self.save = function (callback, oldSession) {
-
         // do select
     };
 };
 
 ModelController.defineEntity = function (name, attributes) {
-
     // define entity
     return entity;
 };
