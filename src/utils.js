@@ -79,10 +79,12 @@ module.exports = {
         }
         if (inputObjects[name] === undefined || inputObjects[name] === null) {
 
-            if (typeof parameter.alternativeKey === 'string' && parameter.alternativeKey !== key)
-                utils.setInputObjects(inputObjects, paths, req, name, parameter, parameter.alternativeKey, type);
-            else if (typeof parameter.alternativeType === 'string' && parameter.alternativeType !== type)
-                utils.setInputObjects(inputObjects, paths, req, name, parameter, key, parameter.alternativeType);
+            if (typeof parameter.alternativeKey === 'string' &&
+                parameter.alternativeKey !== key) utils.setInputObjects(inputObjects,
+                    paths, req, name, parameter, parameter.alternativeKey, type);
+            else if (typeof parameter.alternativeType === 'string' &&
+                parameter.alternativeType !== type) utils.setInputObjects(inputObjects,
+                    paths, req, name, parameter, key, parameter.alternativeType);
             else if (parameter.key !== key) utils.setInputObjects(inputObjects, paths, req, name, {
 
                 key: parameter.key
@@ -109,7 +111,8 @@ module.exports = {
                 throw new Error('Invalid parameter type');
             }
             var parameter = parameters[keys[i]];
-            utils.setInputObjects(inputObjects, paths, req, keys[i], parameter, parameter.key, parameter.type);
+            utils.setInputObjects(inputObjects, paths, req, keys[i],
+                parameter, parameter.key, parameter.type);
         }
         callback(inputObjects);
     },
@@ -184,8 +187,8 @@ module.exports = {
 
                 throw new Error('Invalid return type');
             }
-            var value = utils.getValueAtPath(typeof returns[keys[i]].key === 'string' ? returns[keys[i]].key :
-                keys[i], response.response);
+            var value = utils.getValueAtPath(typeof returns[keys[i]].key === 'string' ?
+                returns[keys[i]].key : keys[i], response.response);
             switch (returns[keys[i]].type) {
 
                 case 'header':
@@ -254,10 +257,10 @@ module.exports = {
         var request = typeof response === 'object' && typeof response.signature === 'number' &&
             Array.isArray(requests[response.signature]) ? requests[response.signature].pop() : {
 
-                req: req,
-                res: res,
-                next: next
-            };
+            req: req,
+            res: res,
+            next: next
+        };
         if (request && request.timeout) {
 
             clearTimeout(request.timeout);
@@ -273,29 +276,31 @@ module.exports = {
         res.header('Access-Control-Allow-Origin', origin);
         if (origin === '*' || origin === req.headers.origin) {
 
-            if (origin === req.headers.origin) res.header('Vary', 'Accept-Encoding,Origin,Accept');
+            if (origin === req.headers.origin)
+                res.header('Vary', 'Accept-Encoding,Origin,Accept');
             var method = ['OPTIONS'].concat(typeof options.method === 'string' &&
                 options.method.length > 0 ? [options.method.toUpperCase()] : []).join(',');
             if (method) res.header('Access-Control-Allow-Methods', method);
-            var headers = ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Behaviour-Signature']
-                .concat(Object.keys(req.headers).map(function (header) {
+            var headers =
+                ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Behaviour-Signature']
+                    .concat(Object.keys(req.headers).map(function (header) {
 
-                    return req.rawHeaders.find(function (rawHeader) {
+                        return req.rawHeaders.find(function (rawHeader) {
 
-                        return rawHeader.toLowerCase() === header.toLowerCase();
-                    });
-                })).concat(Object.keys(typeof options.parameters === 'object' ?
-                    options.parameters : {}).filter(function (key) {
+                            return rawHeader.toLowerCase() === header.toLowerCase();
+                        });
+                    })).concat(Object.keys(typeof options.parameters === 'object' ?
+                        options.parameters : {}).filter(function (key) {
 
-                        return options.parameters[key].type === 'header';
-                    }).map(function (key) {
+                            return options.parameters[key].type === 'header';
+                        }).map(function (key) {
 
-                        return options.parameters[key].key;
-                    })).reduce(function (headers, header) {
+                            return options.parameters[key].key;
+                        })).reduce(function (headers, header) {
 
-                        if (headers.indexOf(header) === -1) headers.push(header);
-                        return headers;
-                    }, []).join(',');
+                            if (headers.indexOf(header) === -1) headers.push(header);
+                            return headers;
+                        }, []).join(',');
             if (headers) res.header('Access-Control-Allow-Headers', headers);
             if (typeof options.returns === 'object') {
 

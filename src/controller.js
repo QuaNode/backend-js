@@ -2,14 +2,17 @@
 /*jshint esversion: 6 */
 'use strict';
 
-let os = require('os');
-let fs = require('fs');
-let bunyan = require('bunyan');
-let BusinessController = require('./business/BusinessController.js').BusinessController;
-let QueryExpression = require('./model.js').QueryExpression;
-let getComparisonOperators = require('./model.js').getComparisonOperators;
-let ModelEntity = require('./model.js').ModelEntity;
-let getModelController = require('./model.js').getModelController;
+var os = require('os');
+var fs = require('fs');
+var bunyan = require('bunyan');
+var BusinessController = require('behaviours-js').BusinessController;
+var {
+    QueryExpression,
+    getComparisonOperators,
+    ModelEntity,
+    getModelController
+} = require('./model.js');
+var getResourceController = require('./resource.js').getResourceController;
 
 var businessControllerSharedInstances = {};
 
@@ -33,47 +36,58 @@ var log = bunyan.createLogger({
 var FREEMEMORY = os.freemem() / 1024 / 1024;
 var queues = {};
 
-var businessController = function (queue, memory) {
+var businessController = function (queue, database, storage, fetch, FetchBehaviour, memory) {
 
-    var theQueue = queue;
+    var aQueue = typeof queue === 'string' ? queue : '';
+    if (database && typeof database !== 'string') throw new Error('Invalid database key');
+    else if (database) aQueue += database;
+    if (storage && typeof storage !== 'string') throw new Error('Invalid storage key');
+    else if (storage) aQueue += storage;
+    if (typeof fetch === 'string') aQueue += fetch;
+    var theQueue = aQueue;
     var freeMemory = os.freemem() / 1024 / 1024;
     var theMemory = typeof memory === 'number' && memory > 0 ? memory : FREEMEMORY - freeMemory;
-    if (!queues[queue || '']) queues[queue || ''] = {
+    if (!queues[aQueue]) queues[aQueue] = {
 
         count: 0,
         spare: {
 
             count: 0,
-            key: (queue || '') + new Date().getTime()
+            key: aQueue + new Date().getTime()
         }
     };
     var count = (freeMemory / theMemory) - 1;
-    if (queues[queue || ''].count > count && count > 0) {
+    if (queues[aQueue].count > count && count > 0) {
 
-        if (queues[queue || ''].spare.count > count) {
+        if (queues[aQueue].spare.count > count) {
 
-            queues[queue || ''].spare.count = 0;
-            queues[queue || ''].spare.key = (queue || '') + new Date().getTime();
+            queues[aQueue].spare.count = 0;
+            queues[aQueue].spare.key = aQueue + new Date().getTime();
         }
-        theQueue = queues[queue || ''].spare.key;
-        queues[queue || ''].spare.count++;
-        if (queues[queue || ''].timeout) clearTimeout(queues[queue || ''].timeout);
-        queues[queue || ''].timeout = setTimeout(function () {
+        theQueue = queues[aQueue].spare.key;
+        queues[aQueue].spare.count++;
+        if (queues[aQueue].timeout) clearTimeout(queues[aQueue].timeout);
+        queues[aQueue].timeout = setTimeout(function () {
 
-            queues[queue || ''].count = 0;
+            queues[aQueue].count = 0;
         }, Math.abs(count) * 1000);
-    } else queues[queue || ''].count++;
-    var businessControllerSharedInstance = typeof theQueue === 'string' &&
+    } else queues[aQueue].count++;
+    var businessControllerSharedInstance = theQueue.length > 0 &&
         businessControllerSharedInstances[theQueue];
+    if (businessControllerSharedInstance && FetchBehaviour &&
+        businessControllerSharedInstance.FetchBehaviour !== FetchBehaviour)
+        throw new Error('Please require() fetcher behaviour before behaviours using it and fetcher' +
+            ' key should be unique per fetcher behaviour');
     if (!businessControllerSharedInstance) {
 
         businessControllerSharedInstance = new BusinessController({
 
-            modelController: getModelController(),
+            modelController: getModelController(database),
             ModelEntity: ModelEntity,
             QueryExpression: QueryExpression,
             ComparisonOperators: getComparisonOperators(),
-            //cacheController : cacheController,
+            resourceController: getResourceController(storage),
+            FetchBehaviour: FetchBehaviour,
             operationCallback: function (data, operationType, operationSubtype) {
 
                 if (data && data.error) {
@@ -103,12 +117,11 @@ var businessController = function (queue, memory) {
                                 stack: e.stack.split('\n    ')
                             }
                         }, 'Queue -> ' + (theQueue || 'Anonymous'));
-                        // logController.log(e, JSON.parse(window.localStorage.getItem('currentUser')));                
                     }
                 }
             }
         });
-        if (typeof theQueue === 'string')
+        if (theQueue.length > 0)
             businessControllerSharedInstances[theQueue] = businessControllerSharedInstance;
     }
     return businessControllerSharedInstance;

@@ -1,7 +1,7 @@
 {
     "name": "backend-js",
-    "version": "1.0.0",
-    "description": "A node module that implements the behaviour-driven design and map-queue algorithm",
+    "version": "1.0.1",
+    "description": "Backend-js is a layer built above expressjs to enable behaviours framework for nodejs applications.",
     "main": "index.js",
     "scripts": {
         "test": "test",
@@ -9,7 +9,7 @@
         "prepare": "npm run snyk-protect"
     },
     "dependencies": {
-        "js-behaviours": "latest",
+        "behaviours-js": "latest",
         "body-parser": "latest",
         "bunyan": "latest",
         "converter": "https://github.com/QuaNode/converter.git",
@@ -20,15 +20,16 @@
         "express-rate-limit": "latest",
         "express-unless": "latest",
         "http-status-codes": "https://github.com/QuaNode/node-http-status",
+        "js-behaviours": "latest",
         "morgan": "latest",
         "parseparams": "latest",
         "route-parser": "latest",
-        "shallow-copy": "latest",
-        "snyk": "^1.192.6"
+        "snyk": "^1.530.0",
+        "xmldom": "latest"
     },
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/quaNode/backendjs.git"
+        "url": "git+https://github.com/quaNode/backend-js.git"
     },
     "keywords": [
         "backend",
@@ -40,11 +41,11 @@
         "queue",
         "beam"
     ],
-    "author": "Ahmed Ragab <ahmed.ragab@me.com> (http://backendjs.com)",
+    "author": "Ahmed Ragab <ahmed.ragab@me.com>",
     "license": "MIT",
     "bugs": {
-        "url": "https://github.com/quaNode/backendjs/issues"
+        "url": "https://github.com/quaNode/backend-js/issues"
     },
-    "homepage": "https://github.com/quaNode/backendjs#readme",
+    "homepage": "https://github.com/quaNode/backend-js#readme",
     "snyk": true
 }

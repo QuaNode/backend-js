@@ -2,23 +2,29 @@
 /*jshint esversion: 6 */
 'use strict';
 
-let express = require('express');
-let paginate = require('express-paginate');
-let Route = require('route-parser');
-let define = require('define-js');
-let unless = require('express-unless');
-let Behaviours = require('js-behaviours');
-let businessController = require('./controller.js').businessController;
-let BusinessBehaviourType = require('./business/BusinessBehaviour.js').BusinessBehaviourType;
-let BusinessBehaviour = require('./business/BusinessBehaviour.js').BusinessBehaviour;
-let getInputObjects = require('./utils.js').getInputObjects;
-let setResponse = require('./utils.js').setResponse;
-let respond = require('./utils.js').respond;
-let getSignature = require('./utils.js').getSignature;
-let setSignature = require('./utils.js').setSignature;
-let getRequest = require('./utils.js').getRequest;
+var express = require('express');
+var paginate = require('express-paginate');
+var Route = require('route-parser');
+var define = require('define-js');
+var unless = require('express-unless');
+var parse = require('parseparams');
+var { BusinessBehaviourType, BusinessBehaviour } = require('behaviours-js');
+var businessController = require('./controller.js').businessController;
+var getLogBehaviour = require('./remote.js').getLogBehaviour;
+var {
+    getInputObjects,
+    setResponse,
+    respond,
+    getSignature,
+    setSignature,
+    getRequest
+} = require('./utils.js');
 
 var backend = module.exports;
+
+var app = backend.app = express();
+
+backend.serve = express.static;
 
 var join = backend.join = (function () {
 
@@ -41,7 +47,11 @@ var behaviours = {
     }
 };
 
-var BehavioursConstructors = {};
+var BEHAVIOURS = {};
+
+var FetchBehaviours = {};
+
+var LogBehaviours = {};
 
 var compareRoutes = function (route1, route2) {
 
@@ -68,10 +78,6 @@ var types = {
 var defaultPrefix = '/';
 
 var defaultRemotes = {};
-
-var app = backend.app = express();
-
-backend.static = express.static;
 
 backend.behaviour = function (path, config) {
 
@@ -107,8 +113,8 @@ backend.behaviour = function (path, config) {
 
             throw new Error('Invalid constructor');
         }
-        var forFrontend = typeof options.name === 'string' && options.name.length > 0;
-        var notDuplicate = function () {
+        var named = typeof options.name === 'string' && options.name.length > 0;
+        var unduplicated = function () {
 
             var skipSameRoutes;
             if (typeof config === 'object') skipSameRoutes = config.skipSameRoutes;
@@ -116,111 +122,48 @@ backend.behaviour = function (path, config) {
                 !skipSameRoutes)) throw new Error('Duplicated behavior name: ' + options.name);
             return !behaviours[options.name];
         }();
-        var getRBCConstructor = function (init) {
-
-            return function () {
-
-                var ȯptions = arguments[0];
-                ȯptions.inputObjects = (ȯptions && ȯptions.parameters) || ȯptions.inputObjects;
-                var self = init.apply(this, arguments).self();
-                Object.defineProperty(self, 'parameters', {
-
-                    enumerable: true,
-                    get: function () {
-
-                        return self.inputObjects;
-                    },
-                    set: function (parameters) {
-
-                        self.inputObjects = parameters;
-                    }
-                });
-                self.run = function (behaviour, parameters, callback) {
-
-                    if (!(behaviour instanceof BusinessBehaviour)) {
-
-                        if (typeof behaviour !== 'string' ||
-                            !BehavioursConstructors[behaviour])
-                            throw new Error('Invalid behaviour name');
-                        behaviour = typeof parameters === 'function' ?
-                            parameters(BehavioursConstructors[behaviour]) :
-                            new BehavioursConstructors[behaviour]({
-
-                                name: behaviour,
-                                type: types[options.type],
-                                priority: options.priority || 0,
-                                inputObjects: parameters
-                            });
-                    } else callback = parameters;
-                    if (typeof callback !== 'function')
-                        throw new Error('Invalid behaviour callback');
-                    if (typeof parameters !== 'function' || callback == parameters)
-                        self.mandatoryBehaviour = behaviour;
-                    businessController(typeof options.queue === 'function' ?
-                        options.queue(options.name, self.inputObjects) : options.queue,
-                        options.memory).runBehaviour(behaviour, null, callback);
-                    return self;
-                };
-                self.remote = function (baseURL) {
-
-                    return {
-
-                        run: function (behaviour, parameters, callback) {
-
-                            if (baseURL === 'local')
-                                return self.run(behaviour, parameters, callback);
-                            if (typeof behaviour !== 'string' || behaviour.length === 0)
-                                throw new Error('Invalid behaviour name');
-                            var remotes;
-                            if (typeof config === 'object') remotes = config.remotes
-                            var remoteURL = Object.assign(typeof remotes === 'object' ?
-                                remotes : {}, defaultRemotes)[baseURL];
-                            var remote_behaviours;
-                            if (remoteURL) baseURL = remoteURL;
-                            if (baseURL instanceof Behaviours) remote_behaviours = baseURL;
-                            else if (typeof baseURL === 'string' && baseURL.length > 0) {
-
-                                remote_behaviours = new Behaviours(baseURL);
-                                if (defaultRemotes[baseURL])
-                                    defaultRemotes[baseURL] = remote_behaviours;
-                                else if (typeof remotes === 'object')
-                                    remotes[baseURL] = remote_behaviours;
-                            } else throw new Error('Invalid RBC remote base URL');
-                            remote_behaviours.ready(function () {
-
-                                remote_behaviours[behaviour](parameters, callback);
-                            });
-                            return self;
-                        }
-                    };
-                };
-            }
-        };
-        var RBCConstructor = typeof options.inherits === 'function' ?
-            define(getRBCConstructor).extend(options.inherits).parameters({
-
-                type: types[options.type],
-                inputObjects: options.defaults
-            }) : define(getRBCConstructor).extend(BusinessBehaviour).parameters({
+        var BehaviourConstructor = define(getConstructor).extend(getLogBehaviour(options, config,
+            types, BEHAVIOURS, defaultRemotes, FetchBehaviours, LogBehaviours)).defaults({
 
                 type: types[options.type]
             });
-        var BehaviourConstructor = define(getConstructor).extend(RBCConstructor).parameters({
+        if (options.fetcher) {
 
-            type: types[options.type]
-        });
-        if (forFrontend && notDuplicate) {
+            var fetcher = typeof options.fetcher === 'string' ? options.fetcher : '';
+            FetchBehaviours[fetcher] = BehaviourConstructor;
+        }
+        if (options.logger) {
+
+            var logger = typeof options.logger === 'string' ? options.logger : '';
+            LogBehaviours[logger] = BehaviourConstructor;
+        }
+        if (named && unduplicated) {
 
             if (options.name === 'behaviours') {
 
                 throw new Error('behaviours is a reserved name');
             }
-            BehavioursConstructors[options.name] = BehaviourConstructor;
+            BEHAVIOURS[options.name] = {
+
+                options: options,
+                constructor: BehaviourConstructor
+            };
             var isRouterMiddleware = typeof options.path === 'string' && options.path.length > 0;
             var isRoute = isRouterMiddleware && typeof options.method === 'string' &&
                 typeof app[options.method.toLowerCase()] === 'function';
             var longPolling = isRoute && Object.keys(types).indexOf(options.type) > 1;
-            var hasPlugin = typeof options.plugin === 'function';
+            if (!Array.isArray(options.plugins)) options.plugins = [];
+            if (typeof options.plugin === 'function') options.plugins.push(options.plugin);
+            var req_plugin = options.plugins.reduce(function (req_plugin, plugin) {
+
+                if (typeof plugin === 'function' && parse(plugin)[0] !== 'out') return plugin;
+                return req_plugin;
+            });
+            var res_plugin = options.plugins.reduce(function (res_plugin, plugin) {
+
+                if (typeof plugin === 'function' && parse(plugin)[0] === 'out') return plugin;
+                return res_plugin;
+            });
             var prefix = typeof path === 'string' && path.length > 0 ?
                 join(defaultPrefix, path) : defaultPrefix !== '/' ? defaultPrefix : null;
             var behaviour_runner = function (req, res, next, inputObjects, er) {
@@ -266,27 +209,33 @@ backend.behaviour = function (path, config) {
                         if (error) error.version = options.version;
                         request.next(error || er || new Error('Error while executing ' +
                             options.name + ' behaviour, version ' + options.version + '!'));
-                    } else {
+                    } else if (!res_plugin ||
+                        res_plugin(behaviourResponse, request.req, request.res, request.next)) {
 
                         response.response = options.paginate ? behaviourResponse.modelObjects ||
                             behaviourResponse : behaviourResponse;
-                        if (options.paginate)
+                        if (options.paginate) {
+
                             response.has_more = paginate.hasNextPages(request.req)
                                 (typeof behaviourResponse.pageCount === 'number' ?
                                     behaviourResponse.pageCount : 1);
+                        }
                         if (typeof options.returns !== 'function') {
 
                             if (!setResponse(options.returns, !isRoute, request, response))
                                 request.next();
-                        } else options.returns(request.req, request.res,
-                            function (outputObjects) {
+                        } else options.returns(request.req, request.res, function (outputObjects) {
 
-                                respond(request.res, outputObjects);
-                            });
+                            respond(request.res, outputObjects);
+                        });
                     }
                 };
+                var fetching = typeof options.fetching === 'string' ? options.fetching : '';
+                var FetchBehaviour = options.fetcher ? BehaviourConstructor :
+                    FetchBehaviours[fetching];
                 var cancel = businessController(typeof options.queue === 'function' ?
-                    options.queue(options.name, inputObjects) : options.queue,
+                    options.queue(options.name, inputObjects) : options.queue, options.database,
+                    options.storage, options.fetcher || options.fetching, FetchBehaviour,
                     options.memory).runBehaviour(behaviour, options.paginate ?
                         function (property, superProperty) {
 
@@ -395,7 +344,7 @@ backend.behaviour = function (path, config) {
                     }
                 }
                 router = router[options.method.toLowerCase()].bind(router);
-                if (hasPlugin) router(options.path, options.plugin, req_handler);
+                if (req_plugin) router(options.path, req_plugin, req_handler);
                 else router(options.path, req_handler);
                 behaviours[options.name] = {
 
@@ -409,11 +358,11 @@ backend.behaviour = function (path, config) {
 
                 var route = typeof prefix === 'string' && prefix.length > 0 ?
                     join(prefix, options.path) : options.path;
-                if (hasPlugin) app.use(route, options.plugin, req_handler);
+                if (req_plugin) app.use(route, req_plugin, req_handler);
                 else app.use(route, req_handler);
             } else {
 
-                if (hasPlugin) app.use(options.plugin, req_handler);
+                if (req_plugin) app.use(req_plugin, req_handler);
                 else app.use(req_handler);
             }
         }
@@ -435,19 +384,4 @@ backend.behaviours = function (path, parser, remotes) {
     return behaviours;
 };
 
-backend.meta = behaviours;
-
-//var CacheController = require('./cache/CacheController.js').CacheController;
-//var cacheController = new CacheController();
-//var LogController = require('./logs/LogController.js').LogController;
-//var logController = new LogController();
-/*window.onerror = function(errorMsg, url, lineNumber) {
-
- try {
-
- throw new Error(errorMsg + '   ' + url + '   ' + lineNumber);
- } catch (e) {
-
- logController.log(e, JSON.parse(window.localStorage.getItem('currentUser')));
- }
- };*/
+backend.routes = behaviours;

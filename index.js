@@ -2,27 +2,45 @@
 /*jshint esversion: 6 */
 'use strict';
 
-let fs = require('fs');
-let bodyParser = require('body-parser');
-let logger = require('morgan');
-let Route = require('route-parser');
-let HttpStatus = require('http-status-codes');
-let rateLimit = require("express-rate-limit");
-let debug = require('debug');
-let ModelEntity = require('./model.js').ModelEntity;
-let QueryExpression = require('./model.js').QueryExpression;
-let setComparisonOperators = require('./model.js').setComparisonOperators;
-let setLogicalOperators = require('./model.js').setLogicalOperators;
-let AggregateExpression = require('./model.js').AggregateExpression;
-let setComputationOperators = require('./model.js').setComputationOperators;
-let setModelController = require('./model.js').setModelController;
-let model = require('./model.js').model;
-let ServiceParameter = require('./service.js').ServiceParameter;
-let ServiceParameterType = require('./service.js').ServiceParameterType;
-let service = require('./service.js').service;
-let allowCrossOrigins = require('./utils.js').allowCrossOrigins;
-let respond = require('./utils.js').respond;
-let backend = require('./behaviour.js');
+var fs = require('fs');
+var bodyParser = require('body-parser');
+var logger = require('morgan');
+var Route = require('route-parser');
+var HttpStatus = require('http-status-codes');
+var rateLimit = require("express-rate-limit");
+var debug = require('debug');
+var {
+    join,
+    serve,
+    app,
+    routes,
+    behaviours,
+    behaviour
+} = require('./behaviour.js');
+var {
+    ModelEntity,
+    QueryExpression,
+    setComparisonOperators,
+    setLogicalOperators,
+    AggregateExpression,
+    setComputationOperators,
+    setModelController,
+    getModelController,
+    model
+} = require('./src/model.js');
+var {
+    ServiceParameter,
+    ServiceParameterType,
+    service
+} = require('./src/service.js');
+var {
+    setResourceController,
+    getResourceController
+} = require('./src/resource.js');
+var {
+    allowCrossOrigins,
+    respond
+} = require('./src/utils.js');
 
 var TIMEOUT = 50;
 var limiter = rateLimit({
@@ -44,13 +62,7 @@ var limiter = rateLimit({
 debug.enable('backend:*');
 debug = debug('backend:index');
 
-var server, app = backend.app;
-var serve = backend.static;
-var behaviour = backend.behaviour;
-var behaviours = backend.behaviours;
-var meta = backend.meta;
-var join = backend.join;
-var started = false;
+var server;
 
 module.exports = {
 
@@ -61,41 +73,38 @@ module.exports = {
     AggregateExpression: AggregateExpression,
     setComputationOperators: setComputationOperators,
     setModelController: setModelController,
+    getModelController: getModelController,
     ServiceParameter: ServiceParameter,
     ServiceParameterType: ServiceParameterType,
-    model: function () {
-
-        return model;
-    },
-    service: function () {
-
-        return service;
-    },
+    setResourceController: setResourceController,
+    getResourceController: getResourceController,
+    model: model,
+    service: service,
     behaviour: behaviour,
     server: function (paths, options) {
 
-        if (started) return server;
+        if (server) return server;
         app.use(logger('dev'));
         app.use(limiter);
         app.all('/*', function (req, res, next) {
 
-            var keys = Object.keys(meta);
+            var keys = Object.keys(routes);
             for (var i = 0; i < keys.length; i++) {
 
                 var route = typeof options.path === 'string' &&
-                    typeof meta[keys[i]].path === 'string' ?
-                    join(options.path, meta[keys[i]].path) : meta[keys[i]].path || options.path;
+                    typeof routes[keys[i]].path === 'string' ?
+                    join(options.path, routes[keys[i]].path) : routes[keys[i]].path || options.path;
                 if (route) route = new Route(route);
-                var method = typeof meta[keys[i]].method === 'string' &&
-                    typeof app[meta[keys[i]].method.toLowerCase()] === 'function' &&
-                    meta[keys[i]].method.toLowerCase();
-                var origins = options.origins || meta[keys[i]].origins;
+                var method = typeof routes[keys[i]].method === 'string' &&
+                    typeof app[routes[keys[i]].method.toLowerCase()] === 'function' &&
+                    routes[keys[i]].method.toLowerCase();
+                var origins = options.origins || routes[keys[i]].origins;
                 origins = typeof origins === 'string' && origins.length > 0 && origins;
                 if (origins && route && route.match(req.path) &&
                     (method === req.method.toLowerCase() ||
                         req.method === 'OPTIONS')) {
 
-                    allowCrossOrigins(meta[keys[i]], req, res, origins);
+                    allowCrossOrigins(routes[keys[i]], req, res, origins);
                     break;
                 }
             }
@@ -121,7 +130,7 @@ module.exports = {
 
             var err = new Error('Not found');
             if (/[A-Z]/.test(req.path))
-                err = new Error('Not found, may be the case-sensitivity of the path');
+                err = new Error('Not found, maybe the case-sensitivity of the path');
             err.code = 404;
             next(err);
         });
@@ -157,14 +166,12 @@ module.exports = {
 
                 debug('backend listening on port ' + app.get('port'));
             });
-        started = true;
         return server;
     },
     app: function (paths, options) {
 
-        if (started) return app;
+        if (server) return app;
         this.server(paths, options);
-        started = true;
         return app;
     }
 };
