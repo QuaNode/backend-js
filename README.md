@@ -1,18 +1,6 @@
 # backend-js [![Known Vulnerabilities](https://snyk.io/test/github/QuaNode/backendjs/badge.svg?targetFile=package.json)](https://snyk.io/test/github/QuaNode/backendjs?targetFile=package.json) [![Codacy Badge](https://api.codacy.com/project/badge/Grade/f2f50320606542ffb89bc9fef79dbf3f)](https://www.codacy.com/project/quanode/backendjs/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=quaNode/backendjs&amp;utm_campaign=Badge_Grade_Dashboard) [![NPM](https://nodei.co/npm/backend-js.png)](https://npmjs.org/package/backend-js)
 
-### Made for code generation, designed to understand user requirements.
-
-Usually, code generators always focus on performing functions or do specific jobs based on some requirements, but they are missing the important part what if I want to continue developing what shall I do? start from the beginning that's insane! from the other side when developing code on your own from scratch you are obliged to follow a lot of standards and checklists to achieve that clean code.
-
-That's the idea of our backend.js engine "**continuing development using that generated code**" by making it standardized, reusable, readable and maintainable as if you coded it by yourself.
-
-Continuing development on same code is depending heavily on the relationship between user requirements and the code. This relation always exists in documentation or just in the developer mind. Domain Driven Design had put rules to strengthen this relationship by naming the code units based on the domain you're working on.
-
-##### For example; in a banking system, the domain contains terminologies like Account, Transaction, etc... so you should use this for naming your code units \(variables, classes, functions, etc... \).
-
-And much more other practices to strengthen this relation but despite that, there is no strong relationship between user requirements and the code that is where our goal "**lead to continuing**" came from.
-
-Our new pattern [Behavior-first Design](https://github.com/QuaNode/backendjs/wiki/Behavior-first-design) that is inspired by Behavior Driven Development, solves this by many ways like defining a standard interface to deal with databases regardless its type also defining a language to write the higher level logic breaking that gap between code and user requirements.
+Backend-js is a layer built above expressjs to enable [behaviours framework](https://github.com/QuaNode/behaviours) for nodejs applications.
 
 ## Installation
 
@@ -27,7 +15,6 @@ npm install backend-js
 ```js
 var backend = require('backend-js');
 var App = backend.app(__dirname + '/behaviours', {
-
     path: '/api/v1',
     parser: 'json',
     port: 8383,
@@ -60,10 +47,8 @@ var App = backend.app(__dirname + '/behaviours', {
 var backend = require('backend-js');
 var model = backend.model();
 var User = model({
-
   name: 'User'
 }, {
-
   username: String,
   password: String
 });
@@ -164,18 +149,14 @@ var query = entity.getObjectQuery();
 
 ```js
 var getUsers = behaviour({
-
   name: 'GetUsers',
   version: '1',
   path: '/users',
   method: 'GET'
 }, function(init) {
-
   return function() {
-
     var self = init.apply(this, arguments).self();
     self.begin('Query', function(key, businessController, operation) {
-
         operation
           .entity(new User())
           .append(true)
@@ -200,28 +181,21 @@ you should define your own data access layer like following
 var backend = require('backend-js');
 
 var ModelController = function () {
-
     self.removeObjects = function (queryExprs, entity, callback) {
-
         // do remove
     };
     self.newObjects = function (objsAttributes, entity, callback) {
-
         // do add new
     };
-
     self.getObjects = function (queryExprs, entity, callback) {
-
         // do select
     };
     self.save = function (callback, oldSession) {
-
         // do select
     };
 };
 
 ModelController.defineEntity = function (name, attributes) {
-
     // define entity
     return entity;
 };
