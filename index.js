@@ -16,7 +16,7 @@ var {
     routes,
     behaviours,
     behaviour
-} = require('./behaviour.js');
+} = require('./src/behaviour.js');
 var {
     ModelEntity,
     QueryExpression,

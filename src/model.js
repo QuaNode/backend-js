@@ -57,7 +57,7 @@ module.exports.setModelController = function (mc, key) {
         throw new Error('Missing defineEntity method in model controller constructor');
     }
     modelControllers[key || 'main'] = mc;
-    ModelControllers[key || 'main'] = modelControllers.constructor;
+    ModelControllers[key || 'main'] = mc.constructor;
 };
 
 module.exports.getModelController = function (key) {

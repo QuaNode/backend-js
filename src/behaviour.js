@@ -10,7 +10,7 @@ var unless = require('express-unless');
 var parse = require('parseparams');
 var { BusinessBehaviourType, BusinessBehaviour } = require('behaviours-js');
 var businessController = require('./controller.js').businessController;
-var getLogBehaviour = require('./remote.js').getLogBehaviour;
+var getLogBehaviour = require('./log.js').getLogBehaviour;
 var {
     getInputObjects,
     setResponse,
@@ -158,12 +158,12 @@ backend.behaviour = function (path, config) {
 
                 if (typeof plugin === 'function' && parse(plugin)[0] !== 'out') return plugin;
                 return req_plugin;
-            });
+            }, undefined);
             var res_plugin = options.plugins.reduce(function (res_plugin, plugin) {
 
                 if (typeof plugin === 'function' && parse(plugin)[0] === 'out') return plugin;
                 return res_plugin;
-            });
+            }, undefined);
             var prefix = typeof path === 'string' && path.length > 0 ?
                 join(defaultPrefix, path) : defaultPrefix !== '/' ? defaultPrefix : null;
             var behaviour_runner = function (req, res, next, inputObjects, er) {
