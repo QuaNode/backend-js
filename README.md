@@ -207,7 +207,7 @@ backend.setModelController(new ModelController());
 
 ## Starter project
 
-A sample project that you can learn from examples how to use BackendJS.
+A sample project that you can learn from examples how to use Backend-JS.
 
 #### [https://github.com/QuaNode/BeamJS-Start](https://github.com/QuaNode/BeamJS-Start)
 
