@@ -9,6 +9,7 @@ var Route = require('route-parser');
 var HttpStatus = require('http-status-codes');
 var rateLimit = require("express-rate-limit");
 var debug = require('debug');
+var cors = require('cors');
 var {
     join,
     serve,
@@ -38,7 +39,7 @@ var {
     getResourceController
 } = require('./src/resource.js');
 var {
-    allowCrossOrigins,
+    setCorsOptions,
     respond
 } = require('./src/utils.js');
 
@@ -84,33 +85,44 @@ module.exports = {
     server: function (paths, options) {
 
         if (server) return server;
+        if (options.proxy) app.set('trust proxy', options.proxy);
         app.use(logger('dev'));
         app.use(limiter);
-        app.all('/*', function (req, res, next) {
+        var corsOptionsDelegate = function (req, callback) {
 
+            var corsOptions = {
+
+                origin: false
+            };
+            var credentials = options.credentials;
+            var maxAge = options.maxAge;
             var keys = Object.keys(routes);
             for (var i = 0; i < keys.length; i++) {
 
-                var route = typeof options.path === 'string' &&
-                    typeof routes[keys[i]].path === 'string' ?
-                    join(options.path, routes[keys[i]].path) : routes[keys[i]].path || options.path;
+                var routeOptions = routes[keys[i]];
+                var route = typeof options.path === 'string' && typeof routeOptions.path === 'string' ?
+                    join(options.path, routeOptions.path) : routeOptions.path || options.path;
                 if (route) route = new Route(route);
-                var method = typeof routes[keys[i]].method === 'string' &&
-                    typeof app[routes[keys[i]].method.toLowerCase()] === 'function' &&
-                    routes[keys[i]].method.toLowerCase();
-                var origins = options.origins || routes[keys[i]].origins;
-                origins = typeof origins === 'string' && origins.length > 0 && origins;
+                var method = typeof routeOptions.method === 'string' &&
+                    typeof app[routeOptions.method.toLowerCase()] === 'function' &&
+                    routeOptions.method.toLowerCase();
+                var origins = routeOptions.origins != undefined ? routeOptions.origins : options.origins;
+                origins = typeof origins === 'string' && origins.length > 0 ? origins : origins == true;
                 if (origins && route && route.match(req.path) &&
-                    (method === req.method.toLowerCase() ||
-                        req.method === 'OPTIONS')) {
+                    [method, 'options'].indexOf(req.method.toLowerCase()) > -1) {
 
-                    allowCrossOrigins(routes[keys[i]], req, res, origins);
+                    setCorsOptions(corsOptions, origins, routeOptions, req);
+                    credentials =
+                        routeOptions.credentials != undefined ? routeOptions.credentials : credentials;
+                    maxAge = routeOptions.maxAge != undefined ? routeOptions.maxAge : maxAge;
                     break;
                 }
             }
-            if (req.method === 'OPTIONS') res.status(200).end();
-            else next();
-        });
+            if (typeof credentials === 'boolean') corsOptions.credentials = credentials;
+            if (!isNaN(parseInt(maxAge))) corsOptions.maxAge = maxAge;
+            callback(null, corsOptions);
+        };
+        app.all('/*', cors(corsOptionsDelegate));
         behaviours(options.path, options.parser, paths);
         if (typeof options.static === 'object') {
 

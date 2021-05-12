@@ -269,47 +269,43 @@ module.exports = {
         if (response.signature) delete requests[response.signature];
         return request && !request.req.aborted && !request.res.headersSent && request;
     },
-    allowCrossOrigins: function (options, req, res, origins) {
+    setCorsOptions: function (corsOptions, origins, options, req) {
 
-        var origin = (origins || options.origins || '').indexOf('*' || req.headers.origin) > -1 ?
-            req.headers.origin || '*' : 'null';
-        res.header('Access-Control-Allow-Origin', origin);
-        if (origin === '*' || origin === req.headers.origin) {
+        var origin = ('' + origins).indexOf('*' || req.headers.origin) > -1 ? req.headers.origin || '*' :
+            origins == true;
+        corsOptions.origin = origin;
+        if (origin) {
 
-            if (origin === req.headers.origin)
-                res.header('Vary', 'Accept-Encoding,Origin,Accept');
-            var method = ['OPTIONS'].concat(typeof options.method === 'string' &&
+            var methods = ['OPTIONS'].concat(typeof options.method === 'string' &&
                 options.method.length > 0 ? [options.method.toUpperCase()] : []).join(',');
-            if (method) res.header('Access-Control-Allow-Methods', method);
-            var headers =
-                ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Behaviour-Signature']
-                    .concat(Object.keys(req.headers).map(function (header) {
+            corsOptions.methods = methods;
+            var headers = ['Origin', 'X-Requested-With', 'Content-Type', 'Accept',
+                'Behaviour-Signature'].concat(Object.keys(req.headers).map(function (header) {
 
-                        return req.rawHeaders.find(function (rawHeader) {
+                    return req.rawHeaders.find(function (rawHeader) {
 
-                            return rawHeader.toLowerCase() === header.toLowerCase();
-                        });
-                    })).concat(Object.keys(typeof options.parameters === 'object' ?
-                        options.parameters : {}).filter(function (key) {
+                        return rawHeader.toLowerCase() === header.toLowerCase();
+                    });
+                })).concat(Object.keys(typeof options.parameters === 'object' ?
+                    options.parameters : {}).filter(function (key) {
 
-                            return options.parameters[key].type === 'header';
-                        }).map(function (key) {
+                        return options.parameters[key].type === 'header';
+                    }).map(function (key) {
 
-                            return options.parameters[key].key;
-                        })).reduce(function (headers, header) {
+                        return options.parameters[key].key;
+                    })).reduce(function (headers, header) {
 
-                            if (headers.indexOf(header) === -1) headers.push(header);
-                            return headers;
-                        }, []).join(',');
-            if (headers) res.header('Access-Control-Allow-Headers', headers);
+                        if (headers.indexOf(header) === -1) headers.push(header);
+                        return headers;
+                    }, []).join(',');
+            corsOptions.allowedHeaders = headers;
             if (typeof options.returns === 'object') {
 
                 var returns = Object.keys(options.returns);
-                if (returns.length > 0) res.header('Access-Control-Expose-Headers',
-                    returns.filter(function (key) {
+                if (returns.length > 0) corsOptions.exposedHeaders = returns.filter(function (key) {
 
-                        return options.returns[key].type === 'header';
-                    }).join(','));
+                    return options.returns[key].type === 'header';
+                }).join(',');
             }
         }
     }

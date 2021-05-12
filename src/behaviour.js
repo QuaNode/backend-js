@@ -351,6 +351,9 @@ backend.behaviour = function (path, config) {
                     version: options.version,
                     method: options.method,
                     path: options.path,
+                    origins: options.origins,
+                    credentials: options.credentials,
+                    maxAge: options.maxAge,
                     parameters: options.parameters,
                     returns: options.returns
                 };
