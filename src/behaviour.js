@@ -5,8 +5,9 @@
 var express = require('express');
 var paginate = require('express-paginate');
 var Route = require('route-parser');
-var define = require('define-js');
 var unless = require('express-unless');
+var vhost = require('vhost');
+var define = require('define-js');
 var parse = require('parseparams');
 var { BusinessBehaviourType, BusinessBehaviour } = require('behaviours-js');
 var businessController = require('./controller.js').businessController;
@@ -49,6 +50,8 @@ var behaviours = {
 
 var BEHAVIOURS = {};
 
+var defaultRemotes = {};
+
 var FetchBehaviours = {};
 
 var LogBehaviours = {};
@@ -76,8 +79,6 @@ var types = {
 };
 
 var defaultPrefix = '/';
-
-var defaultRemotes = {};
 
 backend.behaviour = function (path, config) {
 
@@ -164,8 +165,14 @@ backend.behaviour = function (path, config) {
                 if (typeof plugin === 'function' && parse(plugin)[0] === 'out') return plugin;
                 return res_plugin;
             }, undefined);
-            var prefix = typeof path === 'string' && path.length > 0 ?
-                join(defaultPrefix, path) : defaultPrefix !== '/' ? defaultPrefix : null;
+            var prefix;
+            var overwritePath;
+            if (typeof config === 'object') overwritePath = config.overwritePath;
+            if (typeof path === 'string' && path.length > 0) {
+
+                if (overwritePath) prefix = path;
+                else prefix = join(defaultPrefix, path);
+            } else if (defaultPrefix !== '/' && !overwritePath) prefix = defaultPrefix;
             var behaviour_runner = function (req, res, next, inputObjects, er) {
 
                 var signature = getSignature(req);
@@ -210,7 +217,7 @@ backend.behaviour = function (path, config) {
                         request.next(error || er || new Error('Error while executing ' +
                             options.name + ' behaviour, version ' + options.version + '!'));
                     } else if (!res_plugin ||
-                        res_plugin(behaviourResponse, request.req, request.res, request.next)) {
+                        !res_plugin(behaviourResponse, request.req, request.res, request.next)) {
 
                         response.response = options.paginate ? behaviourResponse.modelObjects ||
                             behaviourResponse : behaviourResponse;
@@ -311,6 +318,11 @@ backend.behaviour = function (path, config) {
                     }
                 });
             }
+            if (typeof options.host === 'string' && options.host.length > 0) {
+
+                req_handler = vhost(options.host, req_handler);
+                if (req_plugin) req_plugin = vhost(options.host, req_plugin);
+            }
             if (isRoute) {
 
                 var keys = Object.keys(behaviours);
@@ -351,6 +363,7 @@ backend.behaviour = function (path, config) {
                     version: options.version,
                     method: options.method,
                     path: options.path,
+                    prefix: prefix,
                     origins: options.origins,
                     credentials: options.credentials,
                     maxAge: options.maxAge,

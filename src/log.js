@@ -47,8 +47,8 @@ module.exports.getLogBehaviour =
                 };
             }
         };
-        return define(getLBConstructor).extend(getRemoteBehaviour(options, config,
-            types, BEHAVIOURS, defaultRemotes, FetchBehaviours)).defaults({
+        return define(getLBConstructor).extend(getRemoteBehaviour(options, config, types, BEHAVIOURS,
+            defaultRemotes, FetchBehaviours)).defaults({
 
                 type: types[options.type]
             });

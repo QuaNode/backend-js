@@ -85,6 +85,7 @@ module.exports = {
     server: function (paths, options) {
 
         if (server) return server;
+        app.disable("x-powered-by");
         if (options.proxy) app.set('trust proxy', options.proxy);
         app.use(logger('dev'));
         app.use(limiter);
@@ -100,8 +101,9 @@ module.exports = {
             for (var i = 0; i < keys.length; i++) {
 
                 var routeOptions = routes[keys[i]];
-                var route = typeof options.path === 'string' && typeof routeOptions.path === 'string' ?
-                    join(options.path, routeOptions.path) : routeOptions.path || options.path;
+                var prefix = routeOptions.prefix || options.path;
+                var route = typeof prefix === 'string' && typeof routeOptions.path === 'string' ?
+                    join(prefix, routeOptions.path) : routeOptions.path || prefix;
                 if (route) route = new Route(route);
                 var method = typeof routeOptions.method === 'string' &&
                     typeof app[routeOptions.method.toLowerCase()] === 'function' &&
@@ -149,10 +151,7 @@ module.exports = {
         app.use(function (err, req, res, next) {
 
             debug(err);
-            if (res.headersSent) {
-
-                return next(err);
-            }
+            if (res.headersSent) return next(err);
             respond(res.status(HttpStatus.getStatus(err.code) || 500), {
 
                 behaviour: err.name,
