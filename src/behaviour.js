@@ -58,15 +58,15 @@ var LogBehaviours = {};
 
 var compareRoutes = function (route1, route2) {
 
-    var route = (route1 && route1.name && route1.name.indexOf(':') > -1 && route1) || route2;
+    var route = (route1 && route1.path && route1.path.indexOf(':') > -1 && route1) || route2;
     if (route === route2) {
 
         route2 = route1;
         route1 = route;
     }
-    if (route && route.name) route = new Route(route.name);
-    return (route && route.match((route2 && route2.name) || ' ') ||
-        route1.name === (route2 && route2.name)) &&
+    if (route && route.path) route = new Route(route.path);
+    return (route && route.match((route2 && route2.path) || ' ') ||
+        route1.path === (route2 && route2.path)) &&
         (route1.method || '').toLowerCase() === ((route2 && route2.method) || '').toLowerCase();
 };
 
@@ -115,12 +115,12 @@ backend.behaviour = function (path, config) {
             throw new Error('Invalid constructor');
         }
         var named = typeof options.name === 'string' && options.name.length > 0;
+        var skipSameRoutes;
         var unduplicated = function () {
 
-            var skipSameRoutes;
             if (typeof config === 'object') skipSameRoutes = config.skipSameRoutes;
-            if (behaviours[options.name] && (typeof skipSameRoutes !== 'boolean' ||
-                !skipSameRoutes)) throw new Error('Duplicated behavior name: ' + options.name);
+            if (behaviours[options.name] && skipSameRoutes !== true)
+                throw new Error('Duplicated behavior name: ' + options.name);
             return !behaviours[options.name];
         }();
         var BehaviourConstructor = define(getConstructor).extend(getLogBehaviour(options, config,
@@ -294,24 +294,26 @@ backend.behaviour = function (path, config) {
 
                             return {
 
-                                name: (behaviours[name] && behaviours[name].path) || name,
+                                name: name,
+                                path: behaviours[name] && behaviours[name].path,
                                 method: behaviours[name] && behaviours[name].method
                             };
                         }).filter(function (opt) {
 
-                            var suffix = opt.name;
+                            var name = opt.name;
+                            var suffix = opt.path;
                             var method = opt.method;
                             var route = typeof prefix === 'string' &&
                                 request.path.startsWith(prefix) &&
                                 typeof suffix === 'string' ?
                                 join(prefix, suffix) : suffix || prefix;
-                            return compareRoutes({
+                            return name === options.name && compareRoutes({
 
-                                name: route,
+                                path: route,
                                 method: method
                             }, {
 
-                                name: request.path,
+                                path: request.path,
                                 method: request.method
                             });
                         }).length > 0;
@@ -326,15 +328,15 @@ backend.behaviour = function (path, config) {
             if (isRoute) {
 
                 var keys = Object.keys(behaviours);
-                if (keys.some(function (key) {
+                if (!skipSameRoutes && keys.some(function (key) {
 
                     return compareRoutes({
 
-                        name: behaviours[key].path,
+                        path: behaviours[key].path,
                         method: behaviours[key].method
                     }, {
 
-                        name: options.path,
+                        path: options.path,
                         method: options.method
                     });
                 })) throw new Error('Duplicated behavior path: ' + options.path);
