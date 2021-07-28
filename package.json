@@ -26,7 +26,7 @@
         "parseparams": "latest",
         "route-parser": "latest",
         "vhost": "latest",
-        "snyk": "^1.530.0"
+        "snyk": "^1.667.0"
     },
     "repository": {
         "type": "git",
