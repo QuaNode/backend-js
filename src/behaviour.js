@@ -42,7 +42,8 @@ var join = backend.join = function (s1, s2) {
 var compare = backend.compare = function (route1, route2) {
 
     var route;
-    if (route1 && route1.path && route1.path.indexOf(':') > -1) route = route1;
+    if (route1 && route1.path && (route1.path.indexOf(':') > -1 ||
+        route1.path.indexOf('*') > -1)) route = route1;
     else route = route2;
     if (route === route2) {
 
@@ -146,9 +147,9 @@ backend.behaviour = function (path, config) {
         var unduplicated = function () {
 
             if (typeof config === 'object') skipSameRoutes = config.skipSameRoutes;
-            if (behaviours[options.name] && skipSameRoutes !== true)
+            if (BEHAVIOURS[options.name] && skipSameRoutes !== true)
                 throw new Error('Duplicated behavior name: ' + options.name);
-            return !behaviours[options.name];
+            return !BEHAVIOURS[options.name];
         }();
         var BehaviourConstructor = define(getConstructor).extend(getLogBehaviour(options, config,
             types, BEHAVIOURS, defaultRemotes, FetchBehaviours, LogBehaviours, function (room) {
@@ -190,7 +191,7 @@ backend.behaviour = function (path, config) {
                 if (typeof plugin === 'function' && parse(plugin)[0] !== 'out') return plugin;
                 return req_plugin;
             }, undefined);
-            if (parse(req_plugin).reverse()[0] === 'head')
+            if (req_plugin && parse(req_plugin).reverse()[0] === 'head')
                 upgradePlugins[options.name] = req_plugin;
             var res_plugin = options.plugins.reduce(function (res_plugin, plugin) {
 
@@ -456,9 +457,13 @@ backend.BehavioursServer = function (path, parser, remotes) {
     var validate_path = function (behaviour, path) {
 
         var behaviour_prefix = behaviour.prefix || defaultPrefix;
+        var behaviour_path = behaviour.path || '/';
+        var isRoute = typeof behaviour.method === 'string' &&
+            typeof app[behaviour.method.toLowerCase()] === 'function';
+        if (!isRoute) behaviour_path = join(behaviour_path, '/*path');
         return compare({
 
-            path: resolve(behaviour_prefix, behaviour.path, path)
+            path: resolve(behaviour_prefix, behaviour_path, path)
         }, {
 
             path: path
@@ -476,13 +481,14 @@ backend.BehavioursServer = function (path, parser, remotes) {
     };
     this.upgrade = function (req, socket, head) {
 
-        var names = Object.keys(behaviours);
+        var names = Object.keys(BEHAVIOURS);
         for (var i = 0; i < names.length; i++) {
 
             if (!upgradePlugins[names[i]]) continue;
-            var behaviour = behaviours[names[i]];
+            var behaviour = BEHAVIOURS[names[i]].options;
+            var path = req.originalUrl || req.url;
             if (validate_host(behaviour.host, req, socket) &&
-                validate_path(behaviour, req.path)) {
+                validate_path(behaviour, path)) {
 
                 upgradePlugins[names[i]](req, socket, undefined, head);
                 return true;
@@ -495,7 +501,7 @@ backend.BehavioursServer = function (path, parser, remotes) {
         var name = query.behaviour;
         if (typeof name === 'string' && name.length > 0) {
 
-            var behaviour = behaviours[name];
+            var behaviour = BEHAVIOURS[name] && BEHAVIOURS[name].options;
             if (behaviour && behaviour.events &&
                 path.startsWith(behaviour.prefix)) return;
         }
@@ -510,7 +516,7 @@ backend.BehavioursServer = function (path, parser, remotes) {
         if (typeof name === 'string' && name.length > 0 &&
             typeof token === 'string' && token.length > 0) {
 
-            var behaviour = behaviours[name];
+            var behaviour = BEHAVIOURS[name] && BEHAVIOURS[name].options;
             if (behaviour && behaviour.events &&
                 validate_host(behaviour.host, socket.request, socket)) {
 
