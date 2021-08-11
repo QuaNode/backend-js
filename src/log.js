@@ -3,10 +3,10 @@
 'use strict';
 
 var define = require('define-js');
-var getRemoteBehaviour = require('./remote.js').getRemoteBehaviour;
+var getEventBehaviour = require('./event.js').getEventBehaviour;
 
 module.exports.getLogBehaviour =
-    function (options, config, types, BEHAVIOURS, defaultRemotes, FetchBehaviours, LogBehaviours) {
+    function (options, config, types, BEHAVIOURS, defaultRemotes, FetchBehaviours, LogBehaviours, getEmitters) {
 
         var getLBConstructor = function (init) {
 
@@ -47,8 +47,8 @@ module.exports.getLogBehaviour =
                 };
             }
         };
-        return define(getLBConstructor).extend(getRemoteBehaviour(options, config, types, BEHAVIOURS,
-            defaultRemotes, FetchBehaviours)).defaults({
+        return define(getLBConstructor).extend(getEventBehaviour(options, config, types, BEHAVIOURS,
+            defaultRemotes, FetchBehaviours, getEmitters)).defaults({
 
                 type: types[options.type]
             });

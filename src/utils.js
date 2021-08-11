@@ -14,12 +14,10 @@ module.exports = {
 
     getValueAtPath: function (path, object) {
 
-        var pathComponents = path.split('.');
+        var components = path.split('.');
         var value = object;
-        for (var j = 0; value && j < pathComponents.length; j++) {
-
-            value = value[pathComponents[j]];
-        }
+        for (var j = 0; value && j < components.length; j++)
+            value = value[components[j]];
         return value;
     },
     getCorrectValue: function (value, type) {

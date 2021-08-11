@@ -5,17 +5,21 @@
 var fs = require('fs');
 var bodyParser = require('body-parser');
 var logger = require('morgan');
-var Route = require('route-parser');
 var HttpStatus = require('http-status-codes');
 var rateLimit = require("express-rate-limit");
+var session = require('express-session');
+var iosession = require("express-socket.io-session");
+var memorystore = require('memorystore');
 var debug = require('debug');
 var cors = require('cors');
+var Server = require('socket.io').Server;
 var {
-    join,
+    BehavioursServer,
+    compare,
+    resolve,
     serve,
     app,
     routes,
-    behaviours,
     behaviour
 } = require('./src/behaviour.js');
 var {
@@ -43,6 +47,7 @@ var {
     respond
 } = require('./src/utils.js');
 
+var MemoryStore = memorystore(session);
 var TIMEOUT = 50;
 var limiter = rateLimit({
 
@@ -51,8 +56,8 @@ var limiter = rateLimit({
     headers: false,
     handler: function (req, res, next) {
 
-        var timeout = req.rateLimit.limit + (req.rateLimit.resetTime.getTime() -
-            new Date().getTime()) * (req.rateLimit.current - req.rateLimit.limit);
+        var timeout = (req.rateLimit.resetTime.getTime() - new Date().getTime()) *
+            (req.rateLimit.current - req.rateLimit.limit);
         if (timeout < (1000 * TIMEOUT)) setTimeout(function () {
 
             if (!req.aborted && !res.headersSent) next();
@@ -89,7 +94,7 @@ module.exports = {
         if (options.proxy) app.set('trust proxy', options.proxy);
         app.use(logger('dev'));
         app.use(limiter);
-        var corsOptionsDelegate = function (req, callback) {
+        app.all('/*', cors(function (req, callback) {
 
             var corsOptions = {
 
@@ -102,16 +107,19 @@ module.exports = {
 
                 var routeOptions = routes[keys[i]];
                 var prefix = routeOptions.prefix || options.path;
-                var route = typeof prefix === 'string' && typeof routeOptions.path === 'string' ?
-                    join(prefix, routeOptions.path) : routeOptions.path || prefix;
-                if (route) route = new Route(route);
-                var method = typeof routeOptions.method === 'string' &&
-                    typeof app[routeOptions.method.toLowerCase()] === 'function' &&
-                    routeOptions.method.toLowerCase();
+                var method;
+                if (typeof routeOptions.method === 'string' &&
+                    typeof app[routeOptions.method.toLowerCase()] === 'function')
+                    method = routeOptions.method.toLowerCase();
                 var origins = routeOptions.origins != undefined ? routeOptions.origins : options.origins;
                 origins = typeof origins === 'string' && origins.length > 0 ? origins : origins == true;
-                if (origins && route && route.match(req.path) &&
-                    [method, 'options'].indexOf(req.method.toLowerCase()) > -1) {
+                if (origins && compare({
+
+                    path: resolve(prefix, routeOptions.path, req)
+                }, {
+
+                    path: req.path
+                }) && [method, 'options'].indexOf(req.method.toLowerCase()) > -1) {
 
                     setCorsOptions(corsOptions, origins, routeOptions, req);
                     credentials =
@@ -123,9 +131,16 @@ module.exports = {
             if (typeof credentials === 'boolean') corsOptions.credentials = credentials;
             if (!isNaN(parseInt(maxAge))) corsOptions.maxAge = maxAge;
             callback(null, corsOptions);
-        };
-        app.all('/*', cors(corsOptionsDelegate));
-        behaviours(options.path, options.parser, paths);
+        }));
+        app.use(session({
+
+            store: new MemoryStore(),
+            resave: false,
+            secret: '' + new Date().getTime()
+        }));
+        var { upgrade, validate, connect } = new BehavioursServer(options.path, options.parser, paths);
+        if (typeof paths === 'object' && typeof paths.proxy === 'string' &&
+            paths.proxy.length > 0) require(paths.proxy);
         if (typeof options.static === 'object') {
 
             if (typeof options.static.route === 'string') app.use(options.static.route,
@@ -159,24 +174,46 @@ module.exports = {
                 message: err.message
             }, options.parser);
         });
-        app.set('port', options.port || process.env.PORT ||
-            (typeof options.https === 'object' ? 443 : 80));
-        server = require(typeof options.https === 'object' ?
-            'https' : 'http').createServer(function () {
+        var https = typeof options.https === 'object';
+        var port = https ? 443 : 80;
+        app.set('port', options.port || process.env.PORT || port);
+        var module = https ? 'https' : 'http';
+        server = require(module).createServer(function () {
 
-                if (typeof options.https === 'object')
-                    return ['key', 'cert', 'ca'].reduce(function (https, prop) {
+            if (https) return ['key', 'cert', 'ca'].reduce(function (https, prop) {
 
-                        if (typeof options.https[prop] === 'string' &&
-                            fs.existsSync(options.https[prop]))
-                            https[prop] = fs.readFileSync(options.https[prop]).toString();
-                        return https;
-                    }, {});
-                else return app;
-            }(), app).listen(app.get('port'), function () {
+                var path = options.https[prop];
+                if (typeof path === 'string' && fs.existsSync(path))
+                    https[prop] = fs.readFileSync(path).toString();
+                return https;
+            }, {}); else return app;
+        }(), app);
+        var io = new Server(server);
+        io.use(iosession(session, {
 
-                debug('backend listening on port ' + app.get('port'));
+            autoSave: true
+        }));
+        io.of(function (path, query, next) {
+
+            var err = validate(path, query);
+            next(err, !err);
+        }).on('connect', function (socket) {
+
+            socket.once('disconnect', function () {
+
+                debug('backend socket:' + socket.id + ' disconnected on port ' + app.get('port'));
             });
+            connect(socket);
+        });
+        server.removeAllListeners("upgrade");
+        server.on("upgrade", function (req, socket, head) {
+
+            if (!upgrade(req, socket, head)) io.engine.handleUpgrade(req, socket, head);
+        });
+        server.listen(app.get('port'), function () {
+
+            debug('backend listening on port ' + app.get('port'));
+        });
         return server;
     },
     app: function (paths, options) {

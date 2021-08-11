@@ -9,7 +9,12 @@ var unless = require('express-unless');
 var vhost = require('vhost');
 var define = require('define-js');
 var parse = require('parseparams');
-var { BusinessBehaviourType, BusinessBehaviour } = require('behaviours-js');
+var url = require('url');
+var crypto = require('crypto');
+var {
+    BusinessBehaviourType,
+    BusinessBehaviour
+} = require('behaviours-js');
 var businessController = require('./controller.js').businessController;
 var getLogBehaviour = require('./log.js').getLogBehaviour;
 var {
@@ -27,17 +32,54 @@ var app = backend.app = express();
 
 backend.serve = express.static;
 
-var join = backend.join = (function () {
+var join = backend.join = function (s1, s2) {
 
-    var utility = require('url');
-    return function (s1, s2) {
+    var fromIndex = s2.startsWith('/') ? 1 : 0;
+    var toIndex = s1.endsWith('/') ? s1.length - 1 : s1.length;
+    return url.resolve(s1.substr(0, toIndex) + '/', s2.substr(fromIndex));
+};
 
-        return utility.resolve(s1.substr(0, s1.endsWith('/') ? s1.length - 1 :
-            s1.length) + '/', s2.substr(s2.startsWith('/') ? 1 : 0));
-    };
-})();
+var compare = backend.compare = function (route1, route2) {
+
+    var route;
+    if (route1 && route1.path && route1.path.indexOf(':') > -1) route = route1;
+    else route = route2;
+    if (route === route2) {
+
+        route2 = route1;
+        route1 = route;
+    }
+    if (route && route.path) route = new Route(route.path);
+    var path1 = route1 && route1.path;
+    var path2 = route2 && route2.path;
+    var method1 = ((route1 && route1.method) || '').toLowerCase();
+    var method2 = ((route2 && route2.method) || '').toLowerCase();
+    var matched = route && route.match(path2 || ' ');
+    return (matched || path1 === path2) && method1 === method2;
+};
+
+var resolve = backend.resolve = function (prefix, suffix, path) {
+
+    var prefixed = typeof prefix === 'string' && path.startsWith(prefix);
+    if (prefixed && typeof suffix === 'string') return join(prefix, suffix);
+    else return suffix || prefix;
+};
+
+var defaultPrefix = '/';
+
+var types = {
+
+    database: BusinessBehaviourType.OFFLINESYNC,
+    database_with_action: BusinessBehaviourType.OFFLINEACTION,
+    integration: BusinessBehaviourType.ONLINESYNC,
+    integration_with_action: BusinessBehaviourType.ONLINEACTION
+};
 
 var routers = {};
+
+var events = {};
+
+var emitters = {};
 
 var behaviours = {
 
@@ -56,29 +98,7 @@ var FetchBehaviours = {};
 
 var LogBehaviours = {};
 
-var compareRoutes = function (route1, route2) {
-
-    var route = (route1 && route1.path && route1.path.indexOf(':') > -1 && route1) || route2;
-    if (route === route2) {
-
-        route2 = route1;
-        route1 = route;
-    }
-    if (route && route.path) route = new Route(route.path);
-    return (route && route.match((route2 && route2.path) || ' ') ||
-        route1.path === (route2 && route2.path)) &&
-        (route1.method || '').toLowerCase() === ((route2 && route2.method) || '').toLowerCase();
-};
-
-var types = {
-
-    database: BusinessBehaviourType.OFFLINESYNC,
-    database_with_action: BusinessBehaviourType.OFFLINEACTION,
-    integration: BusinessBehaviourType.ONLINESYNC,
-    integration_with_action: BusinessBehaviourType.ONLINEACTION
-};
-
-var defaultPrefix = '/';
+var upgradePlugins = {};
 
 backend.behaviour = function (path, config) {
 
@@ -114,6 +134,13 @@ backend.behaviour = function (path, config) {
 
             throw new Error('Invalid constructor');
         }
+        if (!Array.isArray(options.events)) options.events = [];
+        if (typeof options.event === 'function') options.events.push(options.event);
+        options.events = options.events.filter(function (event) {
+
+            return typeof event === 'function' || (typeof event === 'string' &&
+                event.length > 0);
+        });
         var named = typeof options.name === 'string' && options.name.length > 0;
         var skipSameRoutes;
         var unduplicated = function () {
@@ -124,7 +151,10 @@ backend.behaviour = function (path, config) {
             return !behaviours[options.name];
         }();
         var BehaviourConstructor = define(getConstructor).extend(getLogBehaviour(options, config,
-            types, BEHAVIOURS, defaultRemotes, FetchBehaviours, LogBehaviours)).defaults({
+            types, BEHAVIOURS, defaultRemotes, FetchBehaviours, LogBehaviours, function (room) {
+
+                return emitters[room];
+            })).defaults({
 
                 type: types[options.type]
             });
@@ -160,6 +190,8 @@ backend.behaviour = function (path, config) {
                 if (typeof plugin === 'function' && parse(plugin)[0] !== 'out') return plugin;
                 return req_plugin;
             }, undefined);
+            if (parse(req_plugin).reverse()[0] === 'head')
+                upgradePlugins[options.name] = req_plugin;
             var res_plugin = options.plugins.reduce(function (res_plugin, plugin) {
 
                 if (typeof plugin === 'function' && parse(plugin)[0] === 'out') return plugin;
@@ -200,46 +232,73 @@ backend.behaviour = function (path, config) {
                     priority: options.priority || 0,
                     inputObjects: inputObjects
                 });
-                var behaviour_callback = function (behaviourResponse, error) {
+                var behaviour_callback = function (behaviour_response, error) {
 
                     var request = getRequest(req, res, next, response);
                     if (!request) {
 
                         if (longPolling) setResponse(behaviour_callback.bind(null,
-                            behaviourResponse, error), response);
+                            behaviour_response, error), response);
                         return;
                     }
                     if (longPolling) delete response.signature;
-                    if (typeof error === 'object' || typeof behaviourResponse !== 'object') {
+                    if (typeof error === 'object' || typeof behaviour_response !== 'object') {
 
                         if (error) error.name = options.name;
                         if (error) error.version = options.version;
                         request.next(error || er || new Error('Error while executing ' +
                             options.name + ' behaviour, version ' + options.version + '!'));
                     } else if (!res_plugin ||
-                        !res_plugin(behaviourResponse, request.req, request.res, request.next)) {
+                        !res_plugin(behaviour_response, request.req, request.res, request.next)) {
 
-                        response.response = options.paginate ? behaviourResponse.modelObjects ||
-                            behaviourResponse : behaviourResponse;
+                        response.response = options.paginate ? behaviour_response.modelObjects ||
+                            behaviour_response : behaviour_response;
+                        if (options.events.length > 0) {
+
+                            var events_token = crypto.randomBytes(48).toString('base64');
+                            response.events = options.events.map(function (event) {
+
+                                var room = typeof event === 'function' ?
+                                    event(options.name, inputObjects) : event;
+                                return room && typeof room === 'object' ?
+                                    JSON.stringify(room) : room;
+                            }).filter(function (room) {
+
+                                if (typeof room === 'string' && room.trim()) {
+
+                                    var event = events[options.name];
+                                    if (!event) event = events[options.name] = {};
+                                    if (!event[room]) event[room] = {};
+                                    event[room][req.session.id] = {
+
+                                        token: response.events_token = events_token,
+                                        count: 0
+                                    };
+                                    return true;
+                                }
+                                return false;
+                            });
+                        }
                         if (options.paginate) {
 
                             response.has_more = paginate.hasNextPages(request.req)
-                                (typeof behaviourResponse.pageCount === 'number' ?
-                                    behaviourResponse.pageCount : 1);
+                                (typeof behaviour_response.pageCount === 'number' ?
+                                    behaviour_response.pageCount : 1);
                         }
                         if (typeof options.returns !== 'function') {
 
                             if (!setResponse(options.returns, !isRoute, request, response))
                                 request.next();
-                        } else options.returns(request.req, request.res, function (outputObjects) {
+                        } else options.returns(request.req, request.res, behaviour_response,
+                            error, function (outputObjects) {
 
-                            respond(request.res, outputObjects);
-                        });
+                                respond(request.res, outputObjects);
+                            });
                     }
                 };
                 var fetching = typeof options.fetching === 'string' ? options.fetching : '';
-                var FetchBehaviour = options.fetcher ? BehaviourConstructor :
-                    FetchBehaviours[fetching];
+                var FetchBehaviour =
+                    options.fetcher ? BehaviourConstructor : FetchBehaviours[fetching];
                 var cancel = businessController(typeof options.queue === 'function' ?
                     options.queue(options.name, inputObjects) : options.queue, options.database,
                     options.storage, options.fetcher || options.fetching, FetchBehaviour,
@@ -268,9 +327,7 @@ backend.behaviour = function (path, config) {
                         Object.keys(behaviours).map(function (name) {
 
                             var suffix = behaviours[name] && behaviours[name].path;
-                            return typeof prefix === 'string' && req.path.startsWith(prefix) &&
-                                typeof suffix === 'string' ?
-                                join(prefix, suffix) : suffix || prefix;
+                            return resolve(prefix, suffix, req.path);
                         }), req, function (inputObjects) {
 
                             behaviour_runner(req, res, next, inputObjects);
@@ -288,33 +345,20 @@ backend.behaviour = function (path, config) {
                 req_handler.unless = unless;
                 req_handler = req_handler.unless({
 
-                    custom: function (request) {
+                    custom: function (req) {
 
-                        return options.unless.map(function (name) {
+                        return options.unless.filter(function (name) {
 
-                            return {
+                            var suffix = behaviours[name] && behaviours[name].path;
+                            var method = behaviours[name] && behaviours[name].method;
+                            return name === options.name && compare({
 
-                                name: name,
-                                path: behaviours[name] && behaviours[name].path,
-                                method: behaviours[name] && behaviours[name].method
-                            };
-                        }).filter(function (opt) {
-
-                            var name = opt.name;
-                            var suffix = opt.path;
-                            var method = opt.method;
-                            var route = typeof prefix === 'string' &&
-                                request.path.startsWith(prefix) &&
-                                typeof suffix === 'string' ?
-                                join(prefix, suffix) : suffix || prefix;
-                            return name === options.name && compareRoutes({
-
-                                path: route,
+                                path: resolve(prefix, suffix, req.path),
                                 method: method
                             }, {
 
-                                path: request.path,
-                                method: request.method
+                                path: req.path,
+                                method: req.method
                             });
                         }).length > 0;
                     }
@@ -327,13 +371,13 @@ backend.behaviour = function (path, config) {
             }
             if (isRoute) {
 
-                var keys = Object.keys(behaviours);
-                if (!skipSameRoutes && keys.some(function (key) {
+                var names = Object.keys(behaviours);
+                if (!skipSameRoutes && names.some(function (name) {
 
-                    return compareRoutes({
+                    return compare({
 
-                        path: behaviours[key].path,
-                        method: behaviours[key].method
+                        path: behaviours[name].path,
+                        method: behaviours[name].method
                     }, {
 
                         path: options.path,
@@ -365,12 +409,22 @@ backend.behaviour = function (path, config) {
                     version: options.version,
                     method: options.method,
                     path: options.path,
+                    host: options.host,
+                    events: options.events.length > 0,
                     prefix: prefix,
                     origins: options.origins,
                     credentials: options.credentials,
                     maxAge: options.maxAge,
-                    parameters: options.parameters,
-                    returns: options.returns
+                    parameters: function () {
+
+                        if (typeof options.parameters !== 'function')
+                            return options.parameters;
+                    }(),
+                    returns: function () {
+
+                        if (typeof options.returns !== 'function')
+                            return options.returns;
+                    }()
                 };
             } else if (isRouterMiddleware) {
 
@@ -388,7 +442,7 @@ backend.behaviour = function (path, config) {
     };
 };
 
-backend.behaviours = function (path, parser, remotes) {
+backend.BehavioursServer = function (path, parser, remotes) {
 
     if (typeof remotes === 'object') defaultRemotes = remotes;
     if (defaultPrefix === '/' && typeof path === 'string' && path.length > 0)
@@ -399,7 +453,103 @@ backend.behaviours = function (path, parser, remotes) {
 
             respond(res, behaviours, parser);
         });
-    return behaviours;
+    var validate_path = function (behaviour, path) {
+
+        var behaviour_prefix = behaviour.prefix || defaultPrefix;
+        return compare({
+
+            path: resolve(behaviour_prefix, behaviour.path, path)
+        }, {
+
+            path: path
+        });
+    };
+    var validate_host = function (host, req, res) {
+
+        var same_host = true;
+        if (typeof host === 'string' && host.length > 0)
+            vhost(host, function () { })(req, res, function () {
+
+                same_host = false;
+            });
+        return same_host;
+    };
+    this.upgrade = function (req, socket, head) {
+
+        var names = Object.keys(behaviours);
+        for (var i = 0; i < names.length; i++) {
+
+            if (!upgradePlugins[names[i]]) continue;
+            var behaviour = behaviours[names[i]];
+            if (validate_host(behaviour.host, req, socket) &&
+                validate_path(behaviour, req.path)) {
+
+                upgradePlugins[names[i]](req, socket, undefined, head);
+                return true;
+            }
+        }
+        return false;
+    };
+    this.validate = function (path, query) {
+
+        var name = query.behaviour;
+        if (typeof name === 'string' && name.length > 0) {
+
+            var behaviour = behaviours[name];
+            if (behaviour && behaviour.events &&
+                path.startsWith(behaviour.prefix)) return;
+        }
+        return new Error('Not found');
+    };
+    this.connect = function (socket) {
+
+        var client;
+        var name = socket.handshake.query.behaviour;
+        var token = socket.handshake.auth.token;
+        var id = socket.handshake.session.id;
+        if (typeof name === 'string' && name.length > 0 &&
+            typeof token === 'string' && token.length > 0) {
+
+            var behaviour = behaviours[name];
+            if (behaviour && behaviour.events &&
+                validate_host(behaviour.host, socket.request, socket)) {
+
+                var joined = false;
+                var event = events[name];
+                if (event) socket.once('join ' + behaviour, function (room) {
+
+                    if (event[room]) client = event[room][id];
+                    if (client) {
+
+                        client.count++;
+                        if (client.token === token && client.count === 0) {
+
+                            var room_events = emitters[room];
+                            if (!room_events) room_events = emitters[room] = {};
+                            var emitter = room_events[name];
+                            if (!emitter) emitter = room_events[name] = [];
+                            if (emitter.indexOf(socket.nsp) === -1)
+                                emitter.push(socket.nsp);
+                            socket.join(room);
+                            joined = true;
+                            return;
+                        }
+                    }
+                    socket.disconnect(true);
+                });
+                setTimeout(function () {
+
+                    if (!joined) socket.disconnect(true);
+                }, 60000);
+                socket.once('disconnect', function () {
+
+                    if (client) client.count--;
+                });
+                return;
+            }
+        }
+        socket.disconnect(true);
+    };
 };
 
 backend.routes = behaviours;
