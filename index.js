@@ -115,7 +115,7 @@ module.exports = {
                 origins = typeof origins === 'string' && origins.length > 0 ? origins : origins == true;
                 if (origins && compare({
 
-                    path: resolve(prefix, routeOptions.path, req)
+                    path: resolve(prefix, routeOptions.path, req.path)
                 }, {
 
                     path: req.path

@@ -352,7 +352,7 @@ backend.behaviour = function (path, config) {
 
                             var suffix = behaviours[name] && behaviours[name].path;
                             var method = behaviours[name] && behaviours[name].method;
-                            return name === options.name && compare({
+                            return compare({
 
                                 path: resolve(prefix, suffix, req.path),
                                 method: method
