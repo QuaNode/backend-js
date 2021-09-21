@@ -10,6 +10,7 @@ var vhost = require('vhost');
 var define = require('define-js');
 var parse = require('parseparams');
 var url = require('url');
+var querystring = require('querystring');
 var crypto = require('crypto');
 var {
     BusinessBehaviourType,
@@ -175,11 +176,6 @@ backend.behaviour = function (path, config) {
 
                 throw new Error('behaviours is a reserved name');
             }
-            BEHAVIOURS[options.name] = {
-
-                options: options,
-                constructor: BehaviourConstructor
-            };
             var isRouterMiddleware = typeof options.path === 'string' && options.path.length > 0;
             var isRoute = isRouterMiddleware && typeof options.method === 'string' &&
                 typeof app[options.method.toLowerCase()] === 'function';
@@ -206,6 +202,15 @@ backend.behaviour = function (path, config) {
                 if (overwritePath) prefix = path;
                 else prefix = join(defaultPrefix, path);
             } else if (defaultPrefix !== '/' && !overwritePath) prefix = defaultPrefix;
+            if (options.events.length > 0 && join(prefix, options.path) == join(prefix, '/events')) {
+
+                throw new Error('Invalid path. ' + join(prefix, options.path) + ' is reserved route');
+            }
+            BEHAVIOURS[options.name] = {
+
+                options: Object.assign({ prefix }, options),
+                constructor: BehaviourConstructor
+            };
             var behaviour_runner = function (req, res, next, inputObjects, er) {
 
                 var signature = getSignature(req);
@@ -257,6 +262,7 @@ backend.behaviour = function (path, config) {
                         if (options.events.length > 0) {
 
                             var events_token = crypto.randomBytes(48).toString('base64');
+                            response.events_token = events_token;
                             response.events = options.events.map(function (event) {
 
                                 var room = typeof event === 'function' ?
@@ -272,7 +278,7 @@ backend.behaviour = function (path, config) {
                                     if (!event[room]) event[room] = {};
                                     event[room][req.session.id] = {
 
-                                        token: response.events_token = events_token,
+                                        token: events_token,
                                         count: 0
                                     };
                                     return true;
@@ -482,11 +488,16 @@ backend.BehavioursServer = function (path, parser, remotes) {
     this.upgrade = function (req, socket, head) {
 
         var names = Object.keys(BEHAVIOURS);
+        var [path, query] = (req.originalUrl || req.url).split('?');
+        if (query) {
+
+            query = querystring.parse(query);
+            if (names.indexOf(query.behaviour) > -1) names = [query.behaviour];
+        }
         for (var i = 0; i < names.length; i++) {
 
             if (!upgradePlugins[names[i]]) continue;
             var behaviour = BEHAVIOURS[names[i]].options;
-            var path = req.originalUrl || req.url;
             if (validate_host(behaviour.host, req, socket) &&
                 validate_path(behaviour, path)) {
 
@@ -502,16 +513,23 @@ backend.BehavioursServer = function (path, parser, remotes) {
         if (typeof name === 'string' && name.length > 0) {
 
             var behaviour = BEHAVIOURS[name] && BEHAVIOURS[name].options;
-            if (behaviour && behaviour.events &&
-                path.startsWith(behaviour.prefix)) return;
+            if (behaviour && behaviour.events && compare({
+
+                path: resolve(behaviour.prefix, '/events', path)
+            }, {
+
+                path: path
+            })) return;
         }
         return new Error('Not found');
     };
     this.connect = function (socket) {
 
         var client;
-        var name = socket.handshake.query.behaviour;
-        var token = socket.handshake.auth.token;
+        var name = socket.handshake.auth.behaviour ||
+            socket.handshake.query.behaviour;
+        var token = socket.handshake.auth.token ||
+            socket.handshake.query.token;
         var id = socket.handshake.session.id;
         if (typeof name === 'string' && name.length > 0 &&
             typeof token === 'string' && token.length > 0) {
@@ -522,13 +540,13 @@ backend.BehavioursServer = function (path, parser, remotes) {
 
                 var joined = false;
                 var event = events[name];
-                if (event) socket.once('join ' + behaviour, function (room) {
+                if (event) socket.once('join ' + name, function (room) {
 
                     if (event[room]) client = event[room][id];
                     if (client) {
 
                         client.count++;
-                        if (client.token === token && client.count === 0) {
+                        if (client.token === token && client.count === 1) {
 
                             var room_events = emitters[room];
                             if (!room_events) room_events = emitters[room] = {};

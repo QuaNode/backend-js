@@ -3,12 +3,12 @@
 'use strict';
 
 var fs = require('fs');
+var querystring = require('querystring');
 var bodyParser = require('body-parser');
 var logger = require('morgan');
 var HttpStatus = require('http-status-codes');
 var rateLimit = require("express-rate-limit");
 var session = require('express-session');
-var iosession = require("express-socket.io-session");
 var memorystore = require('memorystore');
 var debug = require('debug');
 var cors = require('cors');
@@ -94,7 +94,7 @@ module.exports = {
         if (options.proxy) app.set('trust proxy', options.proxy);
         app.use(logger('dev'));
         app.use(limiter);
-        app.all('/*', cors(function (req, callback) {
+        var corsDelegate = function (req, callback) {
 
             var corsOptions = {
 
@@ -111,18 +111,38 @@ module.exports = {
                 if (typeof routeOptions.method === 'string' &&
                     typeof app[routeOptions.method.toLowerCase()] === 'function')
                     method = routeOptions.method.toLowerCase();
-                var origins = routeOptions.origins != undefined ? routeOptions.origins : options.origins;
-                origins = typeof origins === 'string' && origins.length > 0 ? origins : origins == true;
-                if (origins && compare({
+                var origins =
+                    routeOptions.origins != undefined ? routeOptions.origins : options.origins;
+                origins =
+                    typeof origins === 'string' && origins.length > 0 ? origins : origins == true;
+                var path = req.path || req.originalUrl || req.url;
+                var [path, query] = path.split('?');
+                var events_path = false;
+                if (query && routeOptions.events && compare({
 
-                    path: resolve(prefix, routeOptions.path, req.path)
+                    path: resolve(prefix, '/events', path)
                 }, {
 
-                    path: req.path
-                }) && [method, 'options'].indexOf(req.method.toLowerCase()) > -1) {
+                    path: path
+                }) && req.method.toLowerCase() === 'get') {
+
+                    query = querystring.parse(query);
+                    if (keys[i] == query.behaviour) {
+
+                        events_path = true;
+                        credentials = true;
+                    }
+                }
+                if (origins && (events_path || (compare({
+
+                    path: resolve(prefix, routeOptions.path, path)
+                }, {
+
+                    path: path
+                }) && [method, 'options'].indexOf(req.method.toLowerCase()) > -1))) {
 
                     setCorsOptions(corsOptions, origins, routeOptions, req);
-                    credentials =
+                    if (!events_path) credentials =
                         routeOptions.credentials != undefined ? routeOptions.credentials : credentials;
                     maxAge = routeOptions.maxAge != undefined ? routeOptions.maxAge : maxAge;
                     break;
@@ -131,9 +151,11 @@ module.exports = {
             if (typeof credentials === 'boolean') corsOptions.credentials = credentials;
             if (!isNaN(parseInt(maxAge))) corsOptions.maxAge = maxAge;
             callback(null, corsOptions);
-        }));
-        app.use(session({
+        };
+        app.all('/*', cors(corsDelegate));
+        app.use(session = session({
 
+            name: 'behaviours.sid',
             store: new MemoryStore(),
             resave: false,
             secret: '' + new Date().getTime()
@@ -188,11 +210,11 @@ module.exports = {
                 return https;
             }, {}); else return app;
         }(), app);
-        var io = new Server(server);
-        io.use(iosession(session, {
+        var io = new Server(server, {
 
-            autoSave: true
-        }));
+            cors: corsDelegate,
+            allowEIO3: true
+        });
         io.of(function (path, query, next) {
 
             var err = validate(path, query);
@@ -204,6 +226,9 @@ module.exports = {
                 debug('backend socket:' + socket.id + ' disconnected on port ' + app.get('port'));
             });
             connect(socket);
+        }).use(function (socket, next) {
+
+            session(socket.handshake, {}, next);
         });
         server.removeAllListeners("upgrade");
         server.on("upgrade", function (req, socket, head) {
