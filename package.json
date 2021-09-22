@@ -27,7 +27,7 @@
         "morgan": "latest",
         "parseparams": "latest",
         "route-parser": "latest",
-        "snyk": "^1.677.0",
+        "snyk": "^1.685.0",
         "socket.io": "latest",
         "vhost": "latest"
     },
