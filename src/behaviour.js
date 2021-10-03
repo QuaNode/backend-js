@@ -237,6 +237,14 @@ backend.behaviour = function (path, config) {
                     type: types[options.type],
                     priority: options.priority || 0,
                     inputObjects: inputObjects
+                }, function (name, room) {
+
+                    var event = events[name];
+                    if (event && event[room]) {
+
+                        var client = event[room][req.session.id];
+                        if (client) return client.id;
+                    }
                 });
                 var behaviour_callback = function (behaviour_response, error) {
 
@@ -545,6 +553,7 @@ backend.BehavioursServer = function (path, parser, remotes) {
                     if (event[room]) client = event[room][id];
                     if (client) {
 
+                        client.id = socket.id;
                         client.count++;
                         if (client.token === token && client.count === 1) {
 

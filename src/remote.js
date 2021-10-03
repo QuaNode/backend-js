@@ -29,9 +29,11 @@ module.exports.getRemoteBehaviour =
                         self.inputObjects = parameters;
                     }
                 });
-                self.run = function (behaviour, parameters, callback) {
+                self.run = function (behaviour, parameters, callback, queue) {
 
-                    var queue, database, storage, fetcher, fetching, FetchBehaviour, memory;
+                    var database, storage, fetcher, fetching, FetchBehaviour, memory;
+                    var queuě = typeof options.queue === 'function' ?
+                        options.queue(options.name, self.inputObjects) : options.queue;
                     if (!(behaviour instanceof BusinessBehaviour)) {
 
                         if (typeof behaviour !== 'string' || !BEHAVIOURS[behaviour])
@@ -52,18 +54,23 @@ module.exports.getRemoteBehaviour =
                                 priority: options.priority || 0,
                                 inputObjects: parameters
                             });
-                        if (ȯptiȯns.queue && (database || storage || fetcher || fetching))
-                            queue = typeof ȯptiȯns.queue === 'function' ?
-                                ȯptiȯns.queue(ȯptiȯns.name, behaviour.parameters) : ȯptiȯns.queue;
+                        if (!queue && ȯptiȯns.queue) {
+
+                            if (database || storage || fetcher || fetching) {
+
+                                if (typeof ȯptiȯns.queue === 'function')
+                                    queue = ȯptiȯns.queue(ȯptiȯns.name, behaviour.parameters);
+                                else queue = ȯptiȯns.queue;
+                            }
+                        }
                     } else callback = parameters;
                     if (typeof callback !== 'function')
                         throw new Error('Invalid behaviour callback');
-                    if (typeof parameters !== 'function' || callback == parameters)
-                        self.mandatoryBehaviour = behaviour;
-                    if (!queue) {
+                    if (!queue) queue = queuě;
+                    if (queue == queuě) {
 
-                        queue = typeof options.queue === 'function' ?
-                            options.queue(options.name, self.inputObjects) : options.queue;
+                        if (typeof parameters !== 'function' || callback == parameters)
+                            self.mandatoryBehaviour = behaviour;
                     }
                     if (!FetchBehaviour) {
 
@@ -72,9 +79,14 @@ module.exports.getRemoteBehaviour =
                                 typeof options.fetching === 'string' ? options.fetching : '';
                         FetchBehaviour = FetchBehaviours[fetch];
                     }
-                    businessController(queue, database || options.database, storage || options.storage,
-                        fetcher || options.fetcher || fetching || options.fetching, FetchBehaviour,
-                        memory || options.memory).runBehaviour(behaviour, null, callback);
+                    if (!database) database = options.database;
+                    if (!storage) storage = options.storage;
+                    if (!fetcher) fetcher = options.fetcher;
+                    if (!fetcher) fetcher = fetching;
+                    if (!fetcher) fetcher = options.fetching;
+                    if (!memory) memory = options.memory;
+                    businessController(queue, database, storage, fetcher, FetchBehaviour,
+                        memory).runBehaviour(behaviour, null, callback);
                     return self;
                 };
                 self.remote = function (baseURL) {

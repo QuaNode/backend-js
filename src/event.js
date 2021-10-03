@@ -11,78 +11,89 @@ debug.enable('backend:*');
 debug = debug('backend:event');
 
 module.exports.getEventBehaviour =
-	function (options, config, types, BEHAVIOURS, defaultRemotes, FetchBehaviours, getEmitters) {
+    function (options, config, types, BEHAVIOURS, defaultRemotes, FetchBehaviours, getEmitters) {
 
-		var getEBConstructor = function (init) {
+        var getEBConstructor = function (init) {
 
-			return function () {
+            return function () {
 
-				var self = init.apply(this, arguments).self();
-				var emit = function (emitters, room, behavior, response, forceReceive) {
+                var self = init.apply(this, arguments).self();
+                var [_, getEmitterId] = arguments;
+                var emit = function (emitters, room, behavior, response, forceReceive) {
 
-					emitters.forEach(function (emitter) {
+                    emitters.forEach(function (emitter) {
 
-						if (!forceReceive) emitter = emitter.volatile;
-						emitter.to(room).emit(behavior, response);
-					});
-				};
-				self.trigger = function (event, parameters, forceReceive) {
+                        if (!forceReceive) emitter = emitter.volatile;
+                        emitter.to(room).emit(behavior, response);
+                    });
+                };
+                self.trigger = function (event, parameters, forceReceive) {
 
-					var room = event;
-					if (room && typeof room === 'object') room = JSON.stringify(room);
-					if (typeof room !== 'string') throw new Error('Invalid event');
-					var emitters = getEmitters(room);
-					if (emitters) Object.keys(emitters).forEach(function (behavior_name) {
+                    var room = event;
+                    if (room && typeof room === 'object') room = JSON.stringify(room);
+                    if (typeof room !== 'string') throw new Error('Invalid event');
+                    var queue = typeof options.queue === 'function' ?
+                        options.queue(options.name, self.parameters) : options.queue;
+                    var emitters = getEmitters(room);
+                    if (emitters) Object.keys(emitters).forEach(function (behavior_name) {
 
-						var emitter = emitters[behavior_name];
-						var behavior = BEHAVIOURS[behavior_name].options;
-						if (Array.isArray(emitter)) self.run(behavior_name, parameters,
-							function (behaviour_response, error) {
+                        var behavior = BEHAVIOURS[behavior_name].options;
+                        var behavior_queue = typeof behavior.queue === 'function' ?
+                            behavior.queue(behavior.name, parameters) : behavior.queue;
+                        if (behavior_queue == queue) {
 
-								var response = {
+                            throw new Error('Queues of event behaviours should be different ' +
+                                'from the queue of triggering behaviour');
+                        }
+                        var emitter = emitters[behavior.name];
+                        if (Array.isArray(emitter)) self.run(behavior.name, parameters,
+                            function (behaviour_response, error) {
 
-									behaviour: behavior.name,
-									version: behavior.version
-								};
-								if (typeof error === 'object' || typeof behaviour_response !== 'object') {
+                                var response = {
 
-									debug(err);
-									response.message = error ? error.message : 'Error while executing ' +
-										behavior.name + ' behaviour, version ' + behavior.version + '!';
-								} else {
+                                    behaviour: behavior.name,
+                                    version: behavior.version,
+                                    emitter_id: getEmitterId(behavior.name, room)
+                                };
+                                if (typeof error === 'object' || typeof behaviour_response !== 'object') {
 
-									response.response = behavior.paginate ? behaviour_response.modelObjects ||
-										behaviour_response : behaviour_response;
-									if (behavior.paginate) {
+                                    debug(err);
+                                    response.message = error ? error.message : 'Error while executing ' +
+                                        behavior.name + ' behaviour, version ' + behavior.version + '!';
+                                } else {
 
-										response.has_more = behaviour_response.pageCount > parameters.page;
-									}
-									if (typeof behavior.returns === 'function') {
+                                    response.response = behavior.paginate ? behaviour_response.modelObjects ||
+                                        behaviour_response : behaviour_response;
+                                    if (behavior.paginate) {
 
-										behavior.returns(emitter.reduce(function (requests, anEmitter) {
+                                        response.has_more = behaviour_response.pageCount > parameters.page;
+                                    }
+                                    if (typeof behavior.returns === 'function') {
 
-											if (anEmitter instanceof Namespace) requests =
-												requests.concat(anEmitter.allSockets().map(function (socket) {
+                                        behavior.returns(emitter.reduce(function (requests, anEmitter) {
 
-													return socket.request;
-												}));
-											return requests;
-										}, []), emitter, behaviour_response, error, function (outputObjects) {
+                                            if (anEmitter instanceof Namespace) requests =
+                                                requests.concat(anEmitter.allSockets().map(function (socket) {
 
-											emit(emitter, room, behavior_name, outputObjects, forceReceive);
-										});
-										return;
-									}
-								}
-								emit(emitter, room, behavior_name, response, forceReceive);
-							});
-					});
-				};
-			}
-		};
-		return define(getEBConstructor).extend(getRemoteBehaviour(options, config, types, BEHAVIOURS,
-			defaultRemotes, FetchBehaviours)).defaults({
+                                                    return socket.request;
+                                                }));
+                                            return requests;
+                                        }, []), emitter, behaviour_response, error, function (outputObjects) {
 
-				type: types[options.type]
-			});
-	};
+                                            emit(emitter, room, behavior.name, outputObjects, forceReceive);
+                                        });
+                                        return;
+                                    }
+                                }
+                                emit(emitter, room, behavior.name, response, forceReceive);
+                            }, behavior_queue);
+                    });
+                };
+            }
+        };
+        return define(getEBConstructor).extend(getRemoteBehaviour(options, config, types, BEHAVIOURS,
+            defaultRemotes, FetchBehaviours)).defaults({
+
+                type: types[options.type]
+            });
+    };
