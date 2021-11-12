@@ -98,9 +98,9 @@ module.exports = {
 
             var corsOptions = {
 
-                origin: false
+                origin: false,
+                credentials: true
             };
-            var credentials = options.credentials;
             var maxAge = options.maxAge;
             var keys = Object.keys(routes);
             for (var i = 0; i < keys.length; i++) {
@@ -127,11 +127,7 @@ module.exports = {
                 }) && req.method.toLowerCase() === 'get') {
 
                     query = querystring.parse(query);
-                    if (keys[i] == query.behaviour) {
-
-                        events_path = true;
-                        credentials = true;
-                    }
+                    if (keys[i] == query.behaviour) events_path = true;
                 }
                 if (origins && (events_path || (compare({
 
@@ -142,13 +138,10 @@ module.exports = {
                 }) && [method, 'options'].indexOf(req.method.toLowerCase()) > -1))) {
 
                     setCorsOptions(corsOptions, origins, routeOptions, req);
-                    if (!events_path) credentials =
-                        routeOptions.credentials != undefined ? routeOptions.credentials : credentials;
                     maxAge = routeOptions.maxAge != undefined ? routeOptions.maxAge : maxAge;
                     break;
                 }
             }
-            if (typeof credentials === 'boolean') corsOptions.credentials = credentials;
             if (!isNaN(parseInt(maxAge))) corsOptions.maxAge = maxAge;
             callback(null, corsOptions);
         };

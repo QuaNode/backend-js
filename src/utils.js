@@ -215,13 +215,6 @@ module.exports = {
 
         if (typeof response !== 'object' || typeof response.signature !== 'number')
             throw new Error('Invalid behaviour signature');
-        if (responses[response.signature]) {
-
-            clearTimeout(responses[response.signature].timeout);
-            var callback = responses[response.signature].callback;
-            delete responses[response.signature];
-            return callback();
-        }
         if (timeouts[response.signature]) return next(new Error('Request timeout'));
         if (!requests[response.signature]) requests[response.signature] = [];
         if (requests[response.signature].length === 0) {
@@ -236,13 +229,20 @@ module.exports = {
                     if (requests[response.signature]) {
 
                         var index = requests[response.signature].indexOf(request);
-                        requests[response.signature].splice(index, 1);
+                        if (index > -1) requests[response.signature].splice(index, 1);
                     }
                     if (!req.aborted && !res.headersSent) utils.respond(res, response);
                 }, TIMEOUT * 1000)
             };
             requests[response.signature].push(request);
         } else utils.respond(res, response);
+        if (responses[response.signature]) {
+
+            clearTimeout(responses[response.signature].timeout);
+            var callback = responses[response.signature].callback;
+            delete responses[response.signature];
+            callback();
+        }
     },
     getSignature: function (req) {
 

@@ -428,7 +428,6 @@ backend.behaviour = function (path, config) {
                     events: options.events.length > 0,
                     prefix: prefix,
                     origins: options.origins,
-                    credentials: options.credentials,
                     maxAge: options.maxAge,
                     parameters: function () {
 
