@@ -28,7 +28,7 @@
         "parseparams": "latest",
         "route-parser": "latest",
         "snyk": "^1.685.0",
-        "socket.io": "latest",
+        "socket.io": "4.4.0",
         "vhost": "latest"
     },
     "repository": {
