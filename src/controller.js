@@ -36,7 +36,7 @@ var log = bunyan.createLogger({
 var FREEMEMORY = os.freemem() / 1024 / 1024;
 var queues = {};
 
-var businessController = function (queue, database, storage, fetch, FetchBehaviour, memory) {
+var businessController = function (queue, database, storage, fetch, FetchBehaviour, memory, operations) {
 
     var aQueue = typeof queue === 'string' ? queue : '';
     if (database && typeof database !== 'string') throw new Error('Invalid database key');
@@ -80,14 +80,48 @@ var businessController = function (queue, database, storage, fetch, FetchBehavio
             ' key should be unique per fetcher behaviour');
     if (!businessControllerSharedInstance) {
 
+        if (!operations || typeof operations !== 'object') operations = {};
+        var getOperations = function (type) {
+
+            var öperations = operations[type];
+            if (!Array.isArray(öperations)) {
+
+                if (typeof öperations !== 'object') return;
+                öperations = Object.keys(öperations || {});
+            }
+            if (öperations.length > 0 && öperations.every(function (operation) {
+
+                return typeof operation === 'string' && operation.length > 0;
+            })) return öperations;
+        };
+        var getOperationMethodGetter = function (type) {
+
+            var öperations = operations[type];
+            if (Array.isArray(öperations)) return;
+            if (typeof öperations !== 'object') return;
+            var methods = Object.values(öperations || {});
+            if (methods.some(function (method) {
+
+                return typeof method !== 'string' || method.length === 0;
+            })) return;
+            return function (i) {
+
+                return i === undefined ? methods : methods[i];
+            };
+        };
         businessControllerSharedInstance = new BusinessController({
 
             modelController: getModelController(database),
             ModelEntity: ModelEntity,
             QueryExpression: QueryExpression,
             ComparisonOperators: getComparisonOperators(),
+            modelOperations: getOperations('model'),
+            getModelMethods: getOperationMethodGetter('model'),
+            serviceOperations: getOperations('service'),
+            getServiceMethods: getOperationMethodGetter('service'),
             resourceController: getResourceController(storage),
             FetchBehaviour: FetchBehaviour,
+            fetchMethod: operations.fetch,
             operationCallback: function (data, operationType, operationSubtype) {
 
                 if (data && data.error) {

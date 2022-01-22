@@ -15,20 +15,22 @@ module.exports.getRemoteBehaviour =
             return function () {
 
                 var ȯptions = arguments[0];
-                ȯptions.inputObjects = (ȯptions && ȯptions.parameters) || ȯptions.inputObjects;
+                ȯptions.inputObjects =
+                    (ȯptions && ȯptions.parameters) || ȯptions.inputObjects;
                 var self = init.apply(this, arguments).self();
-                Object.defineProperty(self, 'parameters', {
+                if (!self.hasOwnProperty('parameters'))
+                    Object.defineProperty(self, 'parameters', {
 
-                    enumerable: true,
-                    get: function () {
+                        enumerable: true,
+                        get: function () {
 
-                        return self.inputObjects;
-                    },
-                    set: function (parameters) {
+                            return self.inputObjects;
+                        },
+                        set: function (parameters) {
 
-                        self.inputObjects = parameters;
-                    }
-                });
+                            self.inputObjects = parameters;
+                        }
+                    });
                 self.run = function (behaviour, parameters, callback, queue) {
 
                     var database, storage, fetcher, fetching, FetchBehaviour, memory;

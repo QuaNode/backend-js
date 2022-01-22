@@ -130,6 +130,12 @@ module.exports.model = function () {
 
             return function (features, query, aggregate) {
 
+                if (Array.isArray(features)) {
+
+                    aggregate = query;
+                    query = features;
+                    features = undefined;
+                }
                 init.apply(this, [{
 
                     constructor: EntityConstructor,

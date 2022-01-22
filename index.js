@@ -153,7 +153,8 @@ module.exports = {
             resave: false,
             secret: '' + new Date().getTime()
         }));
-        var { upgrade, validate, connect } = new BehavioursServer(options.path, options.parser, paths);
+        var { upgrade, validate, connect } =
+            new BehavioursServer(options.path, options.parser, paths, options.operations);
         if (typeof paths === 'object' && typeof paths.proxy === 'string' &&
             paths.proxy.length > 0) require(paths.proxy);
         if (typeof options.static === 'object') {
