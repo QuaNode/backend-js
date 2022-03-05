@@ -48,12 +48,15 @@ var {
 } = require('./src/utils.js');
 
 var MemoryStore = memorystore(session);
-var TIMEOUT = 30000;
+var LIMIT = 5;
+var HITS = 30;
+var WINDOW = HITS * 1000;
 var limited = {};
 var limiter = rateLimit({
 
-    windowMs: 200,
-    max: 1,
+    windowMs: WINDOW,
+    max: HITS * LIMIT,
+    delayMs: 0,
     headers: false,
     handler: function (req, res, next) {
 
@@ -64,14 +67,16 @@ var limiter = rateLimit({
         };
         limited[req.ip].count++;
         var time = new Date().getTime() - limited[req.ip].time;
-        var limiting = limited[req.ip].count >= 5 && time <= 1000;
-        if (limiting) res.status(this.statusCode).send(this.message);
-        else setTimeout(function () {
+        var limiting = limited[req.ip].count > LIMIT && time <= WINDOW;
+        if (limiting) {
 
             limited[req.ip] = undefined;
             delete limited[req.ip];
+            res.status(this.statusCode).send(this.message);
+        } else setTimeout(function () {
+
             if (!req.aborted && !res.headersSent) next();
-        }, TIMEOUT);
+        }, (LIMIT - limited[req.ip].count) / HITS * 1000);
     }
 });
 
