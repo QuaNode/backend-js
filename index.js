@@ -48,7 +48,8 @@ var {
 } = require('./src/utils.js');
 
 var MemoryStore = memorystore(session);
-var TIMEOUT = 50;
+var TIMEOUT = 30000;
+var limited = {};
 var limiter = rateLimit({
 
     windowMs: 200,
@@ -56,12 +57,21 @@ var limiter = rateLimit({
     headers: false,
     handler: function (req, res, next) {
 
-        var timeout = (req.rateLimit.resetTime.getTime() - new Date().getTime()) *
-            (req.rateLimit.current - req.rateLimit.limit);
-        if (timeout < (1000 * TIMEOUT)) setTimeout(function () {
+        if (!limited[req.ip]) limited[req.ip] = {
 
+            count: 0,
+            time: new Date().getTime()
+        };
+        limited[req.ip].count++;
+        var time = new Date().getTime() - limited[req.ip].time;
+        var limiting = limited[req.ip].count >= 5 && time <= 1000;
+        if (limiting) res.status(this.statusCode).send(this.message);
+        else setTimeout(function () {
+
+            limited[req.ip] = undefined;
+            delete limited[req.ip];
             if (!req.aborted && !res.headersSent) next();
-        }, timeout); else res.status(this.statusCode).send(this.message);
+        }, TIMEOUT);
     }
 });
 
@@ -151,6 +161,7 @@ module.exports = {
             name: 'behaviours.sid',
             store: new MemoryStore(),
             resave: false,
+            saveUninitialized: false,
             secret: '' + new Date().getTime()
         }));
         var { upgrade, validate, connect } =

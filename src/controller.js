@@ -40,10 +40,10 @@ var businessController = function (queue, database, storage, fetch, FetchBehavio
 
     var aQueue = typeof queue === 'string' ? queue : '';
     if (database && typeof database !== 'string') throw new Error('Invalid database key');
-    else if (database) aQueue += database;
+    else if (database) aQueue += ' - ' + database;
     if (storage && typeof storage !== 'string') throw new Error('Invalid storage key');
-    else if (storage) aQueue += storage;
-    if (typeof fetch === 'string') aQueue += fetch;
+    else if (storage) aQueue += ' - ' + storage;
+    if (typeof fetch === 'string') aQueue += ' - ' + fetch;
     var theQueue = aQueue;
     var freeMemory = os.freemem() / 1024 / 1024;
     var theMemory = typeof memory === 'number' && memory > 0 ? memory : FREEMEMORY - freeMemory;
@@ -53,17 +53,12 @@ var businessController = function (queue, database, storage, fetch, FetchBehavio
         spare: {
 
             count: 0,
-            key: aQueue + new Date().getTime()
+            key: new Date().getTime()
         }
     };
     var count = (freeMemory / theMemory) - 1;
-    if (queues[aQueue].count > count && count > 0) {
+    if (queues[aQueue].count > count) {
 
-        if (queues[aQueue].spare.count > count) {
-
-            queues[aQueue].spare.count = 0;
-            queues[aQueue].spare.key = aQueue + new Date().getTime();
-        }
         theQueue = queues[aQueue].spare.key;
         queues[aQueue].spare.count++;
         if (queues[aQueue].timeout) clearTimeout(queues[aQueue].timeout);
@@ -124,35 +119,18 @@ var businessController = function (queue, database, storage, fetch, FetchBehavio
             fetchMethod: operations.fetch,
             operationCallback: function (data, operationType, operationSubtype) {
 
-                if (data && data.error) {
+                if (data && data.error) log.error({
 
-                    log.trace({
+                    behaviour: data.behaviour,
+                    operation: operationType + (operationSubtype ? ' @ ' + operationSubtype : ''),
+                    queue: queues[aQueue],
+                    err: {
 
-                        behaviour: data.behaviour,
-                        err: {
-
-                            message: data.error.message,
-                            name: data.error.name,
-                            stack: data.error.stack.split('\n    ')
-                        }
-                    }, 'Queue -> ' + (theQueue || 'Anonymous'));
-                    try {
-
-                        throw new Error('When ' + operationType + ' @ ' + operationSubtype);
-                    } catch (e) {
-
-                        log.error({
-
-                            behaviour: data.behaviour,
-                            err: {
-
-                                message: e.message,
-                                name: e.name,
-                                stack: e.stack.split('\n    ')
-                            }
-                        }, 'Queue -> ' + (theQueue || 'Anonymous'));
+                        message: data.error.message,
+                        name: data.error.name,
+                        stack: data.error.stack.split('\n    ')
                     }
-                }
+                }, 'Queue -> ' + (aQueue || 'Anonymous'));
             }
         });
         if (theQueue.length > 0)
