@@ -87,8 +87,8 @@ module.exports.getRemoteBehaviour =
                     if (!fetcher) fetcher = fetching;
                     if (!fetcher) fetcher = options.fetching;
                     if (!memory) memory = options.memory;
-                    businessController(queue, database, storage, fetcher, FetchBehaviour,
-                        memory).runBehaviour(behaviour, null, callback);
+                    businessController(behaviour.name, queue, database, storage, fetcher,
+                        FetchBehaviour, memory).runBehaviour(behaviour, null, callback);
                     return self;
                 };
                 self.remote = function (baseURL) {

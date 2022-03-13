@@ -65,9 +65,10 @@ var limiter = rateLimit({
             count: 0,
             time: new Date().getTime()
         };
-        limited[req.ip].count++;
+        var count = ++limited[req.ip].count;
         var time = new Date().getTime() - limited[req.ip].time;
-        var limiting = limited[req.ip].count > LIMIT && time <= WINDOW;
+        var timeout = (Math.abs(LIMIT - count) / HITS) * 1000;
+        var limiting = (count > LIMIT && time <= WINDOW) || (timeout > WINDOW);
         if (limiting) {
 
             limited[req.ip] = undefined;
@@ -76,7 +77,7 @@ var limiter = rateLimit({
         } else setTimeout(function () {
 
             if (!req.aborted && !res.headersSent) next();
-        }, (LIMIT - limited[req.ip].count) / HITS * 1000);
+        }, timeout);
     }
 });
 

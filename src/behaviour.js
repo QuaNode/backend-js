@@ -338,7 +338,7 @@ backend.behaviour = function (path, config) {
                 var fetching = typeof options.fetching === 'string' ? options.fetching : '';
                 var FetchBehaviour =
                     options.fetcher ? BehaviourConstructor : FetchBehaviours[fetching];
-                var cancel = businessController(typeof options.queue === 'function' ?
+                var cancel = businessController(options.name, typeof options.queue === 'function' ?
                     options.queue(options.name, inputObjects) : options.queue, options.database,
                     options.storage, options.fetcher || options.fetching, FetchBehaviour,
                     options.memory, options.operations).runBehaviour(behaviour, options.paginate ?
@@ -407,6 +407,13 @@ backend.behaviour = function (path, config) {
 
                 req_handler = vhost(options.host, req_handler);
                 if (req_plugin) req_plugin = vhost(options.host, req_plugin);
+            } else if (req_plugin) {
+
+                var _req_plugin_ = req_plugin;
+                req_plugin = function (req, res, next) {
+
+                    _req_plugin_(req, res, next);
+                };
             }
             if (isRoute) {
 
