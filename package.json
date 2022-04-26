@@ -5,7 +5,7 @@
     "main": "index.js",
     "scripts": {
         "test": "test",
-        "snyk-protect": "snyk protect",
+        "snyk-protect": "snyk-protect",
         "prepare": "npm run snyk-protect"
     },
     "dependencies": {
@@ -27,7 +27,7 @@
         "morgan": "latest",
         "parseparams": "latest",
         "route-parser": "latest",
-        "snyk": "^1.685.0",
+        "@snyk/protect": "latest",
         "socket.io": "latest",
         "vhost": "latest"
     },
