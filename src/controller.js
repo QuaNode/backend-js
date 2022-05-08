@@ -50,20 +50,11 @@ var businessController =
         var theMemory = typeof memory === 'number' && memory > 0 ? memory : FREEMEMORY - freeMemory;
         if (!queues[aQueue]) queues[aQueue] = {
 
-            count: 0,
-            spare: {
-
-                count: 0,
-                key: behaviour
-            }
+            memory: theMemory,
+            spare: behaviour
         };
-        var count = (freeMemory / theMemory) - 1;
-        if (queues[aQueue].count > count) {
-
-            theQueue = queues[aQueue].spare.key;
-            queues[aQueue].spare.count++;
-            queues[aQueue].count = 0;
-        } else queues[aQueue].count++;
+        if (theMemory < queues[aQueue].memory) queues[aQueue].memory = theMemory;
+        if (freeMemory < queues[aQueue].memory) theQueue = queues[aQueue].spare;
         var businessControllerSharedInstance = theQueue.length > 0 &&
             businessControllerSharedInstances[theQueue];
         if (businessControllerSharedInstance && FetchBehaviour &&

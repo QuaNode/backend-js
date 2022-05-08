@@ -50,12 +50,14 @@ var {
 var MemoryStore = memorystore(session);
 var LIMIT = 5;
 var HITS = 30;
-var WINDOW = HITS * 1000;
+var TIMEOUT = 1000;
+var WINDOW = HITS * TIMEOUT;
+var MAX = LIMIT * HITS;
 var limited = {};
 var limiter = rateLimit({
 
     windowMs: WINDOW,
-    max: HITS * LIMIT,
+    max: MAX,
     delayMs: 0,
     headers: false,
     handler: function (req, res, next) {
@@ -65,16 +67,22 @@ var limiter = rateLimit({
             count: 0,
             time: new Date().getTime()
         };
-        var count = ++limited[req.ip].count;
         var time = new Date().getTime() - limited[req.ip].time;
-        var timeout = (Math.abs(LIMIT - count) / HITS) * 1000;
-        var limiting = (count > LIMIT && time <= WINDOW) || (timeout > WINDOW);
-        if (limiting) {
+        var resetting = time > WINDOW;
+        var count = ++limited[req.ip].count;
+        if (resetting) {
 
             limited[req.ip] = undefined;
             delete limited[req.ip];
-            res.status(this.statusCode).send(this.message);
-        } else setTimeout(function () {
+        }
+        var timeout = count / MAX * TIMEOUT;
+        var limitable = count > MAX;
+        if (limitable || resetting) {
+
+            var limiting = (limitable && time <= WINDOW) || timeout > WINDOW;
+            if (limiting) return res.status(this.statusCode).send(this.message);
+        }
+        setTimeout(function () {
 
             if (!req.aborted && !res.headersSent) next();
         }, timeout);
