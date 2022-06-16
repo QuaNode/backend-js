@@ -5,7 +5,9 @@
 var express = require('express');
 var paginate = require('express-paginate');
 var Route = require('route-parser');
-var unless = require('express-unless');
+var {
+    unless
+} = require('express-unless');
 var vhost = require('vhost');
 var define = require('define-js');
 var parse = require('parseparams');

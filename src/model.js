@@ -40,9 +40,9 @@ module.exports.setModelController = function (mc, key) {
 
         throw new Error('Missing removeObjects method in model controller');
     }
-    if (typeof mc.newObjects !== 'function') {
+    if (typeof mc.addObjects !== 'function') {
 
-        throw new Error('Missing newObjects method in model controller');
+        throw new Error('Missing addObjects method in model controller');
     }
     if (typeof mc.getObjects !== 'function') {
 

@@ -184,7 +184,7 @@ var ModelController = function () {
     self.removeObjects = function (queryExprs, entity, callback) {
         // do remove
     };
-    self.newObjects = function (objsAttributes, entity, callback) {
+    self.addObjects = function (objsAttributes, entity, callback) {
         // do add new
     };
     self.getObjects = function (queryExprs, entity, callback) {
