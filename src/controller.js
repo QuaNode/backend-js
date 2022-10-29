@@ -1,41 +1,41 @@
 /*jslint node: true */
 /*jshint esversion: 6 */
-'use strict';
+"use strict";
 
-var os = require('os');
-var fs = require('fs');
-var bunyan = require('bunyan');
+var os = require("os");
+var fs = require("fs");
+var bunyan = require("bunyan");
 var {
     BusinessController
-} = require('behaviours-js');
+} = require("behaviours-js");
 var {
     QueryExpression,
     getComparisonOperators,
     ModelEntity,
     getModelController
-} = require('./model.js');
+} = require("./model.js");
 var {
     getResourceController
-} = require('./resource.js');
+} = require("./resource.js");
 
 var businessControllerSharedInstances = {};
 
-if (!fs.existsSync('./logs')) {
+if (!fs.existsSync("./logs")) {
 
-    fs.mkdirSync('./logs');
+    fs.mkdirSync("./logs");
 }
 
 var log = bunyan.createLogger({
 
-    name: 'backend',
+    name: "backend",
     streams: [{
 
-        path: './logs/error.log',
-        level: 'error',
+        path: "./logs/error.log",
+        level: "error",
     }, {
 
-        path: './logs/trace.log',
-        level: 'trace',
+        path: "./logs/trace.log",
+        level: "trace",
     }],
     serializers: bunyan.stdSerializers
 });
@@ -55,27 +55,27 @@ var businessController = function () {
         memory,
         operations
     ] = arguments;
-    var aQueue = '';
-    if (typeof queue === 'string') {
+    var aQueue = "";
+    if (typeof queue === "string") {
 
         aQueue = queue;
     }
-    if (database && typeof database !== 'string') {
+    if (database && typeof database !== "string") {
 
-        throw new Error('Invalid database key');
-    } else if (database) aQueue += ' - ' + database;
-    if (storage && typeof storage !== 'string') {
+        throw new Error("Invalid database key");
+    } else if (database) aQueue += " - " + database;
+    if (storage && typeof storage !== "string") {
 
-        throw new Error('Invalid storage key');
-    } else if (storage) aQueue += ' - ' + storage;
-    if (typeof fetch === 'string') {
+        throw new Error("Invalid storage key");
+    } else if (storage) aQueue += " - " + storage;
+    if (typeof fetch === "string") {
 
-        aQueue += ' - ' + fetch;
+        aQueue += " - " + fetch;
     }
     var theQueue = aQueue;
     var freeMemory = os.freemem() / 1024 / 1024;
     var theMemory = FREEMEMORY - freeMemory;
-    if (typeof memory === 'number' && memory > 0) {
+    if (typeof memory === "number" && memory > 0) {
 
         theMemory = memory;
     }
@@ -110,16 +110,16 @@ var businessController = function () {
     }
     if (invalid_fetch) {
 
-        throw new Error('Please require() fetcher behaviour' +
-            ' before behaviours using it and fetcher key' +
-            ' should be unique per fetcher behaviour');
+        throw new Error("Please require() fetcher behaviour" +
+            " before behaviours using it and fetcher key" +
+            " should be unique per fetcher behaviour");
     }
     if (!businessControllerSharedInstance) {
 
         var no_operations = !operations;
         if (!no_operations) {
 
-            no_operations |= typeof operations !== 'object';
+            no_operations |= typeof operations !== "object";
         }
         if (no_operations) operations = {};
         var getOperations = function (type) {
@@ -127,13 +127,13 @@ var businessController = function () {
             var öperations = operations[type];
             if (!Array.isArray(öperations)) {
 
-                if (typeof öperations !== 'object') return;
+                if (typeof öperations !== "object") return;
                 öperations = Object.keys(öperations || {});
             }
             if (öperations.length > 0 && öperations.every(...[
                 function (operation) {
 
-                    let valid = typeof operation === 'string';
+                    let valid = typeof operation === "string";
                     if (valid) {
 
                         valid &= operation.length > 0;
@@ -146,11 +146,11 @@ var businessController = function () {
 
             var öperations = operations[type];
             if (Array.isArray(öperations)) return;
-            if (typeof öperations !== 'object') return;
+            if (typeof öperations !== "object") return;
             var methods = Object.values(öperations || {});
             if (methods.some(function (method) {
 
-                let invalid = typeof method !== 'string';
+                let invalid = typeof method !== "string";
                 if (!invalid) {
 
                     invalid |= method.length === 0;
@@ -172,29 +172,29 @@ var businessController = function () {
             ModelEntity,
             QueryExpression,
             ComparisonOperators: getComparisonOperators(),
-            modelOperations: getOperations('model'),
-            getModelMethods: getOperationMethodGetter('model'),
-            serviceOperations: getOperations('service'),
-            getServiceMethods: getOperationMethodGetter('service'),
+            modelOperations: getOperations("model"),
+            getModelMethods: getOperationMethodGetter("model"),
+            serviceOperations: getOperations("service"),
+            getServiceMethods: getOperationMethodGetter("service"),
             resourceController: getResourceController(storage),
             FetchBehaviour,
             fetchMethod: operations.fetch,
-            operationCallback: function () {
+            operationCallback() {
 
                 var [
                     data,
                     operationType,
                     operationSubtype
                 ] = arguments;
-                var _in_ = '';
+                var _in_ = "";
                 if (behaviour) {
 
-                    _in_ = ' in ' + behaviour;
+                    _in_ = " in " + behaviour;
                 }
-                var _when_ = '';
+                var _when_ = "";
                 if (operationSubtype) {
 
-                    _when_ = ' when ' + operationSubtype;
+                    _when_ = " when " + operationSubtype;
                 }
                 if (data && data.error) log.error({
 
@@ -205,9 +205,9 @@ var businessController = function () {
 
                         message: data.error.message,
                         name: data.error.name,
-                        stack: data.error.stack.split('\n    ')
+                        stack: data.error.stack.split("\n    ")
                     }
-                }, 'Queue -> ' + (aQueue || 'Anonymous'));
+                }, "Queue -> " + (aQueue || "Anonymous"));
             }
         });
         if (theQueue.length > 0) {

@@ -1,18 +1,18 @@
 /*jslint node: true */
 /*jshint esversion: 6 */
-'use strict';
+"use strict";
 
 var {
     Namespace
-} = require('socket.io');
-var debug = require('debug');
-var define = require('define-js');
+} = require("socket.io");
+var debug = require("debug");
+var define = require("define-js");
 var {
     getRemoteBehaviour
-} = require('./remote.js');
+} = require("./remote.js");
 
-debug.enable('backend:*');
-debug = debug('backend:event');
+debug.enable("backend:*");
+debug = debug("backend:event");
 
 module.exports.getEventBehaviour = function () {
 
@@ -67,16 +67,16 @@ module.exports.getEventBehaviour = function () {
                     forceReceive
                 ] = arguments;
                 var room = event;
-                if (room && typeof room === 'object') {
+                if (room && typeof room === "object") {
 
                     room = JSON.stringify(room);
                 }
-                if (typeof room !== 'string') {
+                if (typeof room !== "string") {
 
-                    throw new Error('Invalid event');
+                    throw new Error("Invalid event");
                 }
                 var queue = options.queue;
-                if (typeof options.queue === 'function') {
+                if (typeof options.queue === "function") {
 
                     queue = options.queue(...[
                         options.name,
@@ -94,7 +94,7 @@ module.exports.getEventBehaviour = function () {
                     var {
                         queue: behaviour_queue
                     } = behaviour;
-                    if (typeof behaviour.queue === 'function') {
+                    if (typeof behaviour.queue === "function") {
 
                         behaviour_queue = behaviour.queue(...[
                             behaviour.name,
@@ -103,10 +103,10 @@ module.exports.getEventBehaviour = function () {
                     }
                     if (behaviour_queue == queue) {
 
-                        throw new Error('Queue of event ' +
-                            'behaviour should be different ' +
-                            'from the queue of triggering ' +
-                            'behaviour');
+                        throw new Error("Queue of event " +
+                            "behaviour should be different " +
+                            "from the queue of triggering " +
+                            "behaviour");
                     }
                     var emitter = emitters[behaviour.name];
                     if (Array.isArray(emitter)) self.run(...[
@@ -128,11 +128,11 @@ module.exports.getEventBehaviour = function () {
                                 ])
                             };
                             var failing = false;
-                            if (typeof error === 'object') {
+                            if (typeof error === "object") {
 
                                 failing = true;
                             }
-                            if (typeof result !== 'object') {
+                            if (typeof result !== "object") {
 
                                 failing |= true;
                             }
@@ -145,11 +145,11 @@ module.exports.getEventBehaviour = function () {
                                     response.message = message;
                                 } else {
 
-                                    response.message = 'Error' +
-                                        ' while executing ' +
+                                    response.message = "Error" +
+                                        " while executing " +
                                         behaviour.name +
-                                        ' behaviour, version ' +
-                                        behaviour.version + '!';
+                                        " behaviour, version " +
+                                        behaviour.version + "!";
                                 }
                             } else {
 
@@ -176,7 +176,7 @@ module.exports.getEventBehaviour = function () {
                                     }
                                 }
                                 var { returns } = behaviour;
-                                if (typeof returns === 'function') {
+                                if (typeof returns === "function") {
 
                                     returns(...[
                                         emitter.reduce(function () {

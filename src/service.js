@@ -1,9 +1,9 @@
 /*jslint node: true */
 /*jshint esversion: 6 */
-'use strict';
+"use strict";
 
-var define = require('define-js');
-var parse = require('parseparams');
+var define = require("define-js");
+var parse = require("parseparams");
 var {
     ServiceAdapter,
     ServiceEndPoint,
@@ -11,7 +11,7 @@ var {
     ServiceObjectMetadata,
     ServiceParameter,
     ServiceParameterType
-} = require('behaviours-js');
+} = require("behaviours-js");
 
 module.exports = {
 
@@ -29,18 +29,18 @@ module.exports.service = function () {
             authenticate,
             isAuthenticated
         ] = arguments;
-        if (typeof serve !== 'function') {
+        if (typeof serve !== "function") {
 
-            throw new Error('Invalid' +
-                ' service function');
+            throw new Error("Invalid" +
+                " service function");
         }
         if (parse(serve).length < 2) {
 
-            throw new Error('Invalid' +
-                ' service function');
+            throw new Error("Invalid" +
+                " service function");
         }
         let _ = typeof authenticate;
-        var invalid = _ === 'function';
+        var invalid = _ === "function";
         if (invalid) {
 
             invalid &= parse(...[
@@ -49,11 +49,11 @@ module.exports.service = function () {
         }
         if (invalid) {
 
-            throw new Error('Invalid ' +
-                'authentication function');
+            throw new Error("Invalid " +
+                "authentication function");
         }
         var Authenticator = null;
-        if (_ === 'function') {
+        if (_ === "function") {
 
             Authenticator = define(...[
                 function (init) {
@@ -65,7 +65,7 @@ module.exports.service = function () {
                             arguments
                         ]).self();
                         self[
-                            'authenticate'
+                            "authenticate"
                         ] = authenticate;
                     };
                 }
@@ -83,7 +83,7 @@ module.exports.service = function () {
                 ]).self();
                 var authenticator = null;
                 _ = typeof Authenticator;
-                if (_ === 'function') {
+                if (_ === "function") {
 
                     _ = new Authenticator();
                     authenticator = _;
@@ -96,13 +96,13 @@ module.exports.service = function () {
                     ] = arguments;
                     switch (request) {
 
-                        case 'authentication':
+                        case "authentication":
                             if (!authenticator) {
 
                                 throw new Error(...[
-                                    'Missing ' +
-                                    'authentication' +
-                                    ' function'
+                                    "Missing " +
+                                    "authentication" +
+                                    " function"
                                 ]);
                             }
                             authenticator.authenticate(...[
@@ -110,7 +110,7 @@ module.exports.service = function () {
                                 callback
                             ]);
                             break;
-                        case 'request':
+                        case "request":
                             serve(request, callback);
                             break;
                     }
@@ -125,13 +125,13 @@ module.exports.service = function () {
                     request.constants = constants || {};
                     var serializedRequest = request;
                     _ = typeof request.context;
-                    var serializing = _ === 'object';
+                    var serializing = _ === "object";
                     let serialize;
                     if (serializing) {
 
                         ({ serialize } = request.context);
                         _ = typeof serialize;
-                        serializing &= _ === 'function';
+                        serializing &= _ === "function";
                     }
                     if (serializing) {
 
@@ -141,13 +141,13 @@ module.exports.service = function () {
                     }
                     var deserializeCallback = callback;
                     _ = typeof request.context;
-                    var deserializing = _ === 'object';
+                    var deserializing = _ === "object";
                     let deserialize;
                     if (deserializing) {
 
                         ({ deserialize } = request.context);
                         _ = typeof deserialize;
-                        deserializing &= _ === 'function';
+                        deserializing &= _ === "function";
                     }
                     if (deserializing) {
 
@@ -163,7 +163,7 @@ module.exports.service = function () {
                             ]);
                         };
                     }
-                    if (isAuthenticated === 'function') {
+                    if (isAuthenticated === "function") {
 
                         isAuthenticated(...[
                             serializedRequest,
@@ -178,8 +178,8 @@ module.exports.service = function () {
                                 } else callback(...[
                                     null,
                                     error || new Error(...[
-                                        'Authentication ' +
-                                        'needed'
+                                        "Authentication " +
+                                        "needed"
                                     ])
                                 ]);
                             }
@@ -188,11 +188,11 @@ module.exports.service = function () {
 
                         let { context } = request;
                         _ = typeof context;
-                        var authenticating = _ === 'object';
+                        var authenticating = _ === "object";
                         if (authenticating) {
 
                             _ = typeof context.authenticate;
-                            authenticating &= _ === 'function';
+                            authenticating &= _ === "function";
                         }
                         if (authenticating) {
 
@@ -216,7 +216,7 @@ module.exports.service = function () {
         }).extend(ServiceAdapter).defaults(baseURI);
         return function (path, options) {
 
-            if (typeof path === 'object') {
+            if (typeof path === "object") {
 
                 options = path;
             }
@@ -239,8 +239,8 @@ module.exports.service = function () {
                             serviceAttrs
                         ] = arguments;
                         var map = mapping;
-                        var name = '';
-                        var model = '';
+                        var name = "";
+                        var model = "";
                         var key;
                         var value;
                         var id;
@@ -252,55 +252,55 @@ module.exports.service = function () {
                                 __key
                             ] = arguments;
                             var _map = {};
-                            if (typeof __map !== 'string') {
+                            if (typeof __map !== "string") {
 
                                 name = __key;
                             }
-                            if (typeof __map === 'object') {
+                            if (typeof __map === "object") {
 
                                 return __map;
                             }
                             if (Array.isArray(__map)) {
 
                                 _ = typeof __map[0];
-                                if (_ === 'string') {
+                                if (_ === "string") {
 
                                     model = __map[0];
                                 } else {
 
-                                    throw new Error('Invalid ' +
-                                        'nested mapping');
+                                    throw new Error("Invalid " +
+                                        "nested mapping");
                                 }
                                 _ = typeof __map[1];
-                                if (_ === 'object') {
+                                if (_ === "object") {
 
                                     return __map[1];
-                                } else if (_ === 'function') {
+                                } else if (_ === "function") {
 
-                                    name = '';
-                                    model = '';
+                                    name = "";
+                                    model = "";
                                     _map[__key] = __map;
                                     return _map;
                                 } else {
 
                                     _ = typeof __map[0];
                                     let __ = typeof __map[1];
-                                    var strings = _ === 'string';
-                                    strings &= __ === 'string';
+                                    var strings = _ === "string";
+                                    strings &= __ === "string";
                                     if (strings) {
 
-                                        model = '';
+                                        model = "";
                                         _map[__map[0]] = __map[1];
                                         return _map;
                                     } else {
 
-                                        throw new Error('Invalid' +
-                                            ' nested mapping');
+                                        throw new Error("Invalid" +
+                                            " nested mapping");
                                     }
                                 }
                             }
                         };
-                        var one = typeof mapping === 'object';
+                        var one = typeof mapping === "object";
                         if (one) {
 
                             one &= Object.keys(...[
@@ -345,22 +345,22 @@ module.exports.service = function () {
                             } else {
 
                                 _ = typeof mapping;
-                                if (mapping && _ !== 'object') {
+                                if (mapping && _ !== "object") {
 
-                                    throw new Error('Invalid' +
-                                        ' mapping');
+                                    throw new Error("Invalid" +
+                                        " mapping");
                                 }
                             }
                         }
                         var modelAttributes = modelAttrs;
-                        if (typeof map === 'object') {
+                        if (typeof map === "object") {
 
                             modelAttributes = Object.values(...[
                                 map
                             ]).map(function (attribute) {
 
                                 _ = typeof attribute;
-                                if (_ === 'string') {
+                                if (_ === "string") {
 
                                     return attribute;
                                 }
@@ -370,15 +370,15 @@ module.exports.service = function () {
                                 if (many) {
 
                                     _ = typeof attribute[0];
-                                    many &= _ === 'string';
+                                    many &= _ === "string";
                                 }
                                 if (many) return attribute[0];
-                                throw new Error('Invalid' +
-                                    ' mapping');
+                                throw new Error("Invalid" +
+                                    " mapping");
                             });
                         }
                         var serviceAttributes = serviceAttrs;
-                        if (typeof map === 'object') {
+                        if (typeof map === "object") {
 
                             serviceAttributes = Object.keys(map);
                         }
@@ -406,18 +406,18 @@ module.exports.service = function () {
                                 if (Array.isArray(_attr_)) {
 
                                     _ = typeof _attr_[1];
-                                    if (_ === 'object') {
+                                    if (_ === "object") {
 
                                         attribute[
-                                            'metadata'
+                                            "metadata"
                                         ] = getMetadata(...[
                                             _attr_[1]
                                         ]);
                                     }
-                                    if (_ === 'function') {
+                                    if (_ === "function") {
 
                                         attribute[
-                                            'getValue'
+                                            "getValue"
                                         ] = _attr_[1];
                                     }
                                 }
@@ -438,30 +438,30 @@ module.exports.service = function () {
                     self.path = path;
                     self.context = context || {};
                     self.context[
-                        'serialize'
+                        "serialize"
                     ] = self.context.serialize;
                     if (!self.context.serialize) {
 
                         self.context[
-                            'serialize'
+                            "serialize"
                         ] = options.serialize;
                     }
                     self.context[
-                        'deserialize'
+                        "deserialize"
                     ] = self.context.deserialize;
                     if (!self.context.deserialize) {
 
                         self.context[
-                            'deserialize'
+                            "deserialize"
                         ] = options.deserialize;
                     }
                     self.context[
-                        'authenticate'
+                        "authenticate"
                     ] = self.context.authenticate;
                     if (!self.context.authenticate) {
 
                         self.context[
-                            'authenticate'
+                            "authenticate"
                         ] = options.authenticate;
                     }
                     self.adapter = function () {

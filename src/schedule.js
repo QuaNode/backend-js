@@ -1,11 +1,11 @@
 /*jslint node: true */
 /*jshint esversion: 6 */
-'use strict';
+"use strict";
 
-var parser = require('cron-parser');
+var parser = require("cron-parser");
 var {
     businessController
-} = require('./controller.js');
+} = require("./controller.js");
 
 module.exports.scheduleBehaviour = function () {
 
@@ -19,7 +19,7 @@ module.exports.scheduleBehaviour = function () {
     seconds = Math.floor(seconds);
     var { schedule } = options;
     var next;
-    if (typeof schedule === 'function') {
+    if (typeof schedule === "function") {
 
         next = schedule;
     } else if (schedule > 0) next = function () {
@@ -53,7 +53,7 @@ module.exports.scheduleBehaviour = function () {
             }
             return false;
         };
-        var cron = typeof schedule === 'string';
+        var cron = typeof schedule === "string";
         if (cron) {
 
             cron &= schedule.length > 0;
@@ -80,8 +80,8 @@ module.exports.scheduleBehaviour = function () {
                 timeout: options.timeout,
                 inputObjects: {}
             });
-            var fetching = '';
-            if (typeof options.fetching === 'string') {
+            var fetching = "";
+            if (typeof options.fetching === "string") {
 
                 fetching = options.fetching;
             }
@@ -93,7 +93,7 @@ module.exports.scheduleBehaviour = function () {
                 FetchBehaviour = BehaviourConstructor;
             }
             let { queue } = options;
-            if (typeof queue === 'function') {
+            if (typeof queue === "function") {
 
                 queue = queue(options.name, {});
             }

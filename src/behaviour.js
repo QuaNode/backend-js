@@ -1,25 +1,25 @@
 /*jslint node: true */
 /*jshint esversion: 6 */
-'use strict';
+"use strict";
 
-var express = require('express');
-var paginate = require('express-paginate');
-var Route = require('route-parser');
+var express = require("express");
+var paginate = require("express-paginate");
+var Route = require("route-parser");
 var {
     unless
-} = require('express-unless');
-var vhost = require('vhost');
-var define = require('define-js');
-var parse = require('parseparams');
+} = require("express-unless");
+var vhost = require("vhost");
+var define = require("define-js");
+var parse = require("parseparams");
 var {
     URL,
     URLSearchParams
 } = require("url");
-var crypto = require('crypto');
+var crypto = require("crypto");
 var {
     BusinessBehaviourType,
     BusinessBehaviour
-} = require('behaviours-js');
+} = require("behaviours-js");
 var {
     OFFLINESYNC,
     OFFLINEACTION,
@@ -28,13 +28,13 @@ var {
 } = BusinessBehaviourType;
 var {
     businessController
-} = require('./controller.js');
+} = require("./controller.js");
 var {
     getLogBehaviour
-} = require('./log.js');
+} = require("./log.js");
 var {
     scheduleBehaviour
-} = require('./schedule.js');
+} = require("./schedule.js");
 var {
     getInputObjects,
     setResponse,
@@ -42,7 +42,7 @@ var {
     getSignature,
     setSignature,
     getRequest
-} = require('./utils.js');
+} = require("./utils.js");
 
 var backend = module.exports;
 
@@ -52,16 +52,16 @@ backend.serve = express.static;
 
 var join = backend.join = function (s1, s2) {
 
-    var fromIndex = s2.startsWith('/') ? 1 : 0;
+    var fromIndex = s2.startsWith("/") ? 1 : 0;
     var toIndex = s1.length;
-    if (s1.endsWith('/')) toIndex--;
-    s1 = s1.substr(0, toIndex) + '/';
+    if (s1.endsWith("/")) toIndex--;
+    s1 = s1.substr(0, toIndex) + "/";
     s2 = s2.substr(fromIndex);
     var url = new URL(...[
         s2,
-        new URL(s1, 'resolve://')
+        new URL(s1, "resolve://")
     ]);
-    if (url.protocol === 'resolve:') {
+    if (url.protocol === "resolve:") {
 
         var { pathname, search, hash } = url;
         return pathname + search + hash;
@@ -76,8 +76,8 @@ var compare = backend.compare = function () {
     var varying = !!(route1 && route1.path);
     if (varying) {
 
-        varying = route1.path.indexOf(':') > -1;
-        varying |= route1.path.indexOf('*') > -1;
+        varying = route1.path.indexOf(":") > -1;
+        varying |= route1.path.indexOf("*") > -1;
     }
     if (varying) route = route1;
     if (route === route2) {
@@ -91,14 +91,14 @@ var compare = backend.compare = function () {
     }
     var path1 = route1 && route1.path;
     var path2 = route2 && route2.path;
-    var method1 = (route1 && route1.method) || '';
+    var method1 = (route1 && route1.method) || "";
     method1 = method1.toLowerCase();
-    var method2 = (route2 && route2.method) || '';
+    var method2 = (route2 && route2.method) || "";
     method2 = method2.toLowerCase();
     var matched = !!route;
     if (matched) {
 
-        matched &= !!route.match(path2 || ' ');
+        matched &= !!route.match(path2 || " ");
     }
     matched |= path1 === path2;
     matched &= method1 === method2;
@@ -108,18 +108,18 @@ var compare = backend.compare = function () {
 var resolve = backend.resolve = function () {
 
     var [prefix, suffix, path] = arguments;
-    var prefixed = typeof prefix === 'string';
+    var prefixed = typeof prefix === "string";
     if (prefixed) {
 
         prefixed &= path.startsWith(prefix);
     }
-    if (prefixed && typeof suffix === 'string') {
+    if (prefixed && typeof suffix === "string") {
 
         return join(prefix, suffix);
     } else return suffix || prefix;
 };
 
-var defaultPrefix = '/';
+var defaultPrefix = "/";
 
 var types = {
 
@@ -139,8 +139,8 @@ var behaviours = {
 
     behaviours: {
 
-        method: 'GET',
-        path: '/behaviours'
+        method: "GET",
+        path: "/behaviours"
     }
 };
 
@@ -158,18 +158,18 @@ var upgradePlugins = {};
 
 backend.behaviour = function (path, config) {
 
-    var no_app = typeof app !== 'function';
+    var no_app = typeof app !== "function";
     if (!no_app) {
 
-        no_app |= typeof app.use !== 'function';
+        no_app |= typeof app.use !== "function";
     }
-    if (no_app) throw new Error('Invalid express app');
-    if (typeof path === 'object') {
+    if (no_app) throw new Error("Invalid express app");
+    if (typeof path === "object") {
 
         config = path;
         path = config.path;
     }
-    if (typeof config !== 'object' || !config) {
+    if (typeof config !== "object" || !config) {
 
         config = {};
     }
@@ -177,22 +177,22 @@ backend.behaviour = function (path, config) {
     if (!no_operations) {
 
         let { operations } = config;
-        no_operations |= typeof operations !== 'object';
+        no_operations |= typeof operations !== "object";
     }
     if (no_operations) config.operations = {};
     return function (options, getConstructor) {
 
-        if (typeof options !== 'object') {
+        if (typeof options !== "object") {
 
-            throw new Error('Invalid definition object');
+            throw new Error("Invalid definition object");
         }
-        if (typeof options.inherits === 'function') {
+        if (typeof options.inherits === "function") {
 
             let { prototype } = options.inherits;
             if (!(prototype instanceof BusinessBehaviour)) {
 
-                throw new Error('Super behaviour should ' +
-                    'inherit from BusinessBehaviour');
+                throw new Error("Super behaviour should " +
+                    "inherit from BusinessBehaviour");
             }
             options = Object.assign(Object.keys(...[
                 BEHAVIOURS
@@ -210,7 +210,7 @@ backend.behaviour = function (path, config) {
         if (!no_operations) {
 
             let { operations } = options;
-            no_operations |= typeof operations !== 'object';
+            no_operations |= typeof operations !== "object";
         }
         if (no_operations) options.operations = {};
         options.operations = Object.assign(...[
@@ -219,40 +219,40 @@ backend.behaviour = function (path, config) {
             config.operations,
             options.operations
         ]);
-        var no_type = typeof options.type !== 'string';
+        var no_type = typeof options.type !== "string";
         if (!no_type) {
 
             no_type |= types[options.type] === undefined;
         }
-        if (no_type) options.type = 'database';
-        var no_version = typeof options.version !== 'string';
+        if (no_type) options.type = "database";
+        var no_version = typeof options.version !== "string";
         if (!no_version) {
 
             no_version |= options.version.length === 0;
         }
         if (no_version) {
 
-            throw new Error('Invalid behaviour version');
+            throw new Error("Invalid behaviour version");
         }
-        if (typeof getConstructor !== 'function') {
+        if (typeof getConstructor !== "function") {
 
-            throw new Error('Invalid constructor');
+            throw new Error("Invalid constructor");
         }
         if (!Array.isArray(options.events)) {
 
             options.events = [];
         }
-        if (typeof options.event === 'function') {
+        if (typeof options.event === "function") {
 
             options.events.push(options.event);
         }
         options.events = options.events.filter(...[
             function (event) {
 
-                let valid = typeof event === 'function';
+                let valid = typeof event === "function";
                 if (!valid) {
 
-                    valid = typeof event === 'string';
+                    valid = typeof event === "string";
                     if (valid) {
 
                         valid &= event.length > 0;
@@ -261,7 +261,7 @@ backend.behaviour = function (path, config) {
                 return valid;
             }
         ]);
-        var named = typeof options.name === 'string';
+        var named = typeof options.name === "string";
         if (named) {
 
             named &= options.name.length > 0;
@@ -273,9 +273,9 @@ backend.behaviour = function (path, config) {
                 options.name
             ] && skipSameRoutes !== true) {
 
-                throw new Error('Duplicate behavior name: ' +
-                    options.name + '. Make sure names are ' +
-                    'unique and not numerical');
+                throw new Error("Duplicate behavior name: " +
+                    options.name + ". Make sure names are " +
+                    "unique and not numerical");
             }
             return named && !BEHAVIOURS[options.name];
         }();
@@ -299,8 +299,8 @@ backend.behaviour = function (path, config) {
         });
         if (options.fetcher) {
 
-            var fetcher = '';
-            if (typeof options.fetcher === 'string') {
+            var fetcher = "";
+            if (typeof options.fetcher === "string") {
 
                 fetcher = options.fetcher;
             }
@@ -308,8 +308,8 @@ backend.behaviour = function (path, config) {
         }
         if (options.logger) {
 
-            var logger = '';
-            if (typeof options.logger === 'string') {
+            var logger = "";
+            if (typeof options.logger === "string") {
 
                 options.logger = logger;
             }
@@ -323,21 +323,21 @@ backend.behaviour = function (path, config) {
         ]);
         if (uniquelyNamed) {
 
-            if (options.name === 'behaviours') {
+            if (options.name === "behaviours") {
 
-                throw new Error('behaviours is a reserved name');
+                throw new Error("behaviours is a reserved name");
             }
-            var middleware = typeof options.path === 'string';
+            var middleware = typeof options.path === "string";
             if (middleware) {
 
                 middleware &= options.path.length > 0;
             }
             var routing = middleware;
-            routing &= typeof options.method === 'string';
+            routing &= typeof options.method === "string";
             if (routing) {
 
                 let method = options.method.toLowerCase();
-                routing &= typeof app[method] === 'function';
+                routing &= typeof app[method] === "function";
             }
             var polling = routing && Object.keys(...[
                 types
@@ -346,17 +346,17 @@ backend.behaviour = function (path, config) {
 
                 options.plugins = [];
             }
-            if (typeof options.plugin === 'function') {
+            if (typeof options.plugin === "function") {
 
                 options.plugins.push(options.plugin);
             }
             var request_plugin = options.plugins.reduce(...[
                 function (request_plugin, plugin) {
 
-                    let valid = typeof plugin === 'function';
+                    let valid = typeof plugin === "function";
                     if (valid) {
 
-                        valid &= parse(plugin)[0] !== 'out';
+                        valid &= parse(plugin)[0] !== "out";
                     }
                     if (valid) return plugin;
                     return request_plugin;
@@ -367,7 +367,7 @@ backend.behaviour = function (path, config) {
             if (upgrading) {
 
                 let [last] = parse(request_plugin).reverse();
-                upgrading &= last === 'head';
+                upgrading &= last === "head";
             }
             if (upgrading) {
 
@@ -376,10 +376,10 @@ backend.behaviour = function (path, config) {
             var response_plugin = options.plugins.reduce(...[
                 function (response_plugin, plugin) {
 
-                    let valid = typeof plugin === 'function';
+                    let valid = typeof plugin === "function";
                     if (valid) {
 
-                        valid &= parse(plugin)[0] === 'out';
+                        valid &= parse(plugin)[0] === "out";
                     }
                     if (valid) return plugin;
                     return response_plugin;
@@ -387,7 +387,7 @@ backend.behaviour = function (path, config) {
                 undefined
             ]);
             var prefix;
-            var pathing = typeof path === 'string';
+            var pathing = typeof path === "string";
             if (pathing) {
 
                 pathing &= path.length > 0;
@@ -399,7 +399,7 @@ backend.behaviour = function (path, config) {
             } else {
 
                 var no_overwrite = !config.overwritePath;
-                no_overwrite &= defaultPrefix !== '/';
+                no_overwrite &= defaultPrefix !== "/";
                 if (no_overwrite) {
 
                     prefix = defaultPrefix;
@@ -408,11 +408,11 @@ backend.behaviour = function (path, config) {
             if (options.events.length > 0 && join(...[
                 prefix,
                 options.path
-            ]) == join(prefix, '/events')) {
+            ]) == join(prefix, "/events")) {
 
-                throw new Error('Invalid path. ' +
+                throw new Error("Invalid path. " +
                     join(prefix, options.path) +
-                    ' is reserved route');
+                    " is reserved route");
             }
             BEHAVIOURS[options.name] = {
 
@@ -439,7 +439,7 @@ backend.behaviour = function (path, config) {
                     let time = new Date(signature).getTime();
                     response.signature = time;
                     setSignature(req, res, next, response);
-                    if (typeof signature === 'number') return;
+                    if (typeof signature === "number") return;
                 }
                 if (options.paginate) {
 
@@ -489,8 +489,8 @@ backend.behaviour = function (path, config) {
                         return;
                     }
                     if (polling) delete response.signature;
-                    var failing = typeof error === 'object';
-                    failing |= typeof result !== 'object';
+                    var failing = typeof error === "object";
+                    failing |= typeof result !== "object";
                     if (failing) {
 
                         if (error && !error.name) {
@@ -502,11 +502,11 @@ backend.behaviour = function (path, config) {
                             error.version = options.version;
                         }
                         request.next(...[
-                            error || er || new Error('Error ' +
-                                'while executing ' +
+                            error || er || new Error("Error " +
+                                "while executing " +
                                 options.name +
-                                ' behaviour, version ' +
-                                options.version + '!')
+                                " behaviour, version " +
+                                options.version + "!")
                         ]);
                     } else {
 
@@ -536,7 +536,7 @@ backend.behaviour = function (path, config) {
                             if (options.events.length > 0) {
 
                                 let _ = crypto.randomBytes(48);
-                                let token = _.toString('base64');
+                                let token = _.toString("base64");
                                 response.events_token = token;
                                 ({ events: _ } = options);
                                 response.events = _.map(...[
@@ -544,7 +544,7 @@ backend.behaviour = function (path, config) {
 
                                         let room = event;
                                         _ = typeof event;
-                                        if (_ === 'function') {
+                                        if (_ === "function") {
 
                                             room = event(...[
                                                 options.name,
@@ -553,7 +553,7 @@ backend.behaviour = function (path, config) {
                                         }
                                         let jsonify = !!room;
                                         _ = typeof room;
-                                        jsonify &= _ === 'object';
+                                        jsonify &= _ === "object";
                                         if (jsonify) {
 
                                             let {
@@ -566,7 +566,7 @@ backend.behaviour = function (path, config) {
                                 ]).filter(function (room) {
 
                                     _ = typeof room;
-                                    let valid = _ === 'string';
+                                    let valid = _ === "string";
                                     if (valid) {
 
                                         valid &= !!room.trim();
@@ -602,7 +602,7 @@ backend.behaviour = function (path, config) {
                                 let {
                                     pageCount: page
                                 } = result;
-                                if (typeof page !== 'number') {
+                                if (typeof page !== "number") {
 
                                     page = 1;
                                 }
@@ -612,7 +612,7 @@ backend.behaviour = function (path, config) {
                                 response.has_more = _;
                             }
                             let { returns } = options;
-                            if (typeof returns !== 'function') {
+                            if (typeof returns !== "function") {
 
                                 if (!setResponse(...[
                                     returns,
@@ -636,8 +636,8 @@ backend.behaviour = function (path, config) {
                         }
                     }
                 };
-                var fetching = '';
-                if (typeof options.fetching === 'string') {
+                var fetching = "";
+                if (typeof options.fetching === "string") {
 
                     fetching = options.fetching;
                 }
@@ -647,7 +647,7 @@ backend.behaviour = function (path, config) {
                     FetchBehaviour = BehaviourConstructor;
                 }
                 let { queue } = options;
-                if (typeof queue === 'function') {
+                if (typeof queue === "function") {
 
                     queue = queue(options.name, inputObjects);
                 }
@@ -670,11 +670,11 @@ backend.behaviour = function (path, config) {
                         ] = arguments;
                         let page = {
 
-                            modelObjects: 'modelObjects',
-                            pageCount: 'pageCount'
+                            modelObjects: "modelObjects",
+                            pageCount: "pageCount"
                         };
                         let map = { options };
-                        if (typeof map === 'function') {
+                        if (typeof map === "function") {
 
                             var mapped = map(...[
                                 property,
@@ -686,17 +686,17 @@ backend.behaviour = function (path, config) {
                     } : options.map,
                     behaviour_callback
                 ]);
-                req.on('close', function () {
+                req.on("close", function () {
 
                     let _ = typeof cancel;
-                    var cancelling = _ === 'function';
+                    var cancelling = _ === "function";
                     cancelling &= !polling;
                     if (cancelling) cancel();
                 });
             };
             var request_handler = function (req, res, next) {
 
-                if (typeof options.parameters !== 'function') {
+                if (typeof options.parameters !== "function") {
 
                     if (!routing || req.complete) {
 
@@ -731,7 +731,7 @@ backend.behaviour = function (path, config) {
                             }
                         ]);
                     } else req.socket.on(...[
-                        'end',
+                        "end",
                         request_handler.bind(null, req, res, next)
                     ]);
                 } else options.parameters(...[
@@ -745,9 +745,9 @@ backend.behaviour = function (path, config) {
                             next,
                             inputObjects,
                             er
-                        ]); else throw new Error('Parameters' +
-                            ' callback function called before' +
-                            ' all request data consumed');
+                        ]); else throw new Error("Parameters" +
+                            " callback function called before" +
+                            " all request data consumed");
                     }
                 ]);
             };
@@ -756,7 +756,7 @@ backend.behaviour = function (path, config) {
                 request_handler.unless = unless;
                 request_handler = request_handler.unless({
 
-                    custom: function (req) {
+                    custom(req) {
 
                         return options.unless.filter(...[
                             function (name) {
@@ -787,7 +787,7 @@ backend.behaviour = function (path, config) {
                     }
                 });
             }
-            var filtering = typeof options.host === 'string';
+            var filtering = typeof options.host === "string";
             if (filtering) {
 
                 filtering &= options.host.length > 0;
@@ -837,11 +837,11 @@ backend.behaviour = function (path, config) {
                     }
                 ])) {
 
-                    throw new Error('Duplicated behavior' +
-                        ' path: ' + options.path);
+                    throw new Error("Duplicated behavior" +
+                        " path: " + options.path);
                 }
                 var router = app;
-                let prefixing = typeof prefix === 'string';
+                let prefixing = typeof prefix === "string";
                 if (prefixing) {
 
                     prefixing &= prefix.length > 0;
@@ -883,7 +883,7 @@ backend.behaviour = function (path, config) {
                     parameters: function () {
 
                         let { parameters } = options;
-                        if (typeof parameters !== 'function') {
+                        if (typeof parameters !== "function") {
 
                             return parameters;
                         }
@@ -891,7 +891,7 @@ backend.behaviour = function (path, config) {
                     returns: function () {
 
                         let { returns } = options;
-                        if (typeof returns !== 'function') {
+                        if (typeof returns !== "function") {
 
                             return returns;
                         }
@@ -900,7 +900,7 @@ backend.behaviour = function (path, config) {
             } else if (middleware) {
 
                 var route = options.path;
-                let prefixing = typeof prefix === 'string';
+                let prefixing = typeof prefix === "string";
                 if (prefixing) {
 
                     prefixing &= prefix.length > 0;
@@ -933,31 +933,31 @@ backend.behaviour = function (path, config) {
 backend.BehavioursServer = function () {
 
     var [prefix, parser, remotes, operations] = arguments;
-    if (operations && typeof operations === 'object') {
+    if (operations && typeof operations === "object") {
 
         defaultOperations = operations;
     }
-    if (remotes && typeof remotes === 'object') {
+    if (remotes && typeof remotes === "object") {
 
         defaultRemotes = remotes;
     }
-    var default_prefixing = defaultPrefix === '/';
-    default_prefixing &= typeof prefix === 'string';
+    var default_prefixing = defaultPrefix === "/";
+    default_prefixing &= typeof prefix === "string";
     if (default_prefixing) {
 
         default_prefixing &= prefix.length > 0;
     }
     if (default_prefixing) defaultPrefix = prefix;
     if (!prefix) prefix = defaultPrefix;
-    var prefixing = typeof prefix === 'string';
+    var prefixing = typeof prefix === "string";
     if (prefixing) {
 
         prefixing &= prefix.length > 0;
     }
     app.get(function () {
 
-        if (prefixing) return join(prefix, '/behaviours');
-        return '/behaviours';
+        if (prefixing) return join(prefix, "/behaviours");
+        return "/behaviours";
     }(), function (_, res) {
 
         respond(res, behaviours, parser);
@@ -969,16 +969,16 @@ backend.BehavioursServer = function () {
 
             behaviour_prefix = defaultPrefix;
         }
-        var behaviour_path = behaviour.path || '/';
-        var routing = typeof behaviour.method === 'string';
+        var behaviour_path = behaviour.path || "/";
+        var routing = typeof behaviour.method === "string";
         if (routing) {
 
             let method = behaviour.method.toLowerCase();
-            routing &= typeof app[method] === 'function';
+            routing &= typeof app[method] === "function";
         }
         if (!routing) {
 
-            behaviour_path = join(behaviour_path, '/*path');
+            behaviour_path = join(behaviour_path, "/*path");
         }
         return compare({
 
@@ -995,7 +995,7 @@ backend.BehavioursServer = function () {
     var validate_host = function (host, req, res) {
 
         var same_host = true;
-        var filtering = typeof host === 'string';
+        var filtering = typeof host === "string";
         if (filtering) {
 
             filtering &= host.length > 0;
@@ -1016,7 +1016,7 @@ backend.BehavioursServer = function () {
         var [
             path,
             query
-        ] = (req.originalUrl || req.url).split('?');
+        ] = (req.originalUrl || req.url).split("?");
         if (query) {
 
             query = new URLSearchParams(...[
@@ -1056,7 +1056,7 @@ backend.BehavioursServer = function () {
     this.validate = function (path, query) {
 
         var name = query.behaviour;
-        var named = typeof name === 'string';
+        var named = typeof name === "string";
         if (named) {
 
             named &= name.length > 0;
@@ -1077,7 +1077,7 @@ backend.BehavioursServer = function () {
 
                 path: resolve(...[
                     behaviour.prefix,
-                    '/events',
+                    "/events",
                     path
                 ])
             }, {
@@ -1085,7 +1085,7 @@ backend.BehavioursServer = function () {
                 path
             })) return;
         }
-        return new Error('Not found');
+        return new Error("Not found");
     };
     this.connect = function (socket) {
 
@@ -1101,12 +1101,12 @@ backend.BehavioursServer = function () {
             token = socket.handshake.query.token;
         }
         let id = socket.handshake.session.id;
-        var authenticating = typeof name === 'string';
+        var authenticating = typeof name === "string";
         if (authenticating) {
 
             authenticating &= name.length > 0;
         }
-        authenticating &= typeof token === 'string';
+        authenticating &= typeof token === "string";
         if (authenticating) {
 
             authenticating &= token.length > 0;
@@ -1132,7 +1132,7 @@ backend.BehavioursServer = function () {
                 var joined = false;
                 var event = events[name];
                 if (event) socket.once(...[
-                    'join ' + name,
+                    "join " + name,
                     function (room) {
 
                         if (event[room]) {
@@ -1190,7 +1190,7 @@ backend.BehavioursServer = function () {
 
                     if (!joined) socket.disconnect(true);
                 }, 60000);
-                socket.once('disconnect', function () {
+                socket.once("disconnect", function () {
 
                     if (client) client.count--;
                 });

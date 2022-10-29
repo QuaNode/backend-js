@@ -1,15 +1,15 @@
 /*jslint node: true */
 /*jshint esversion: 6 */
-'use strict';
+"use strict";
 
-var define = require('define-js');
-var Behaviours = require('js-behaviours');
+var define = require("define-js");
+var Behaviours = require("js-behaviours");
 var {
     BusinessBehaviour
-} = require('behaviours-js');
+} = require("behaviours-js");
 var {
     businessController
-} = require('./controller.js');
+} = require("./controller.js");
 
 module.exports.getRemoteBehaviour = function () {
 
@@ -29,29 +29,29 @@ module.exports.getRemoteBehaviour = function () {
             if ((ȯptions || {}).parameters) {
 
                 ȯptions[
-                    'inputObjects'
+                    "inputObjects"
                 ] = ȯptions.parameters;
             }
             var self = init.apply(...[
                 this, arguments
             ]).self();
             if (!self.hasOwnProperty(...[
-                'parameters'
+                "parameters"
             ])) Object.defineProperty(...[
                 self,
-                'parameters',
+                "parameters",
                 {
                     enumerable: true,
-                    get: function () {
+                    get() {
 
                         return self[
-                            'inputObjects'
+                            "inputObjects"
                         ];
                     },
-                    set: function (parameters) {
+                    set(parameters) {
 
                         self[
-                            'inputObjects'
+                            "inputObjects"
                         ] = parameters;
                     }
                 }
@@ -72,7 +72,7 @@ module.exports.getRemoteBehaviour = function () {
                     memory,
                     operations;
                 var queuě = options.queue;
-                if (typeof queuě === 'function') {
+                if (typeof queuě === "function") {
 
                     queuě = queuě(...[
                         options.name,
@@ -83,7 +83,7 @@ module.exports.getRemoteBehaviour = function () {
                 if (!(behaviour instanceof BB)) {
 
                     let _ = typeof behaviour;
-                    let invalid = _ !== 'string';
+                    let invalid = _ !== "string";
                     if (!invalid) {
 
                         invalid |= !BEHAVIOURS[
@@ -92,8 +92,8 @@ module.exports.getRemoteBehaviour = function () {
                     }
                     if (invalid) {
 
-                        throw new Error('Invalid' +
-                            ' behaviour name');
+                        throw new Error("Invalid" +
+                            " behaviour name");
                     }
                     var ȯptiȯns = BEHAVIOURS[
                         behaviour
@@ -111,7 +111,7 @@ module.exports.getRemoteBehaviour = function () {
                     memory = ȯptiȯns.memory;
                     operations = ȯptiȯns.operations;
                     _ = typeof parameters;
-                    if (_ === 'function') {
+                    if (_ === "function") {
 
                         behaviour = parameters(...[
                             BEHAVIOURS[
@@ -138,7 +138,7 @@ module.exports.getRemoteBehaviour = function () {
 
                             queue = ȯptiȯns.queue;
                             _ = typeof queue;
-                            if (_ === 'function') {
+                            if (_ === "function") {
 
                                 queue = queue(...[
                                     ȯptiȯns.name,
@@ -148,16 +148,16 @@ module.exports.getRemoteBehaviour = function () {
                         }
                     }
                 } else callback = parameters;
-                if (typeof callback !== 'function') {
+                if (typeof callback !== "function") {
 
-                    throw new Error('Invalid behaviour' +
-                        ' callback');
+                    throw new Error("Invalid behaviour" +
+                        " callback");
                 }
                 if (!queue) queue = queuě;
                 if (queue == queuě) {
 
                     let _ = typeof parameters;
-                    var mandatory = _ !== 'function';
+                    var mandatory = _ !== "function";
                     mandatory |= callback == parameters;
                     if (mandatory) {
 
@@ -166,21 +166,21 @@ module.exports.getRemoteBehaviour = function () {
                 }
                 if (!FetchBehaviour) {
 
-                    var fetch = '';
+                    var fetch = "";
                     let _ = typeof options.fetcher;
-                    if (_ === 'string') {
+                    if (_ === "string") {
 
                         fetch = options.fetcher;
                     } else {
 
                         _ = typeof fetching;
-                        if (_ === 'string') {
+                        if (_ === "string") {
 
                             fetch = fetching;
                         } else {
 
                             _ = typeof options.fetching;
-                            if (_ === 'string') {
+                            if (_ === "string") {
 
                                 fetch = options.fetching;
                             }
@@ -214,14 +214,14 @@ module.exports.getRemoteBehaviour = function () {
 
                 return {
 
-                    run: function () {
+                    run() {
 
                         let [
                             behaviour,
                             parameters,
                             callback
                         ] = arguments;
-                        if (baseURL === 'local') {
+                        if (baseURL === "local") {
 
                             return self.run(...[
                                 behaviour,
@@ -230,30 +230,30 @@ module.exports.getRemoteBehaviour = function () {
                             ]);
                         }
                         let _ = typeof behaviour;
-                        var no_name = _ !== 'string';
+                        var no_name = _ !== "string";
                         if (!no_name) {
 
                             no_name |= behaviour.length === 0;
                         }
                         if (no_name) {
 
-                            throw new Error('Invalid ' +
-                                'behaviour name');
+                            throw new Error("Invalid " +
+                                "behaviour name");
                         }
                         var remotes;
-                        if (typeof config === 'object') {
+                        if (typeof config === "object") {
 
                             remotes = config.remotes;
                         }
                         _ = typeof remotes;
                         var remoteURL = Object.assign(...[
-                            _ === 'object' ? remotes : {},
+                            _ === "object" ? remotes : {},
                             defaultRemotes
                         ])[baseURL];
                         var behaviours;
                         if (remoteURL) baseURL = remoteURL;
                         _ = typeof baseURL;
-                        var url_string = _ === 'string';
+                        var url_string = _ === "string";
                         if (url_string) {
 
                             url_string &= baseURL.length > 0;
@@ -274,7 +274,7 @@ module.exports.getRemoteBehaviour = function () {
                             } else {
 
                                 _ = typeof remotes;
-                                if (_ === 'object') {
+                                if (_ === "object") {
 
                                     remotes[
                                         baseURL
@@ -283,8 +283,8 @@ module.exports.getRemoteBehaviour = function () {
                             }
                         } else {
 
-                            throw new Error('Invalid' +
-                                ' remote base URL');
+                            throw new Error("Invalid" +
+                                " remote base URL");
                         }
                         behaviours.ready(function () {
 
@@ -299,7 +299,7 @@ module.exports.getRemoteBehaviour = function () {
             };
         }
     };
-    if (typeof options.inherits === 'function') {
+    if (typeof options.inherits === "function") {
 
         return define(getRBConstructor).extend(...[
             options.inherits

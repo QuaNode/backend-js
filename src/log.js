@@ -1,11 +1,11 @@
 /*jslint node: true */
 /*jshint esversion: 6 */
-'use strict';
+"use strict";
 
-var define = require('define-js');
+var define = require("define-js");
 var {
     getEventBehaviour
-} = require('./event.js');
+} = require("./event.js");
 
 module.exports.getLogBehaviour = function () {
 
@@ -35,12 +35,12 @@ module.exports.getLogBehaviour = function () {
                     logger
                 ] = arguments;
                 var LogBehaviour = LogBehaviours[
-                    logger || ''
+                    logger || ""
                 ];
                 if (!LogBehaviour) {
 
-                    throw new Error('Logger ' +
-                        'behaviour is not set');
+                    throw new Error("Logger " +
+                        "behaviour is not set");
                 }
                 var ȯptions = Object.keys(...[
                     BEHAVIOURS
@@ -57,7 +57,7 @@ module.exports.getLogBehaviour = function () {
                     }
                     return ȯptions;
                 }, {});
-                if (typeof parameters !== 'object') {
+                if (typeof parameters !== "object") {
 
                     parameters = {};
                 }
@@ -91,7 +91,7 @@ module.exports.getLogBehaviour = function () {
 
                 return {
 
-                    log: function (parameters, callback) {
+                    log(parameters, callback) {
 
                         self.log(...[
                             parameters,

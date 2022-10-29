@@ -1,9 +1,9 @@
 /*jslint node: true */
-'use strict';
+"use strict";
 
-var stream = require('stream');
-var converter = require('converter');
-var Route = require('route-parser');
+var stream = require("stream");
+var converter = require("converter");
+var Route = require("route-parser");
 
 var TIMEOUT = 58;
 var requests = {};
@@ -12,9 +12,9 @@ var timeouts = {};
 
 module.exports = {
 
-    getValueAtPath: function (path, object) {
+    getValueAtPath(path, object) {
 
-        var components = path.split('.');
+        var components = path.split(".");
         var value = object;
         let length = components.length;
         for (var j = 0; value && j < length; j++) {
@@ -23,26 +23,26 @@ module.exports = {
         }
         return value;
     },
-    getCorrectValue: function (value, type) {
+    getCorrectValue(value, type) {
 
         switch (value) {
 
-            case '*':
-                if (type === 'path') {
+            case "*":
+                if (type === "path") {
 
                     return undefined;
                 }
                 break;
-            case 'undefined':
-            case 'Undefined':
+            case "undefined":
+            case "Undefined":
                 return undefined;
-            case 'null':
-            case 'Null':
+            case "null":
+            case "Null":
                 return null;
         }
         return value;
     },
-    setInputObjects: function () {
+    setInputObjects() {
 
         let [
             inputObjects,
@@ -56,14 +56,14 @@ module.exports = {
         var value;
         switch (type) {
 
-            case 'header':
+            case "header":
                 inputObjects[
                     name
                 ] = utils.getCorrectValue(...[
                     req.get(key)
                 ]);
                 break;
-            case 'body':
+            case "body":
                 if (req.complete) {
 
                     inputObjects[
@@ -76,14 +76,14 @@ module.exports = {
                     ]);
                 }
                 break;
-            case 'query':
+            case "query":
                 inputObjects[
                     name
                 ] = utils.getCorrectValue(...[
                     req.query[key]
                 ]);
                 break;
-            case 'path':
+            case "path":
                 value = req.params[key];
                 if (!value && Array.isArray(...[
                     paths
@@ -109,10 +109,10 @@ module.exports = {
                     name
                 ] = utils.getCorrectValue(...[
                     value,
-                    'path'
+                    "path"
                 ]);
                 break;
-            case 'middleware':
+            case "middleware":
                 inputObjects[
                     name
                 ] = utils.getCorrectValue(...[
@@ -120,8 +120,8 @@ module.exports = {
                 ]);
                 break;
             default:
-                new Error('Invalid parameter' +
-                    ' type');
+                new Error("Invalid parameter" +
+                    " type");
                 break;
         }
         value = inputObjects[name];
@@ -134,7 +134,7 @@ module.exports = {
                 alternativeType
             } = parameter;
             let _ = typeof alternativeKey;
-            var otherKey = _ === 'string';
+            var otherKey = _ === "string";
             otherKey &= alternativeKey !== key;
             if (otherKey) {
 
@@ -150,7 +150,7 @@ module.exports = {
             } else {
 
                 _ = typeof alternativeType;
-                var otherType = _ === 'string';
+                var otherType = _ === "string";
                 otherType &= alternativeType !== type;
                 if (otherType) {
 
@@ -180,7 +180,7 @@ module.exports = {
             }
         }
     },
-    getInputObjects: function () {
+    getInputObjects() {
 
         let [
             parameters,
@@ -188,7 +188,7 @@ module.exports = {
             req,
             callback
         ] = arguments;
-        if (typeof parameters !== 'object') {
+        if (typeof parameters !== "object") {
 
             callback(...[
                 req.complete ? req.body : {}
@@ -200,15 +200,15 @@ module.exports = {
         for (var i = 0; i < keys.length; i++) {
 
             var parameter = parameters[keys[i]];
-            if (typeof parameter.key !== 'string') {
+            if (typeof parameter.key !== "string") {
 
-                throw new Error('Invalid ' +
-                    'parameter key');
+                throw new Error("Invalid " +
+                    "parameter key");
             }
-            if (typeof parameter.type !== 'string') {
+            if (typeof parameter.type !== "string") {
 
-                throw new Error('Invalid ' +
-                    'parameter type');
+                throw new Error("Invalid " +
+                    "parameter type");
             }
             utils.setInputObjects(...[
                 inputObjects,
@@ -222,14 +222,14 @@ module.exports = {
         }
         callback(inputObjects);
     },
-    sendConverted: function (res, json, format) {
+    sendConverted(res, json, format) {
 
         var outStream = converter({
 
-            from: 'json',
+            from: "json",
             to: format
         });
-        outStream.on('data', function (chunk) {
+        outStream.on("data", function (chunk) {
 
             res.send(chunk);
         });
@@ -237,32 +237,32 @@ module.exports = {
         inStream.end(json);
         inStream.pipe(outStream);
     },
-    respond: function (res, object, format) {
+    respond(res, object, format) {
 
         var responders = {
 
-            json: function () {
+            json() {
 
                 res.json(object);
             },
-            text: function () {
+            text() {
 
                 utils.sendConverted(...[
                     res,
                     JSON.stringify(object),
-                    'csv'
+                    "csv"
                 ]);
             },
-            xml: function () {
+            xml() {
 
                 utils.sendConverted(...[
                     res,
                     JSON.stringify(object),
-                    'xml'
+                    "xml"
                 ]);
             }
         };
-        var known = typeof format === 'string';
+        var known = typeof format === "string";
         if (known) {
 
             known &= !!responders[format];
@@ -270,7 +270,7 @@ module.exports = {
         if (known) responders[format]();
         else res.format(responders);
     },
-    setResponse: function () {
+    setResponse() {
 
         let [
             returns,
@@ -282,22 +282,22 @@ module.exports = {
 
             var callback = arguments[0];
             response = arguments[1];
-            if (typeof callback !== 'function') {
+            if (typeof callback !== "function") {
 
-                throw new Error('Invalid ' +
-                    'behaviour callback');
+                throw new Error("Invalid " +
+                    "behaviour callback");
             }
             let _ = typeof response;
-            let no_signature = _ !== 'object';
+            let no_signature = _ !== "object";
             if (no_signature) {
 
                 _ = typeof response.signature;
-                no_signature |= _ !== 'number';
+                no_signature |= _ !== "number";
             }
             if (no_signature) {
 
-                throw new Error('Invalid ' +
-                    'behaviour signature');
+                throw new Error("Invalid " +
+                    "behaviour signature");
             }
             responses[response.signature] = {
 
@@ -315,13 +315,13 @@ module.exports = {
             return;
         }
         let __ = typeof returns;
-        var no_structure = __ !== 'object';
+        var no_structure = __ !== "object";
         __ = typeof response;
-        no_structure |= __ !== 'object';
+        no_structure |= __ !== "object";
         if (!no_structure) {
 
             __ = typeof response.response;
-            no_structure |= __ !== 'object';
+            no_structure |= __ !== "object";
             no_structure |= Array.isArray(...[
                 response.response
             ]);
@@ -332,7 +332,7 @@ module.exports = {
             if (no_response) {
 
                 __ = typeof response;
-                no_response = __ !== 'object';
+                no_response = __ !== "object";
                 no_response |= !Array.isArray(...[
                     response.response
                 ]);
@@ -350,14 +350,14 @@ module.exports = {
 
             var rëturn = returns[keys[i]];
             __ = typeof rëturn.type;
-            if (__ !== 'string') {
+            if (__ !== "string") {
 
-                throw new Error('Invalid ' +
-                    'return type');
+                throw new Error("Invalid " +
+                    "return type");
             }
             let key = keys[i];
             __ = typeof rëturn.key;
-            if (__ === 'string') {
+            if (__ === "string") {
 
                 key = rëturn.key;
             }
@@ -367,7 +367,7 @@ module.exports = {
             ]);
             switch (rëturn.type) {
 
-                case 'header':
+                case "header":
                     if (value) {
 
                         request.res.set(...[
@@ -376,17 +376,17 @@ module.exports = {
                         ]);
                     }
                     break;
-                case 'body':
+                case "body":
                     body[keys[i]] = value;
                     break;
-                case 'middleware':
+                case "middleware":
                     request.req[
                         keys[i]
                     ] = value;
                     break;
                 default:
-                    new Error('Invalid ' +
-                        'return type');
+                    new Error("Invalid " +
+                        "return type");
                     break;
             }
         }
@@ -401,7 +401,7 @@ module.exports = {
         }
         return false;
     },
-    setSignature: function () {
+    setSignature() {
 
         let [
             req,
@@ -410,21 +410,21 @@ module.exports = {
             response
         ] = arguments;
         let _ = typeof response;
-        let no_signature = _ !== 'object';
+        let no_signature = _ !== "object";
         if (!no_signature) {
 
             _ = typeof response.signature;
-            no_signature |= _ !== 'number';
+            no_signature |= _ !== "number";
         }
         if (no_signature) {
 
-            throw new Error('Invalid ' +
-                'behaviour signature');
+            throw new Error("Invalid " +
+                "behaviour signature");
         }
         if (timeouts[response.signature]) {
 
             return next(new Error(...[
-                'Request timeout'
+                "Request timeout"
             ]));
         }
         if (!requests[response.signature]) {
@@ -487,11 +487,11 @@ module.exports = {
             callback();
         }
     },
-    getSignature: function (req) {
+    getSignature(req) {
 
         var signature = Number(...[
             req.get(...[
-                'Behaviour-Signature'
+                "Behaviour-Signature"
             ]) || undefined
         ]);
         if (!isNaN(signature)) {
@@ -500,7 +500,7 @@ module.exports = {
         }
         return new Date();
     },
-    getRequest: function () {
+    getRequest() {
 
         let [
             req,
@@ -510,11 +510,11 @@ module.exports = {
         ] = arguments;
         var request = { req, res, next };
         let _ = typeof response;
-        var signed = _ === 'object';
+        var signed = _ === "object";
         if (signed) {
 
             _ = typeof response.signature;
-            signed &= _ === 'number';
+            signed &= _ === "number";
             if (signed) {
 
                 signed &= Array.isArray(...[
@@ -549,7 +549,7 @@ module.exports = {
         }
         return not_ended && request;
     },
-    setCorsOptions: function () {
+    setCorsOptions() {
 
         let [
             corsOptions,
@@ -558,13 +558,13 @@ module.exports = {
             req
         ] = arguments;
         var origin = origins == true;
-        var allowed = ('' + origins).indexOf(...[
-            '*' || req.headers.origin
+        var allowed = ("" + origins).indexOf(...[
+            "*" || req.headers.origin
         ]) > -1;
         if (allowed) {
 
             origin = req.headers.origin;
-            if (!origin) origin = '*';
+            if (!origin) origin = "*";
         }
         corsOptions.origin = origin;
         if (origin) {
@@ -574,26 +574,26 @@ module.exports = {
                 parameters
             } = options;
             let _ = typeof method;
-            var included = _ === 'string';
+            var included = _ === "string";
             if (included) {
 
                 included &= method.length > 0;
             }
             var methods = [
-                'OPTIONS'
+                "OPTIONS"
             ].concat(...[
                 included ? [
                     method.toUpperCase()
                 ] : []
-            ]).join(',');
+            ]).join(",");
             _ = typeof parameters;
             corsOptions.methods = methods;
             var headers = [
-                'Origin',
-                'X-Requested-With',
-                'Content-Type',
-                'Accept',
-                'Behaviour-Signature'
+                "Origin",
+                "X-Requested-With",
+                "Content-Type",
+                "Accept",
+                "Behaviour-Signature"
             ].concat(Object.keys(...[
                 req.headers
             ]).map(function (header) {
@@ -609,12 +609,12 @@ module.exports = {
                     }
                 ]);
             })).concat(Object.keys(...[
-                _ === 'object' ? parameters : {}
+                _ === "object" ? parameters : {}
             ]).filter(function (key) {
 
                 return parameters[
                     key
-                ].type === 'header';
+                ].type === "header";
             }).map(function (key) {
 
                 return parameters[key].key;
@@ -628,10 +628,10 @@ module.exports = {
                     header
                 ]) === -1) headers.push(header);
                 return headers;
-            }, []).join(',');
+            }, []).join(",");
             corsOptions.allowedHeaders = headers;
             _ = typeof options.returns;
-            if (_ === 'object') {
+            if (_ === "object") {
 
                 var returns = Object.keys(...[
                     options.returns
@@ -639,15 +639,15 @@ module.exports = {
                 if (returns.length > 0) {
 
                     corsOptions[
-                        'exposedHeaders'
+                        "exposedHeaders"
                     ] = returns.filter(...[
                         function (key) {
 
                             return options.returns[
                                 key
-                            ].type === 'header';
+                            ].type === "header";
                         }
-                    ]).join(',');
+                    ]).join(",");
                 }
             }
         }

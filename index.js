@@ -1,18 +1,18 @@
 /*jslint node: true */
 /*jshint esversion: 6 */
-'use strict';
+"use strict";
 
-var fs = require('fs');
+var fs = require("fs");
 var { URLSearchParams } = require("url");
-var bodyParser = require('body-parser');
-var logger = require('morgan');
-var HttpStatus = require('http-status-codes');
+var bodyParser = require("body-parser");
+var logger = require("morgan");
+var HttpStatus = require("http-status-codes");
 var rateLimit = require("express-rate-limit");
-var session = require('express-session');
-var memorystore = require('memorystore');
-var debug = require('debug');
-var cors = require('cors');
-var { Server } = require('socket.io');
+var session = require("express-session");
+var memorystore = require("memorystore");
+var debug = require("debug");
+var cors = require("cors");
+var { Server } = require("socket.io");
 var {
     BehavioursServer,
     compare,
@@ -21,7 +21,7 @@ var {
     app,
     routes,
     behaviour
-} = require('./src/behaviour.js');
+} = require("./src/behaviour.js");
 var {
     ModelEntity,
     QueryExpression,
@@ -32,20 +32,20 @@ var {
     setModelController,
     getModelController,
     model
-} = require('./src/model.js');
+} = require("./src/model.js");
 var {
     ServiceParameter,
     ServiceParameterType,
     service
-} = require('./src/service.js');
+} = require("./src/service.js");
 var {
     setResourceController,
     getResourceController
-} = require('./src/resource.js');
+} = require("./src/resource.js");
 var {
     setCorsOptions,
     respond
-} = require('./src/utils.js');
+} = require("./src/utils.js");
 
 var MemoryStore = memorystore(session);
 var LIMIT = 5;
@@ -60,7 +60,7 @@ var limiter = rateLimit({
     max: MAX,
     delayMs: 0,
     headers: false,
-    handler: function (req, res, next) {
+    handler(req, res, next) {
 
         if (!limited[req.ip]) {
 
@@ -105,8 +105,8 @@ var limiter = rateLimit({
     }
 });
 
-debug.enable('backend:*');
-debug = debug('backend:index');
+debug.enable("backend:*");
+debug = debug("backend:index");
 
 var server;
 
@@ -127,18 +127,18 @@ module.exports = {
     model,
     service,
     behaviour,
-    server: function (paths, options) {
+    server(paths, options) {
 
         if (server) return server;
         app.disable("x-powered-by");
         if (options.proxy) {
 
             app.set(...[
-                'trust proxy',
+                "trust proxy",
                 options.proxy
             ]);
         }
-        app.use(logger('dev'));
+        app.use(logger("dev"));
         app.use(limiter);
         var corsDelegate = function () {
 
@@ -169,12 +169,12 @@ module.exports = {
                     method: rM
                 } = routeOptions;
                 let _ = typeof rM;
-                var valid = _ === 'string';
+                var valid = _ === "string";
                 if (valid) {
 
                     rM = rM.toLowerCase();
                     _ = typeof app[rM];
-                    valid &= _ === 'function';
+                    valid &= _ === "function";
                 }
                 if (valid) method = rM;
                 var { origins } = routeOptions;
@@ -183,7 +183,7 @@ module.exports = {
                     ({ origins } = options);
                 }
                 _ = typeof origins;
-                var allow = _ !== 'string';
+                var allow = _ !== "string";
                 if (!allow) {
 
                     allow |= origins.length === 0;
@@ -201,7 +201,7 @@ module.exports = {
                 ([
                     path,
                     query
-                ] = path.split('?'));
+                ] = path.split("?"));
                 var events_path = false;
                 let eventful = !!query;
                 eventful &= !!routeOptions.events;
@@ -210,13 +210,13 @@ module.exports = {
 
                     path: resolve(...[
                         prefix,
-                        '/events',
+                        "/events",
                         path
                     ])
                 }, {
 
                     path
-                }) && rM === 'get') {
+                }) && rM === "get") {
 
                     query = new URLSearchParams(...[
                         query
@@ -245,7 +245,7 @@ module.exports = {
                         });
                         cors_ready &= [
                             method,
-                            'options'
+                            "options"
                         ].indexOf(rM) > -1;
                     }
                 }
@@ -273,14 +273,14 @@ module.exports = {
             }
             callback(null, corsOptions);
         };
-        app.all('/*', cors(corsDelegate));
+        app.all("/*", cors(corsDelegate));
         app.use(session = session({
 
-            name: 'behaviours.sid',
+            name: "behaviours.sid",
             store: new MemoryStore(),
             resave: false,
             saveUninitialized: false,
-            secret: '' + new Date().getTime()
+            secret: "" + new Date().getTime()
         }));
         var {
             upgrade,
@@ -292,21 +292,21 @@ module.exports = {
             paths,
             options.operations
         ]);
-        var proxied = typeof paths === 'object';
+        var proxied = typeof paths === "object";
         if (proxied) {
 
             let _ = typeof paths.proxy;
-            proxied &= _ === 'string';
+            proxied &= _ === "string";
             if (proxied) {
 
                 proxied &= paths.proxy.length > 0;
             }
         }
         if (proxied) require(paths.proxy);
-        if (typeof options.static === 'object') {
+        if (typeof options.static === "object") {
 
             let _ = typeof options.static.route;
-            if (_ === 'string') {
+            if (_ === "string") {
 
                 app.use(...[
                     options.static.route,
@@ -321,19 +321,19 @@ module.exports = {
             ]));
         }
         let __ = typeof options.parserOptions;
-        if (__ !== 'object') {
+        if (__ !== "object") {
 
             options.parserOptions = undefined;
         }
         var parser;
         __ = typeof options.parser;
-        var parsing = __ === 'string';
+        var parsing = __ === "string";
         if (parsing) {
 
             __ = typeof bodyParser[
                 options.parser
             ];
-            parsing &= __ === 'function';
+            parsing &= __ === "function";
         }
         if (parsing) parser = bodyParser[
             options.parser
@@ -345,7 +345,7 @@ module.exports = {
         }
         app.use(parser);
         __ = typeof paths;
-        var requiring = __ === 'string';
+        var requiring = __ === "string";
         if (requiring) {
 
             requiring &= paths.length > 0;
@@ -353,11 +353,11 @@ module.exports = {
         if (requiring) require(paths);
         else {
 
-            requiring = __ === 'object';
+            requiring = __ === "object";
             if (requiring) {
 
                 __ = typeof paths.local;
-                requiring &= __ === 'string';
+                requiring &= __ === "string";
                 if (requiring) {
 
                     let {
@@ -373,13 +373,13 @@ module.exports = {
         }
         app.use(function (req, res, next) {
 
-            var err = new Error('Not found');
+            var err = new Error("Not found");
             if (/[A-Z]/.test(req.path)) {
 
-                err = new Error('Not ' +
-                    'found, maybe the ' +
-                    'case-sensitivity of ' +
-                    'the path');
+                err = new Error("Not " +
+                    "found, maybe the " +
+                    "case-sensitivity of " +
+                    "the path");
             }
             err.code = 404;
             next(err);
@@ -403,25 +403,25 @@ module.exports = {
             }, options.parser);
         });
         __ = typeof options.https;
-        var https = __ === 'object';
+        var https = __ === "object";
         var port = options.port;
         if (!port) port = process.env.PORT;
         if (!port) port = https ? 443 : 80;
-        app.set('port', port);
-        var protocol = https ? 'https' : 'http';
+        app.set("port", port);
+        var protocol = https ? "https" : "http";
         server = require(...[
             protocol
         ]).createServer(function () {
 
             if (https) return [
-                'key',
-                'cert',
-                'ca'
+                "key",
+                "cert",
+                "ca"
             ].reduce(function (https, prop) {
 
                 var path = options.https[prop];
                 __ = typeof path;
-                var existed = __ === 'string';
+                var existed = __ === "string";
                 existed &= fs.existsSync(path);
                 if (existed) {
 
@@ -443,16 +443,16 @@ module.exports = {
 
             var err = validate(path, query);
             next(err, !err);
-        }).on('connect', function (socket) {
+        }).on("connect", function (socket) {
 
             socket.once(...[
-                'disconnect',
+                "disconnect",
                 function () {
 
-                    debug('backend ' +
-                        'socket:' + socket.id +
-                        ' disconnected on port ' +
-                        app.get('port'));
+                    debug("backend " +
+                        "socket:" + socket.id +
+                        " disconnected on port " +
+                        app.get("port"));
                 }
             ]);
             connect(socket);
@@ -478,16 +478,16 @@ module.exports = {
             }
         });
         server.listen(...[
-            app.get('port'),
+            app.get("port"),
             function () {
 
-                debug('backend listening on port ' +
-                    app.get('port'));
+                debug("backend listening on port " +
+                    app.get("port"));
             }
         ]);
         return server;
     },
-    app: function (paths, options) {
+    app(paths, options) {
 
         if (server) return app;
         this.server(paths, options);
