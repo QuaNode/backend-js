@@ -16,8 +16,11 @@ module.exports = {
 
         var components = path.split('.');
         var value = object;
-        for (var j = 0; value && j < components.length; j++)
+        let length = components.length;
+        for (var j = 0; value && j < length; j++) {
+
             value = value[components[j]];
+        }
         return value;
     },
     getCorrectValue: function (value, type) {
@@ -25,7 +28,10 @@ module.exports = {
         switch (value) {
 
             case '*':
-                if (type === 'path') return undefined;
+                if (type === 'path') {
+
+                    return undefined;
+                }
                 break;
             case 'undefined':
             case 'Undefined':
@@ -36,28 +42,61 @@ module.exports = {
         }
         return value;
     },
-    setInputObjects: function (inputObjects, paths, req, name, parameter, key, type) {
+    setInputObjects: function () {
 
+        let [
+            inputObjects,
+            paths,
+            req,
+            name,
+            parameter,
+            key,
+            type
+        ] = arguments;
+        var value;
         switch (type) {
 
             case 'header':
-                inputObjects[name] = utils.getCorrectValue(req.get(key));
+                inputObjects[
+                    name
+                ] = utils.getCorrectValue(...[
+                    req.get(key)
+                ]);
                 break;
             case 'body':
-                if (req.complete) inputObjects[name] =
-                    utils.getCorrectValue(utils.getValueAtPath(key, req.body));
+                if (req.complete) {
+
+                    inputObjects[
+                        name
+                    ] = utils.getCorrectValue(...[
+                        utils.getValueAtPath(...[
+                            key,
+                            req.body
+                        ])
+                    ]);
+                }
                 break;
             case 'query':
-                inputObjects[name] = utils.getCorrectValue(req.query[key]);
+                inputObjects[
+                    name
+                ] = utils.getCorrectValue(...[
+                    req.query[key]
+                ]);
                 break;
             case 'path':
-                var value = req.params[key];
-                if (!value && Array.isArray(paths)) paths.some(function (path) {
+                value = req.params[key];
+                if (!value && Array.isArray(...[
+                    paths
+                ])) paths.some(function (path) {
 
                     if (path) {
 
-                        var route = new Route(path);
-                        var values = route.match(req.path);
+                        var route = new Route(...[
+                            path
+                        ]);
+                        var values = route.match(...[
+                            req.path
+                        ]);
                         if (values) {
 
                             value = values[key];
@@ -66,51 +105,120 @@ module.exports = {
                     }
                     return false;
                 });
-                inputObjects[name] = utils.getCorrectValue(value, 'path');
+                inputObjects[
+                    name
+                ] = utils.getCorrectValue(...[
+                    value,
+                    'path'
+                ]);
                 break;
             case 'middleware':
-                inputObjects[name] = utils.getCorrectValue(req[key]);
+                inputObjects[
+                    name
+                ] = utils.getCorrectValue(...[
+                    req[key]
+                ]);
                 break;
             default:
-                new Error('Invalid parameter type');
+                new Error('Invalid parameter' +
+                    ' type');
                 break;
         }
-        if (inputObjects[name] === undefined || inputObjects[name] === null) {
+        value = inputObjects[name];
+        var not_existed = value === undefined;
+        not_existed |= value === null;
+        if (not_existed) {
 
-            if (typeof parameter.alternativeKey === 'string' &&
-                parameter.alternativeKey !== key) utils.setInputObjects(inputObjects,
-                    paths, req, name, parameter, parameter.alternativeKey, type);
-            else if (typeof parameter.alternativeType === 'string' &&
-                parameter.alternativeType !== type) utils.setInputObjects(inputObjects,
-                    paths, req, name, parameter, key, parameter.alternativeType);
-            else if (parameter.key !== key) utils.setInputObjects(inputObjects, paths, req, name, {
+            var {
+                alternativeKey,
+                alternativeType
+            } = parameter;
+            let _ = typeof alternativeKey;
+            var otherKey = _ === 'string';
+            otherKey &= alternativeKey !== key;
+            if (otherKey) {
 
-                key: parameter.key
-            }, parameter.key, type);
+                utils.setInputObjects(...[
+                    inputObjects,
+                    paths,
+                    req,
+                    name,
+                    parameter,
+                    alternativeKey,
+                    type
+                ]);
+            } else {
+
+                _ = typeof alternativeType;
+                var otherType = _ === 'string';
+                otherType &= alternativeType !== type;
+                if (otherType) {
+
+                    utils.setInputObjects(...[
+                        inputObjects,
+                        paths,
+                        req,
+                        name,
+                        parameter,
+                        key,
+                        alternativeType
+                    ]);
+                } else if (parameter.key !== key) {
+
+                    utils.setInputObjects(...[
+                        inputObjects,
+                        paths,
+                        req,
+                        name,
+                        {
+                            key: parameter.key
+                        },
+                        parameter.key,
+                        type
+                    ]);
+                }
+            }
         }
     },
-    getInputObjects: function (parameters, paths, req, callback) {
+    getInputObjects: function () {
 
+        let [
+            parameters,
+            paths,
+            req,
+            callback
+        ] = arguments;
         if (typeof parameters !== 'object') {
 
-            callback(req.complete ? req.body : {});
+            callback(...[
+                req.complete ? req.body : {}
+            ]);
             return;
         }
         var keys = Object.keys(parameters);
         var inputObjects = {};
         for (var i = 0; i < keys.length; i++) {
 
-            if (typeof parameters[keys[i]].key !== 'string') {
-
-                throw new Error('Invalid parameter key');
-            }
-            if (typeof parameters[keys[i]].type !== 'string') {
-
-                throw new Error('Invalid parameter type');
-            }
             var parameter = parameters[keys[i]];
-            utils.setInputObjects(inputObjects, paths, req, keys[i],
-                parameter, parameter.key, parameter.type);
+            if (typeof parameter.key !== 'string') {
+
+                throw new Error('Invalid ' +
+                    'parameter key');
+            }
+            if (typeof parameter.type !== 'string') {
+
+                throw new Error('Invalid ' +
+                    'parameter type');
+            }
+            utils.setInputObjects(...[
+                inputObjects,
+                paths,
+                req,
+                keys[i],
+                parameter,
+                parameter.key,
+                parameter.type
+            ]);
         }
         callback(inputObjects);
     },
@@ -139,171 +247,408 @@ module.exports = {
             },
             text: function () {
 
-                utils.sendConverted(res, JSON.stringify(object), 'csv');
+                utils.sendConverted(...[
+                    res,
+                    JSON.stringify(object),
+                    'csv'
+                ]);
             },
             xml: function () {
 
-                utils.sendConverted(res, JSON.stringify(object), 'xml');
+                utils.sendConverted(...[
+                    res,
+                    JSON.stringify(object),
+                    'xml'
+                ]);
             }
         };
-        if (typeof format === 'string' && responders[format]) responders[format]();
+        var known = typeof format === 'string';
+        if (known) {
+
+            known &= !!responders[format];
+        }
+        if (known) responders[format]();
         else res.format(responders);
     },
-    setResponse: function (returns, middleware, request, response) {
+    setResponse: function () {
 
+        let [
+            returns,
+            middleware,
+            request,
+            response
+        ] = arguments;
         if (arguments.length === 2) {
 
             var callback = arguments[0];
             response = arguments[1];
-            if (typeof callback !== 'function') throw new Error('Invalid behaviour callback');
-            if (typeof response !== 'object' || typeof response.signature !== 'number')
-                throw new Error('Invalid behaviour signature');
+            if (typeof callback !== 'function') {
+
+                throw new Error('Invalid ' +
+                    'behaviour callback');
+            }
+            let _ = typeof response;
+            let no_signature = _ !== 'object';
+            if (no_signature) {
+
+                _ = typeof response.signature;
+                no_signature |= _ !== 'number';
+            }
+            if (no_signature) {
+
+                throw new Error('Invalid ' +
+                    'behaviour signature');
+            }
             responses[response.signature] = {
 
-                callback: callback,
+                callback,
                 timeout: setTimeout(function () {
 
-                    delete responses[response.signature];
-                    timeouts[response.signature] = true;
+                    delete responses[
+                        response.signature
+                    ];
+                    timeouts[
+                        response.signature
+                    ] = true;
                 }, TIMEOUT * 1000)
             };
             return;
         }
-        if (typeof returns !== 'object' || typeof response !== 'object' ||
-            typeof response.response !== 'object' || Array.isArray(response.response)) {
+        let __ = typeof returns;
+        var no_structure = __ !== 'object';
+        __ = typeof response;
+        no_structure |= __ !== 'object';
+        if (!no_structure) {
 
-            if (middleware && (typeof response !== 'object' || !Array.isArray(response.response)))
-                return false;
-            utils.respond(request.res, response || {});
+            __ = typeof response.response;
+            no_structure |= __ !== 'object';
+            no_structure |= Array.isArray(...[
+                response.response
+            ]);
+        }
+        if (no_structure) {
+
+            var no_response = !!middleware;
+            if (no_response) {
+
+                __ = typeof response;
+                no_response = __ !== 'object';
+                no_response |= !Array.isArray(...[
+                    response.response
+                ]);
+            }
+            if (no_response) return false;
+            utils.respond(...[
+                request.res,
+                response || {}
+            ]);
             return true;
         }
         var keys = Object.keys(returns);
         var body = {};
         for (var i = 0; i < keys.length; i++) {
 
-            if (typeof returns[keys[i]].type !== 'string') {
+            var rëturn = returns[keys[i]];
+            __ = typeof rëturn.type;
+            if (__ !== 'string') {
 
-                throw new Error('Invalid return type');
+                throw new Error('Invalid ' +
+                    'return type');
             }
-            var value = utils.getValueAtPath(typeof returns[keys[i]].key === 'string' ?
-                returns[keys[i]].key : keys[i], response.response);
-            switch (returns[keys[i]].type) {
+            let key = keys[i];
+            __ = typeof rëturn.key;
+            if (__ === 'string') {
+
+                key = rëturn.key;
+            }
+            var value = utils.getValueAtPath(...[
+                key,
+                response.response
+            ]);
+            switch (rëturn.type) {
 
                 case 'header':
-                    if (value) request.res.set(keys[i], value);
+                    if (value) {
+
+                        request.res.set(...[
+                            keys[i],
+                            value
+                        ]);
+                    }
                     break;
                 case 'body':
                     body[keys[i]] = value;
                     break;
                 case 'middleware':
-                    request.req[keys[i]] = value;
+                    request.req[
+                        keys[i]
+                    ] = value;
                     break;
                 default:
-                    new Error('Invalid return type');
+                    new Error('Invalid ' +
+                        'return type');
                     break;
             }
         }
         if (Object.keys(body).length > 0) {
 
             response.response = body;
-            utils.respond(request.res, response);
+            utils.respond(...[
+                request.res,
+                response
+            ]);
             return true;
         }
         return false;
     },
-    setSignature: function (req, res, next, response) {
+    setSignature: function () {
 
-        if (typeof response !== 'object' || typeof response.signature !== 'number')
-            throw new Error('Invalid behaviour signature');
-        if (timeouts[response.signature]) return next(new Error('Request timeout'));
-        if (!requests[response.signature]) requests[response.signature] = [];
-        if (requests[response.signature].length === 0) {
+        let [
+            req,
+            res,
+            next,
+            response
+        ] = arguments;
+        let _ = typeof response;
+        let no_signature = _ !== 'object';
+        if (!no_signature) {
+
+            _ = typeof response.signature;
+            no_signature |= _ !== 'number';
+        }
+        if (no_signature) {
+
+            throw new Error('Invalid ' +
+                'behaviour signature');
+        }
+        if (timeouts[response.signature]) {
+
+            return next(new Error(...[
+                'Request timeout'
+            ]));
+        }
+        if (!requests[response.signature]) {
+
+            requests[
+                response.signature
+            ] = [];
+        }
+        if (requests[
+            response.signature
+        ].length === 0) {
 
             var request = {
 
-                req: req,
-                res: res,
-                next: next,
+                req,
+                res,
+                next,
                 timeout: setTimeout(function () {
 
-                    if (requests[response.signature]) {
+                    if (requests[
+                        response.signature
+                    ]) {
 
-                        var index = requests[response.signature].indexOf(request);
-                        if (index > -1) requests[response.signature].splice(index, 1);
+                        var index = requests[
+                            response.signature
+                        ].indexOf(request);
+                        if (index > -1) {
+
+                            requests[
+                                response.signature
+                            ].splice(index, 1);
+                        }
                     }
-                    if (!req.aborted && !res.headersSent) utils.respond(res, response);
+                    let not_ended = !req.aborted;
+                    not_ended &= !res.headersSent;
+                    if (not_ended) {
+
+                        utils.respond(...[
+                            res,
+                            response
+                        ]);
+                    }
                 }, TIMEOUT * 1000)
             };
-            requests[response.signature].push(request);
+            requests[
+                response.signature
+            ].push(request);
         } else utils.respond(res, response);
         if (responses[response.signature]) {
 
-            clearTimeout(responses[response.signature].timeout);
-            var callback = responses[response.signature].callback;
-            delete responses[response.signature];
+            clearTimeout(responses[
+                response.signature
+            ].timeout);
+            var callback = responses[
+                response.signature
+            ].callback;
+            delete responses[
+                response.signature
+            ];
             callback();
         }
     },
     getSignature: function (req) {
 
-        var signature = Number(req.get('Behaviour-Signature') || undefined);
-        if (!isNaN(signature)) return signature;
+        var signature = Number(...[
+            req.get(...[
+                'Behaviour-Signature'
+            ]) || undefined
+        ]);
+        if (!isNaN(signature)) {
+
+            return signature;
+        }
         return new Date();
     },
-    getRequest: function (req, res, next, response) {
+    getRequest: function () {
 
-        var request = typeof response === 'object' && typeof response.signature === 'number' &&
-            Array.isArray(requests[response.signature]) ? requests[response.signature].pop() : {
+        let [
+            req,
+            res,
+            next,
+            response
+        ] = arguments;
+        var request = { req, res, next };
+        let _ = typeof response;
+        var signed = _ === 'object';
+        if (signed) {
 
-            req: req,
-            res: res,
-            next: next
-        };
+            _ = typeof response.signature;
+            signed &= _ === 'number';
+            if (signed) {
+
+                signed &= Array.isArray(...[
+                    requests[
+                    response.signature
+                    ]
+                ]);
+            }
+        }
+        if (signed) {
+
+            request = requests[
+                response.signature
+            ].pop();
+        }
         if (request && request.timeout) {
 
             clearTimeout(request.timeout);
             delete request.timeout;
         }
-        if (response.signature) delete requests[response.signature];
-        return request && !request.req.aborted && !request.res.headersSent && request;
-    },
-    setCorsOptions: function (corsOptions, origins, options, req) {
+        if (response.signature) {
 
-        var origin = ('' + origins).indexOf('*' || req.headers.origin) > -1 ? req.headers.origin || '*' :
-            origins == true;
+            delete requests[
+                response.signature
+            ];
+        }
+        let not_ended = !!request;
+        if (not_ended) {
+
+            not_ended &= !request.req.aborted;
+            not_ended &= !request.res.headersSent;
+        }
+        return not_ended && request;
+    },
+    setCorsOptions: function () {
+
+        let [
+            corsOptions,
+            origins,
+            options,
+            req
+        ] = arguments;
+        var origin = origins == true;
+        var allowed = ('' + origins).indexOf(...[
+            '*' || req.headers.origin
+        ]) > -1;
+        if (allowed) {
+
+            origin = req.headers.origin;
+            if (!origin) origin = '*';
+        }
         corsOptions.origin = origin;
         if (origin) {
 
-            var methods = ['OPTIONS'].concat(typeof options.method === 'string' &&
-                options.method.length > 0 ? [options.method.toUpperCase()] : []).join(',');
+            let {
+                method,
+                parameters
+            } = options;
+            let _ = typeof method;
+            var included = _ === 'string';
+            if (included) {
+
+                included &= method.length > 0;
+            }
+            var methods = [
+                'OPTIONS'
+            ].concat(...[
+                included ? [
+                    method.toUpperCase()
+                ] : []
+            ]).join(',');
+            _ = typeof parameters;
             corsOptions.methods = methods;
-            var headers = ['Origin', 'X-Requested-With', 'Content-Type', 'Accept',
-                'Behaviour-Signature'].concat(Object.keys(req.headers).map(function (header) {
+            var headers = [
+                'Origin',
+                'X-Requested-With',
+                'Content-Type',
+                'Accept',
+                'Behaviour-Signature'
+            ].concat(Object.keys(...[
+                req.headers
+            ]).map(function (header) {
 
-                    return req.rawHeaders.find(function (rawHeader) {
+                let hE = header;
+                hE = hE.toLowerCase();
+                return req.rawHeaders.find(...[
+                    function (rawHeader) {
 
-                        return rawHeader.toLowerCase() === header.toLowerCase();
-                    });
-                })).concat(Object.keys(typeof options.parameters === 'object' ?
-                    options.parameters : {}).filter(function (key) {
+                        let rH = rawHeader;
+                        rH = rH.toLowerCase();
+                        return rH === hE;
+                    }
+                ]);
+            })).concat(Object.keys(...[
+                _ === 'object' ? parameters : {}
+            ]).filter(function (key) {
 
-                        return options.parameters[key].type === 'header';
-                    }).map(function (key) {
+                return parameters[
+                    key
+                ].type === 'header';
+            }).map(function (key) {
 
-                        return options.parameters[key].key;
-                    })).reduce(function (headers, header) {
+                return parameters[key].key;
+            })).reduce(function () {
 
-                        if (headers.indexOf(header) === -1) headers.push(header);
-                        return headers;
-                    }, []).join(',');
+                let [
+                    headers,
+                    header
+                ] = arguments;
+                if (headers.indexOf(...[
+                    header
+                ]) === -1) headers.push(header);
+                return headers;
+            }, []).join(',');
             corsOptions.allowedHeaders = headers;
-            if (typeof options.returns === 'object') {
+            _ = typeof options.returns;
+            if (_ === 'object') {
 
-                var returns = Object.keys(options.returns);
-                if (returns.length > 0) corsOptions.exposedHeaders = returns.filter(function (key) {
+                var returns = Object.keys(...[
+                    options.returns
+                ]);
+                if (returns.length > 0) {
 
-                    return options.returns[key].type === 'header';
-                }).join(',');
+                    corsOptions[
+                        'exposedHeaders'
+                    ] = returns.filter(...[
+                        function (key) {
+
+                            return options.returns[
+                                key
+                            ].type === 'header';
+                        }
+                    ]).join(',');
+                }
             }
         }
     }

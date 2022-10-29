@@ -3,7 +3,7 @@
 'use strict';
 
 var fs = require('fs');
-var querystring = require('querystring');
+var { URLSearchParams } = require("url");
 var bodyParser = require('body-parser');
 var logger = require('morgan');
 var HttpStatus = require('http-status-codes');
@@ -12,7 +12,7 @@ var session = require('express-session');
 var memorystore = require('memorystore');
 var debug = require('debug');
 var cors = require('cors');
-var Server = require('socket.io').Server;
+var { Server } = require('socket.io');
 var {
     BehavioursServer,
     compare,
@@ -62,12 +62,16 @@ var limiter = rateLimit({
     headers: false,
     handler: function (req, res, next) {
 
-        if (!limited[req.ip]) limited[req.ip] = {
+        if (!limited[req.ip]) {
 
-            count: 0,
-            time: new Date().getTime()
-        };
-        var time = new Date().getTime() - limited[req.ip].time;
+            limited[req.ip] = {
+
+                count: 0,
+                time: new Date().getTime()
+            };
+        }
+        var time = new Date().getTime();
+        time -= limited[req.ip].time;
         var resetting = time > WINDOW;
         var count = ++limited[req.ip].count;
         if (resetting) {
@@ -79,12 +83,24 @@ var limiter = rateLimit({
         var limitable = count > MAX;
         if (limitable || resetting) {
 
-            var limiting = (limitable && time <= WINDOW) || timeout > WINDOW;
-            if (limiting) return res.status(this.statusCode).send(this.message);
+            var limiting = !!limitable;
+            limiting &= time <= WINDOW;
+            if (!limiting) {
+
+                limiting |= timeout > WINDOW;
+            }
+            if (limiting) {
+
+                return res.status(...[
+                    this.statusCode
+                ]).send(this.message);
+            }
         }
         setTimeout(function () {
 
-            if (!req.aborted && !res.headersSent) next();
+            let not_ended = !req.aborted;
+            not_ended &= !res.headersSent;
+            if (not_ended) next();
         }, timeout);
     }
 });
@@ -96,30 +112,40 @@ var server;
 
 module.exports = {
 
-    ModelEntity: ModelEntity,
-    QueryExpression: QueryExpression,
-    setComparisonOperators: setComparisonOperators,
-    setLogicalOperators: setLogicalOperators,
-    AggregateExpression: AggregateExpression,
-    setComputationOperators: setComputationOperators,
-    setModelController: setModelController,
-    getModelController: getModelController,
-    ServiceParameter: ServiceParameter,
-    ServiceParameterType: ServiceParameterType,
-    setResourceController: setResourceController,
-    getResourceController: getResourceController,
-    model: model,
-    service: service,
-    behaviour: behaviour,
+    ModelEntity,
+    QueryExpression,
+    setComparisonOperators,
+    setLogicalOperators,
+    AggregateExpression,
+    setComputationOperators,
+    setModelController,
+    getModelController,
+    ServiceParameter,
+    ServiceParameterType,
+    setResourceController,
+    getResourceController,
+    model,
+    service,
+    behaviour,
     server: function (paths, options) {
 
         if (server) return server;
         app.disable("x-powered-by");
-        if (options.proxy) app.set('trust proxy', options.proxy);
+        if (options.proxy) {
+
+            app.set(...[
+                'trust proxy',
+                options.proxy
+            ]);
+        }
         app.use(logger('dev'));
         app.use(limiter);
-        var corsDelegate = function (req, callback) {
+        var corsDelegate = function () {
 
+            let [
+                req,
+                callback
+            ] = arguments;
             var corsOptions = {
 
                 origin: false,
@@ -127,46 +153,124 @@ module.exports = {
             };
             var maxAge = options.maxAge;
             var keys = Object.keys(routes);
-            for (var i = 0; i < keys.length; i++) {
+            let length = keys.length;
+            for (var i = 0; i < length; i++) {
 
-                var routeOptions = routes[keys[i]];
-                var prefix = routeOptions.prefix || options.path;
-                var method;
-                if (typeof routeOptions.method === 'string' &&
-                    typeof app[routeOptions.method.toLowerCase()] === 'function')
-                    method = routeOptions.method.toLowerCase();
-                var origins =
-                    routeOptions.origins != undefined ? routeOptions.origins : options.origins;
-                origins =
-                    typeof origins === 'string' && origins.length > 0 ? origins : origins == true;
-                var path = req.path || req.originalUrl || req.url;
-                var [path, query] = path.split('?');
-                var events_path = false;
-                if (query && routeOptions.events && compare({
+                var routeOptions = routes[
+                    keys[i]
+                ];
+                var { prefix } = routeOptions;
+                if (!prefix) {
 
-                    path: resolve(prefix, '/events', path)
-                }, {
-
-                    path: path
-                }) && req.method.toLowerCase() === 'get') {
-
-                    query = querystring.parse(query);
-                    if (keys[i] == query.behaviour) events_path = true;
+                    prefix = options.path;
                 }
-                if (origins && (events_path || (compare({
+                var method;
+                var {
+                    method: rM
+                } = routeOptions;
+                let _ = typeof rM;
+                var valid = _ === 'string';
+                if (valid) {
 
-                    path: resolve(prefix, routeOptions.path, path)
+                    rM = rM.toLowerCase();
+                    _ = typeof app[rM];
+                    valid &= _ === 'function';
+                }
+                if (valid) method = rM;
+                var { origins } = routeOptions;
+                if (origins === undefined) {
+
+                    ({ origins } = options);
+                }
+                _ = typeof origins;
+                var allow = _ !== 'string';
+                if (!allow) {
+
+                    allow |= origins.length === 0;
+                }
+                if (allow) {
+
+                    origins = origins == true;
+                }
+                var query, path = req.path;
+                if (!path) {
+
+                    path = req.originalUrl;
+                }
+                if (!path) path = req.url;
+                ([
+                    path,
+                    query
+                ] = path.split('?'));
+                var events_path = false;
+                let eventful = !!query;
+                eventful &= !!routeOptions.events;
+                rM = req.method.toLowerCase();
+                if (eventful && compare({
+
+                    path: resolve(...[
+                        prefix,
+                        '/events',
+                        path
+                    ])
                 }, {
 
-                    path: path
-                }) && [method, 'options'].indexOf(req.method.toLowerCase()) > -1))) {
+                    path
+                }) && rM === 'get') {
 
-                    setCorsOptions(corsOptions, origins, routeOptions, req);
-                    maxAge = routeOptions.maxAge != undefined ? routeOptions.maxAge : maxAge;
+                    query = new URLSearchParams(...[
+                        query
+                    ]).toString();
+                    if (keys[i] == query.behaviour) {
+
+                        events_path = true;
+                    }
+                }
+                var cors_ready = !!origins;
+                if (cors_ready) {
+
+                    cors_ready = events_path;
+                    if (!cors_ready) {
+
+                        cors_ready = compare({
+
+                            path: resolve(...[
+                                prefix,
+                                routeOptions.path,
+                                path
+                            ])
+                        }, {
+
+                            path
+                        });
+                        cors_ready &= [
+                            method,
+                            'options'
+                        ].indexOf(rM) > -1;
+                    }
+                }
+                if (cors_ready) {
+
+                    setCorsOptions(...[
+                        corsOptions,
+                        origins,
+                        routeOptions,
+                        req
+                    ]);
+                    let {
+                        maxAge: mA
+                    } = routeOptions
+                    if (mA != undefined) {
+
+                        maxAge = mA;
+                    }
                     break;
                 }
             }
-            if (!isNaN(parseInt(maxAge))) corsOptions.maxAge = maxAge;
+            if (!isNaN(parseInt(maxAge))) {
+
+                corsOptions.maxAge = maxAge;
+            }
             callback(null, corsOptions);
         };
         app.all('/*', cors(corsDelegate));
@@ -178,54 +282,155 @@ module.exports = {
             saveUninitialized: false,
             secret: '' + new Date().getTime()
         }));
-        var { upgrade, validate, connect } =
-            new BehavioursServer(options.path, options.parser, paths, options.operations);
-        if (typeof paths === 'object' && typeof paths.proxy === 'string' &&
-            paths.proxy.length > 0) require(paths.proxy);
+        var {
+            upgrade,
+            validate,
+            connect
+        } = new BehavioursServer(...[
+            options.path,
+            options.parser,
+            paths,
+            options.operations
+        ]);
+        var proxied = typeof paths === 'object';
+        if (proxied) {
+
+            let _ = typeof paths.proxy;
+            proxied &= _ === 'string';
+            if (proxied) {
+
+                proxied &= paths.proxy.length > 0;
+            }
+        }
+        if (proxied) require(paths.proxy);
         if (typeof options.static === 'object') {
 
-            if (typeof options.static.route === 'string') app.use(options.static.route,
-                serve(options.static.path, options.static));
-            else app.use(serve(options.static.path, options.static));
+            let _ = typeof options.static.route;
+            if (_ === 'string') {
+
+                app.use(...[
+                    options.static.route,
+                    serve(...[
+                        options.static.path,
+                        options.static
+                    ])
+                ]);
+            } else app.use(serve(...[
+                options.static.path,
+                options.static
+            ]));
         }
-        if (typeof options.parserOptions !== 'object') options.parserOptions = undefined;
-        app.use(typeof options.parser === 'string' &&
-            typeof bodyParser[options.parser] === 'function' ?
-            bodyParser[options.parser](options.parserOptions) :
-            bodyParser.json(options.parserOptions));
-        if (typeof paths === 'string' && paths.length > 0) require(paths);
-        else if (typeof paths === 'object' && typeof paths.local === 'string' &&
-            paths.local.length > 0) require(paths.local);
+        let __ = typeof options.parserOptions;
+        if (__ !== 'object') {
+
+            options.parserOptions = undefined;
+        }
+        var parser;
+        __ = typeof options.parser;
+        var parsing = __ === 'string';
+        if (parsing) {
+
+            __ = typeof bodyParser[
+                options.parser
+            ];
+            parsing &= __ === 'function';
+        }
+        if (parsing) parser = bodyParser[
+            options.parser
+        ](options.parserOptions); else {
+
+            parser = bodyParser.json(...[
+                options.parserOptions
+            ]);
+        }
+        app.use(parser);
+        __ = typeof paths;
+        var requiring = __ === 'string';
+        if (requiring) {
+
+            requiring &= paths.length > 0;
+        }
+        if (requiring) require(paths);
+        else {
+
+            requiring = __ === 'object';
+            if (requiring) {
+
+                __ = typeof paths.local;
+                requiring &= __ === 'string';
+                if (requiring) {
+
+                    let {
+                        length
+                    } = paths.local;
+                    requiring &= length > 0;
+                }
+            }
+            if (requiring) {
+
+                require(paths.local);
+            }
+        }
         app.use(function (req, res, next) {
 
             var err = new Error('Not found');
-            if (/[A-Z]/.test(req.path))
-                err = new Error('Not found, maybe the case-sensitivity of the path');
+            if (/[A-Z]/.test(req.path)) {
+
+                err = new Error('Not ' +
+                    'found, maybe the ' +
+                    'case-sensitivity of ' +
+                    'the path');
+            }
             err.code = 404;
             next(err);
         });
         app.use(function (err, req, res, next) {
 
             debug(err);
-            if (res.headersSent) return next(err);
-            respond(res.status(HttpStatus.getStatus(err.code) || 500), {
+            if (res.headersSent) {
+
+                return next(err);
+            }
+            respond(res.status(...[
+                HttpStatus.getStatus(...[
+                    err.code
+                ]) || 500
+            ]), {
 
                 behaviour: err.name,
                 version: err.version,
                 message: err.message
             }, options.parser);
         });
-        var https = typeof options.https === 'object';
-        var port = https ? 443 : 80;
-        app.set('port', options.port || process.env.PORT || port);
-        var module = https ? 'https' : 'http';
-        server = require(module).createServer(function () {
+        __ = typeof options.https;
+        var https = __ === 'object';
+        var port = options.port;
+        if (!port) port = process.env.PORT;
+        if (!port) port = https ? 443 : 80;
+        app.set('port', port);
+        var protocol = https ? 'https' : 'http';
+        server = require(...[
+            protocol
+        ]).createServer(function () {
 
-            if (https) return ['key', 'cert', 'ca'].reduce(function (https, prop) {
+            if (https) return [
+                'key',
+                'cert',
+                'ca'
+            ].reduce(function (https, prop) {
 
                 var path = options.https[prop];
-                if (typeof path === 'string' && fs.existsSync(path))
-                    https[prop] = fs.readFileSync(path).toString();
+                __ = typeof path;
+                var existed = __ === 'string';
+                existed &= fs.existsSync(path);
+                if (existed) {
+
+                    https[
+                        prop
+                    ] = fs.readFileSync(...[
+                        path
+                    ]).toString();
+                }
                 return https;
             }, {}); else return app;
         }(), app);
@@ -240,24 +445,46 @@ module.exports = {
             next(err, !err);
         }).on('connect', function (socket) {
 
-            socket.once('disconnect', function () {
+            socket.once(...[
+                'disconnect',
+                function () {
 
-                debug('backend socket:' + socket.id + ' disconnected on port ' + app.get('port'));
-            });
+                    debug('backend ' +
+                        'socket:' + socket.id +
+                        ' disconnected on port ' +
+                        app.get('port'));
+                }
+            ]);
             connect(socket);
         }).use(function (socket, next) {
 
             session(socket.handshake, {}, next);
         });
         server.removeAllListeners("upgrade");
-        server.on("upgrade", function (req, socket, head) {
+        server.on("upgrade", function () {
 
-            if (!upgrade(req, socket, head)) io.engine.handleUpgrade(req, socket, head);
-        });
-        server.listen(app.get('port'), function () {
+            let [
+                req,
+                socket,
+                head
+            ] = arguments;
+            if (!upgrade(req, socket, head)) {
 
-            debug('backend listening on port ' + app.get('port'));
+                io.engine.handleUpgrade(...[
+                    req,
+                    socket,
+                    head
+                ]);
+            }
         });
+        server.listen(...[
+            app.get('port'),
+            function () {
+
+                debug('backend listening on port ' +
+                    app.get('port'));
+            }
+        ]);
         return server;
     },
     app: function (paths, options) {

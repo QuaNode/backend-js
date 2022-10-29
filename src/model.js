@@ -12,49 +12,67 @@ var {
     ModelEntity
 } = require('behaviours-js');
 
-module.exports.QueryExpression = QueryExpression;
-module.exports.setComparisonOperators = setComparisonOperators;
-module.exports.getComparisonOperators = function () {
+module.exports = {
 
-    return require('behaviours-js').ComparisonOperators;
+    QueryExpression,
+    setComparisonOperators,
+    getComparisonOperators: function () {
+
+        var {
+            ComparisonOperators
+        } = require('behaviours-js');
+        return ComparisonOperators;
+    },
+    setLogicalOperators,
+    AggregateExpression,
+    setComputationOperators,
+    ModelEntity
 };
-module.exports.setLogicalOperators = setLogicalOperators;
-module.exports.AggregateExpression = AggregateExpression;
-module.exports.setComputationOperators = setComputationOperators;
-module.exports.ModelEntity = ModelEntity;
 
 var ModelControllers = {};
 var modelControllers = {};
 
-module.exports.setModelController = function (mc, key) {
+module.exports.setModelController = function () {
 
+    var [mc, key] = arguments;
     if (key && typeof key !== 'string') {
 
-        throw new Error('Invalid model controller key');
+        throw new Error('Invalid model' +
+            ' controller key');
     }
     if (typeof mc !== 'object') {
 
-        throw new Error('Invalid model controller');
+        throw new Error('Invalid model' +
+            ' controller');
     }
     if (typeof mc.removeObjects !== 'function') {
 
-        throw new Error('Missing removeObjects method in model controller');
+        throw new Error('Missing removeObjects' +
+            ' method in model controller');
     }
     if (typeof mc.addObjects !== 'function') {
 
-        throw new Error('Missing addObjects method in model controller');
+        throw new Error('Missing addObjects' +
+            ' method in model controller');
     }
     if (typeof mc.getObjects !== 'function') {
 
-        throw new Error('Missing getObjects method in model controller');
+        throw new Error('Missing getObjects' +
+            ' method in model controller');
     }
     if (typeof mc.constructor !== 'function') {
 
-        throw new Error('Missing constructor in model controller');
+        throw new Error('Missing constructor' +
+            ' in model controller');
     }
-    if (typeof mc.constructor.defineEntity !== 'function') {
+    let {
+        defineEntity
+    } = mc.constructor;
+    if (typeof defineEntity !== 'function') {
 
-        throw new Error('Missing defineEntity method in model controller constructor');
+        throw new Error('Missing defineEntity' +
+            ' method in model controller' +
+            ' constructor');
     }
     modelControllers[key || 'main'] = mc;
     ModelControllers[key || 'main'] = mc.constructor;
@@ -67,33 +85,74 @@ module.exports.getModelController = function (key) {
 
 module.exports.model = function () {
 
-    return function (options, attributes, plugins) {
+    return function () {
 
-        if (typeof options === 'string' && !attributes && !plugins) return function (modelName) {
+        var [
+            options,
+            attributes,
+            plugins
+        ] = arguments;
+        var defined = typeof options === 'string';
+        defined &= !attributes;
+        defined &= !plugins;
+        if (defined) return function () {
 
-            var modelEntity = ModelEntity.getModelEntity(options);
-            if (!modelEntity)
-                throw new Error('Use require() instead of model() for ' +
+            var [modelName] = arguments;
+            var {
+                getModelEntity
+            } = ModelEntity;
+            var modelEntity = getModelEntity(...[
+                options
+            ]);
+            if (!modelEntity) {
+
+                throw new Error('Use require()' +
+                    ' instead of model() for ' +
                     options + ' in ' + modelName);
+            }
             return modelEntity;
         };
         if (typeof options !== 'object') {
 
-            throw new Error('Invalid definition object');
+            throw new Error('Invalid definition' +
+                ' object');
         }
-        if (typeof options.name !== 'string' || options.name.length === 0) {
+        let {
+            name,
+            database
+        } = options;
+        var no_name = typeof name !== 'string';
+        if (!no_name) {
+
+            no_name |= name.length === 0;
+        }
+        if (no_name) {
 
             throw new Error('Invalid model name');
         }
-        if (options.database && (typeof options.database !== 'string' ||
-            options.database.length === 0)) {
+        var invalid = !!database;
+        if (invalid) {
+
+            invalid = typeof database !== 'string';
+            if (!invalid) {
+
+                invalid |= database.length === 0;
+            }
+        }
+        if (invalid) {
 
             throw new Error('Invalid database key');
         }
-        if (!ModelControllers[options.database || 'main'] ||
-            !modelControllers[options.database || 'main']) {
+        var no_controller = !ModelControllers[
+            database || 'main'
+        ];
+        no_controller |= !modelControllers[
+            database || 'main'
+        ];
+        if (no_controller) {
 
-            throw new Error('Set model controller before defining a model');
+            throw new Error('Set model controller' +
+                ' before defining a model');
         }
         // if (typeof options.version !== 'string') {
 
@@ -114,44 +173,77 @@ module.exports.model = function () {
         if (typeof attributes !== 'object') {
 
             throw new Error('Invalid attributes');
-        } else {
+        } else Object.keys(attributes).forEach(...[
+            function (key) {
 
-            Object.keys(attributes).forEach(function (key) {
+                if (!attributes[key]) {
 
-                if (!attributes[key])
-                    throw new Error('Undefined attribute! try to use model() instead of require()' +
-                        ' for ' + key + ' in ' + options.name + ' or check attribute datatype');
-            });
-        }
-        var EntityConstructor =
-            ModelControllers[options.database || 'main'].defineEntity(options.name, attributes,
-                plugins, options.constraints);
+                    throw new Error('Undefined' +
+                        ' attribute! try to use' +
+                        ' model() instead of ' +
+                        'require() for ' + key +
+                        ' in ' + name + ' or ' +
+                        'check attribute datatype');
+                }
+            }
+        ]);
+        var EntityConstructor = ModelControllers[
+            database || 'main'
+        ].defineEntity(...[
+            name,
+            attributes,
+            plugins,
+            options.constraints
+        ]);
         var Entity = define(function (init) {
 
-            return function (features, query, aggregate) {
+            return function () {
 
+                let [
+                    features,
+                    query,
+                    aggregate
+                ] = arguments;
                 if (Array.isArray(features)) {
 
                     aggregate = query;
                     query = features;
                     features = undefined;
                 }
+                if (typeof features !== 'object') {
+
+                    features = {};
+                }
+                if (!Array.isArray(query)) {
+
+                    query = [];
+                }
+                if (!Array.isArray(aggregate)) {
+
+                    aggregate = [];
+                }
                 init.apply(this, [{
 
                     constructor: EntityConstructor,
-                    attributes: attributes,
-                    features:
-                        Object.assign((typeof features === 'object' && features) || {},
-                            options.features),
-                    query: options.query.concat((Array.isArray(query) && query) || []),
-                    aggregate:
-                        options.aggregate.concat((Array.isArray(aggregate) && aggregate) || [])
+                    attributes,
+                    features: Object.assign(...[
+                        features,
+                        options.features
+                    ]),
+                    query: [
+                        ...options.query,
+                        ...query
+                    ],
+                    aggregate: [
+                        ...options.aggregate,
+                        ...aggregate
+                    ]
                 }]).self();
             };
         }).extend(ModelEntity).defaults({
 
             constructor: EntityConstructor,
-            attributes: attributes,
+            attributes,
             features: options.features,
             query: options.query,
             aggregate: options.aggregate
@@ -159,7 +251,7 @@ module.exports.model = function () {
         ModelEntity.registerModelEntity({
 
             entity: Entity,
-            entityName: options.name
+            entityName: name
         });
         return Entity;
     };

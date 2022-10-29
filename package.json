@@ -1,6 +1,6 @@
 {
     "name": "backend-js",
-    "version": "1.1.8",
+    "version": "1.2.0",
     "description": "Backend-js is a layer built above expressjs to enable behaviours framework for nodejs applications.",
     "main": "index.js",
     "scripts": {
@@ -29,7 +29,8 @@
         "route-parser": "latest",
         "@snyk/protect": "latest",
         "socket.io": "latest",
-        "vhost": "latest"
+        "vhost": "latest",
+        "cron-parser": "latest"
     },
     "repository": {
         "type": "git",

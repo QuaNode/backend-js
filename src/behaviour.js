@@ -11,15 +11,30 @@ var {
 var vhost = require('vhost');
 var define = require('define-js');
 var parse = require('parseparams');
-var url = require('url');
-var querystring = require('querystring');
+var {
+    URL,
+    URLSearchParams
+} = require("url");
 var crypto = require('crypto');
 var {
     BusinessBehaviourType,
     BusinessBehaviour
 } = require('behaviours-js');
-var businessController = require('./controller.js').businessController;
-var getLogBehaviour = require('./log.js').getLogBehaviour;
+var {
+    OFFLINESYNC,
+    OFFLINEACTION,
+    ONLINESYNC,
+    ONLINEACTION
+} = BusinessBehaviourType;
+var {
+    businessController
+} = require('./controller.js');
+var {
+    getLogBehaviour
+} = require('./log.js');
+var {
+    scheduleBehaviour
+} = require('./schedule.js');
 var {
     getInputObjects,
     setResponse,
@@ -38,45 +53,80 @@ backend.serve = express.static;
 var join = backend.join = function (s1, s2) {
 
     var fromIndex = s2.startsWith('/') ? 1 : 0;
-    var toIndex = s1.endsWith('/') ? s1.length - 1 : s1.length;
-    return url.resolve(s1.substr(0, toIndex) + '/', s2.substr(fromIndex));
+    var toIndex = s1.length;
+    if (s1.endsWith('/')) toIndex--;
+    s1 = s1.substr(0, toIndex) + '/';
+    s2 = s2.substr(fromIndex);
+    var url = new URL(...[
+        s2,
+        new URL(s1, 'resolve://')
+    ]);
+    if (url.protocol === 'resolve:') {
+
+        var { pathname, search, hash } = url;
+        return pathname + search + hash;
+    }
+    return url.toString();
 };
 
-var compare = backend.compare = function (route1, route2) {
+var compare = backend.compare = function () {
 
-    var route;
-    if (route1 && route1.path && (route1.path.indexOf(':') > -1 ||
-        route1.path.indexOf('*') > -1)) route = route1;
-    else route = route2;
+    var [route1, route2] = arguments;
+    var route = route2;
+    var varying = !!(route1 && route1.path);
+    if (varying) {
+
+        varying = route1.path.indexOf(':') > -1;
+        varying |= route1.path.indexOf('*') > -1;
+    }
+    if (varying) route = route1;
     if (route === route2) {
 
         route2 = route1;
         route1 = route;
     }
-    if (route && route.path) route = new Route(route.path);
+    if (route && route.path) {
+
+        route = new Route(route.path);
+    }
     var path1 = route1 && route1.path;
     var path2 = route2 && route2.path;
-    var method1 = ((route1 && route1.method) || '').toLowerCase();
-    var method2 = ((route2 && route2.method) || '').toLowerCase();
-    var matched = route && route.match(path2 || ' ');
-    return (matched || path1 === path2) && method1 === method2;
+    var method1 = (route1 && route1.method) || '';
+    method1 = method1.toLowerCase();
+    var method2 = (route2 && route2.method) || '';
+    method2 = method2.toLowerCase();
+    var matched = !!route;
+    if (matched) {
+
+        matched &= !!route.match(path2 || ' ');
+    }
+    matched |= path1 === path2;
+    matched &= method1 === method2;
+    return matched;
 };
 
-var resolve = backend.resolve = function (prefix, suffix, path) {
+var resolve = backend.resolve = function () {
 
-    var prefixed = typeof prefix === 'string' && path.startsWith(prefix);
-    if (prefixed && typeof suffix === 'string') return join(prefix, suffix);
-    else return suffix || prefix;
+    var [prefix, suffix, path] = arguments;
+    var prefixed = typeof prefix === 'string';
+    if (prefixed) {
+
+        prefixed &= path.startsWith(prefix);
+    }
+    if (prefixed && typeof suffix === 'string') {
+
+        return join(prefix, suffix);
+    } else return suffix || prefix;
 };
 
 var defaultPrefix = '/';
 
 var types = {
 
-    database: BusinessBehaviourType.OFFLINESYNC,
-    database_with_action: BusinessBehaviourType.OFFLINEACTION,
-    integration: BusinessBehaviourType.ONLINESYNC,
-    integration_with_action: BusinessBehaviourType.ONLINEACTION
+    database: OFFLINESYNC,
+    database_with_action: OFFLINEACTION,
+    integration: ONLINESYNC,
+    integration_with_action: ONLINEACTION
 };
 
 var routers = {};
@@ -108,10 +158,12 @@ var upgradePlugins = {};
 
 backend.behaviour = function (path, config) {
 
-    if (typeof app !== 'function' || typeof app.use !== 'function') {
+    var no_app = typeof app !== 'function';
+    if (!no_app) {
 
-        throw new Error('Invalid express app');
+        no_app |= typeof app.use !== 'function';
     }
+    if (no_app) throw new Error('Invalid express app');
     if (typeof path === 'object') {
 
         config = path;
@@ -121,10 +173,13 @@ backend.behaviour = function (path, config) {
 
         config = {};
     }
-    if (typeof config.operations !== 'object' || !config.operations) {
+    var no_operations = !config.operations;
+    if (!no_operations) {
 
-        config.operations = {};
+        let { operations } = config;
+        no_operations |= typeof operations !== 'object';
     }
+    if (no_operations) config.operations = {};
     return function (options, getConstructor) {
 
         if (typeof options !== 'object') {
@@ -133,28 +188,49 @@ backend.behaviour = function (path, config) {
         }
         if (typeof options.inherits === 'function') {
 
-            if (!(options.inherits.prototype instanceof BusinessBehaviour)) {
+            let { prototype } = options.inherits;
+            if (!(prototype instanceof BusinessBehaviour)) {
 
-                throw new Error('Super behaviour should inherit from BusinessBehaviour');
+                throw new Error('Super behaviour should ' +
+                    'inherit from BusinessBehaviour');
             }
-            options = Object.assign(Object.keys(BEHAVIOURS).reduce(function (ȯptions, name) {
+            options = Object.assign(Object.keys(...[
+                BEHAVIOURS
+            ]).reduce(function (ȯptions, name) {
 
-                if (BEHAVIOURS[name].constructor == options.inherits)
+                let { constructor } = BEHAVIOURS[name];
+                if (constructor == options.inherits) {
+
                     return BEHAVIOURS[name].options;
+                }
                 return ȯptions;
             }, {}), options);
         }
-        if (typeof options.operations !== 'object' || !options.operations) {
+        no_operations = !options.operations;
+        if (!no_operations) {
 
-            options.operations = {};
+            let { operations } = options;
+            no_operations |= typeof operations !== 'object';
         }
-        options.operations =
-            Object.assign({}, defaultOperations, config.operations, options.operations);
-        if (typeof options.type !== 'string' || types[options.type] === undefined) {
+        if (no_operations) options.operations = {};
+        options.operations = Object.assign(...[
+            {},
+            defaultOperations,
+            config.operations,
+            options.operations
+        ]);
+        var no_type = typeof options.type !== 'string';
+        if (!no_type) {
 
-            options.type = 'database';
+            no_type |= types[options.type] === undefined;
         }
-        if (typeof options.version !== 'string' || options.version.length === 0) {
+        if (no_type) options.type = 'database';
+        var no_version = typeof options.version !== 'string';
+        if (!no_version) {
+
+            no_version |= options.version.length === 0;
+        }
+        if (no_version) {
 
             throw new Error('Invalid behaviour version');
         }
@@ -162,74 +238,180 @@ backend.behaviour = function (path, config) {
 
             throw new Error('Invalid constructor');
         }
-        if (!Array.isArray(options.events)) options.events = [];
-        if (typeof options.event === 'function') options.events.push(options.event);
-        options.events = options.events.filter(function (event) {
+        if (!Array.isArray(options.events)) {
 
-            return typeof event === 'function' || (typeof event === 'string' &&
-                event.length > 0);
-        });
-        var hasName = typeof options.name === 'string' && options.name.length > 0;
-        var hasUniqueName = function () {
+            options.events = [];
+        }
+        if (typeof options.event === 'function') {
 
-            if (hasName && BEHAVIOURS[options.name] && config.skipSameRoutes !== true)
-                throw new Error('Duplicate behavior name: ' + options.name +
-                    '. Make sure names are unique and not numerical');
-            return hasName && !BEHAVIOURS[options.name];
+            options.events.push(options.event);
+        }
+        options.events = options.events.filter(...[
+            function (event) {
+
+                let valid = typeof event === 'function';
+                if (!valid) {
+
+                    valid = typeof event === 'string';
+                    if (valid) {
+
+                        valid &= event.length > 0;
+                    }
+                }
+                return valid;
+            }
+        ]);
+        var named = typeof options.name === 'string';
+        if (named) {
+
+            named &= options.name.length > 0;
+        }
+        var uniquelyNamed = function () {
+
+            let { skipSameRoutes } = config;
+            if (named && BEHAVIOURS[
+                options.name
+            ] && skipSameRoutes !== true) {
+
+                throw new Error('Duplicate behavior name: ' +
+                    options.name + '. Make sure names are ' +
+                    'unique and not numerical');
+            }
+            return named && !BEHAVIOURS[options.name];
         }();
-        var BehaviourConstructor = define(getConstructor).extend(getLogBehaviour(options, config,
-            types, BEHAVIOURS, defaultRemotes, FetchBehaviours, LogBehaviours, function (room) {
+        var BehaviourConstructor = define(...[
+            getConstructor
+        ]).extend(getLogBehaviour(...[
+            options,
+            config,
+            types,
+            BEHAVIOURS,
+            defaultRemotes,
+            FetchBehaviours,
+            LogBehaviours,
+            function (room) {
 
                 return emitters[room];
-            })).defaults({
+            }
+        ])).defaults({
 
-                type: types[options.type]
-            });
+            type: types[options.type]
+        });
         if (options.fetcher) {
 
-            var fetcher = typeof options.fetcher === 'string' ? options.fetcher : '';
+            var fetcher = '';
+            if (typeof options.fetcher === 'string') {
+
+                fetcher = options.fetcher;
+            }
             FetchBehaviours[fetcher] = BehaviourConstructor;
         }
         if (options.logger) {
 
-            var logger = typeof options.logger === 'string' ? options.logger : '';
+            var logger = '';
+            if (typeof options.logger === 'string') {
+
+                options.logger = logger;
+            }
             LogBehaviours[logger] = BehaviourConstructor;
         }
-        if (hasUniqueName) {
+        scheduleBehaviour(...[
+            options,
+            BehaviourConstructor,
+            types,
+            FetchBehaviours
+        ]);
+        if (uniquelyNamed) {
 
             if (options.name === 'behaviours') {
 
                 throw new Error('behaviours is a reserved name');
             }
-            var isRouterMiddleware =
-                typeof options.path === 'string' && options.path.length > 0;
-            var isRoute = isRouterMiddleware && typeof options.method === 'string' &&
-                typeof app[options.method.toLowerCase()] === 'function';
-            var longPolling = isRoute && Object.keys(types).indexOf(options.type) > 1;
-            if (!Array.isArray(options.plugins)) options.plugins = [];
-            if (typeof options.plugin === 'function') options.plugins.push(options.plugin);
-            var req_plugin = options.plugins.reduce(function (req_plugin, plugin) {
+            var middleware = typeof options.path === 'string';
+            if (middleware) {
 
-                if (typeof plugin === 'function' && parse(plugin)[0] !== 'out') return plugin;
-                return req_plugin;
-            }, undefined);
-            if (req_plugin && parse(req_plugin).reverse()[0] === 'head')
-                upgradePlugins[options.name] = req_plugin;
-            var res_plugin = options.plugins.reduce(function (res_plugin, plugin) {
+                middleware &= options.path.length > 0;
+            }
+            var routing = middleware;
+            routing &= typeof options.method === 'string';
+            if (routing) {
 
-                if (typeof plugin === 'function' && parse(plugin)[0] === 'out') return plugin;
-                return res_plugin;
-            }, undefined);
+                let method = options.method.toLowerCase();
+                routing &= typeof app[method] === 'function';
+            }
+            var polling = routing && Object.keys(...[
+                types
+            ]).indexOf(options.type) > 1;
+            if (!Array.isArray(options.plugins)) {
+
+                options.plugins = [];
+            }
+            if (typeof options.plugin === 'function') {
+
+                options.plugins.push(options.plugin);
+            }
+            var request_plugin = options.plugins.reduce(...[
+                function (request_plugin, plugin) {
+
+                    let valid = typeof plugin === 'function';
+                    if (valid) {
+
+                        valid &= parse(plugin)[0] !== 'out';
+                    }
+                    if (valid) return plugin;
+                    return request_plugin;
+                },
+                undefined
+            ]);
+            var upgrading = !!request_plugin;
+            if (upgrading) {
+
+                let [last] = parse(request_plugin).reverse();
+                upgrading &= last === 'head';
+            }
+            if (upgrading) {
+
+                upgradePlugins[options.name] = request_plugin;
+            }
+            var response_plugin = options.plugins.reduce(...[
+                function (response_plugin, plugin) {
+
+                    let valid = typeof plugin === 'function';
+                    if (valid) {
+
+                        valid &= parse(plugin)[0] === 'out';
+                    }
+                    if (valid) return plugin;
+                    return response_plugin;
+                },
+                undefined
+            ]);
             var prefix;
-            if (typeof path === 'string' && path.length > 0) {
+            var pathing = typeof path === 'string';
+            if (pathing) {
+
+                pathing &= path.length > 0;
+            }
+            if (pathing) {
 
                 if (config.overwritePath) prefix = path;
                 else prefix = join(defaultPrefix, path);
-            } else if (defaultPrefix !== '/' && !config.overwritePath) prefix = defaultPrefix;
-            if (options.events.length > 0 &&
-                join(prefix, options.path) == join(prefix, '/events')) {
+            } else {
 
-                throw new Error('Invalid path. ' + join(prefix, options.path) +
+                var no_overwrite = !config.overwritePath;
+                no_overwrite &= defaultPrefix !== '/';
+                if (no_overwrite) {
+
+                    prefix = defaultPrefix;
+                }
+            }
+            if (options.events.length > 0 && join(...[
+                prefix,
+                options.path
+            ]) == join(prefix, '/events')) {
+
+                throw new Error('Invalid path. ' +
+                    join(prefix, options.path) +
                     ' is reserved route');
             }
             BEHAVIOURS[options.name] = {
@@ -237,17 +419,25 @@ backend.behaviour = function (path, config) {
                 options: Object.assign({ prefix }, options),
                 constructor: BehaviourConstructor
             };
-            var behaviour_runner = function (req, res, next, inputObjects, er) {
+            var behaviour_runner = function () {
 
+                var [
+                    req,
+                    res,
+                    next,
+                    inputObjects,
+                    er
+                ] = arguments;
                 var signature = getSignature(req);
                 var response = {
 
                     behaviour: options.name,
                     version: options.version
                 };
-                if (longPolling) {
+                if (polling) {
 
-                    response.signature = new Date(signature).getTime();
+                    let time = new Date(signature).getTime();
+                    response.signature = time;
                     setSignature(req, res, next, response);
                     if (typeof signature === 'number') return;
                 }
@@ -262,178 +452,401 @@ backend.behaviour = function (path, config) {
                     name: options.name,
                     type: types[options.type],
                     priority: options.priority || 0,
-                    inputObjects: inputObjects
+                    timeout: options.timeout,
+                    inputObjects
                 }, function (name, room) {
 
                     var event = events[name];
                     if (event && event[room]) {
 
-                        var client = event[room][req.session.id];
+                        let sessionId = req.session.id;
+                        let client = event[room][sessionId];
                         if (client) return client.id;
                     }
                 });
-                var behaviour_callback = function (behaviour_response, error) {
+                var behaviour_callback = function () {
 
-                    var request = getRequest(req, res, next, response);
+                    var [
+                        result,
+                        error
+                    ] = arguments;
+                    var request = getRequest(...[
+                        req,
+                        res,
+                        next,
+                        response
+                    ]);
                     if (!request) {
 
-                        if (longPolling) setResponse(behaviour_callback.bind(null,
-                            behaviour_response, error), response);
+                        if (polling) setResponse(...[
+                            behaviour_callback.bind(...[
+                                null,
+                                result,
+                                error
+                            ]),
+                            response
+                        ]);
                         return;
                     }
-                    if (longPolling) delete response.signature;
-                    if (typeof error === 'object' || typeof behaviour_response !== 'object') {
+                    if (polling) delete response.signature;
+                    var failing = typeof error === 'object';
+                    failing |= typeof result !== 'object';
+                    if (failing) {
 
-                        if (error) error.name = options.name;
-                        if (error) error.version = options.version;
-                        request.next(error || er || new Error('Error while executing ' +
-                            options.name + ' behaviour, version ' + options.version + '!'));
-                    } else if (!res_plugin ||
-                        !res_plugin(behaviour_response, request.req, request.res, request.next)) {
+                        if (error && !error.name) {
 
-                        response.response = options.paginate ? behaviour_response.modelObjects ||
-                            behaviour_response : behaviour_response;
-                        if (options.events.length > 0) {
+                            error.name = options.name;
+                        }
+                        if (error && !error.version) {
 
-                            var events_token = crypto.randomBytes(48).toString('base64');
-                            response.events_token = events_token;
-                            response.events = options.events.map(function (event) {
+                            error.version = options.version;
+                        }
+                        request.next(...[
+                            error || er || new Error('Error ' +
+                                'while executing ' +
+                                options.name +
+                                ' behaviour, version ' +
+                                options.version + '!')
+                        ]);
+                    } else {
 
-                                var room = typeof event === 'function' ?
-                                    event(options.name, inputObjects) : event;
-                                return room && typeof room === 'object' ?
-                                    JSON.stringify(room) : room;
-                            }).filter(function (room) {
+                        var responding = !response_plugin;
+                        if (!responding) {
 
-                                if (typeof room === 'string' && room.trim()) {
+                            responding |= !response_plugin(...[
+                                result,
+                                request.req,
+                                request.res,
+                                request.next
+                            ]);
+                        }
+                        if (responding) {
 
-                                    var event = events[options.name];
-                                    if (!event) event = events[options.name] = {};
-                                    if (!event[room]) event[room] = {};
-                                    event[room][req.session.id] = {
+                            response.response = result;
+                            if (options.paginate) {
 
-                                        token: events_token,
-                                        count: 0
-                                    };
-                                    return true;
+                                let {
+                                    modelObjects: page
+                                } = result;
+                                if (page) {
+
+                                    response.response = page;
                                 }
-                                return false;
-                            });
+                            }
+                            if (options.events.length > 0) {
+
+                                let _ = crypto.randomBytes(48);
+                                let token = _.toString('base64');
+                                response.events_token = token;
+                                ({ events: _ } = options);
+                                response.events = _.map(...[
+                                    function (event) {
+
+                                        let room = event;
+                                        _ = typeof event;
+                                        if (_ === 'function') {
+
+                                            room = event(...[
+                                                options.name,
+                                                inputObjects
+                                            ]);
+                                        }
+                                        let jsonify = !!room;
+                                        _ = typeof room;
+                                        jsonify &= _ === 'object';
+                                        if (jsonify) {
+
+                                            let {
+                                                stringify
+                                            } = JSON;
+                                            return stringify(room);
+                                        }
+                                        return room;
+                                    }
+                                ]).filter(function (room) {
+
+                                    _ = typeof room;
+                                    let valid = _ === 'string';
+                                    if (valid) {
+
+                                        valid &= !!room.trim();
+                                    }
+                                    if (valid) {
+
+                                        var event = events[
+                                            options.name
+                                        ];
+                                        if (!event) {
+
+                                            event = events[
+                                                options.name
+                                            ] = {};
+                                        }
+                                        if (!event[room]) {
+
+                                            event[room] = {};
+                                        }
+                                        let { id } = req.session;
+                                        event[room][id] = {
+
+                                            token,
+                                            count: 0
+                                        };
+                                        return true;
+                                    }
+                                    return false;
+                                });
+                            }
+                            if (options.paginate) {
+
+                                let {
+                                    pageCount: page
+                                } = result;
+                                if (typeof page !== 'number') {
+
+                                    page = 1;
+                                }
+                                let _ = paginate.hasNextPages(...[
+                                    request.req
+                                ])(page);
+                                response.has_more = _;
+                            }
+                            let { returns } = options;
+                            if (typeof returns !== 'function') {
+
+                                if (!setResponse(...[
+                                    returns,
+                                    !routing,
+                                    request,
+                                    response
+                                ])) request.next();
+                            } else returns(...[
+                                request.req,
+                                request.res,
+                                result,
+                                error,
+                                function (outputObjects) {
+
+                                    respond(...[
+                                        request.res,
+                                        outputObjects
+                                    ]);
+                                }
+                            ]);
                         }
-                        if (options.paginate) {
-
-                            response.has_more = paginate.hasNextPages(request.req)
-                                (typeof behaviour_response.pageCount === 'number' ?
-                                    behaviour_response.pageCount : 1);
-                        }
-                        if (typeof options.returns !== 'function') {
-
-                            if (!setResponse(options.returns, !isRoute, request, response))
-                                request.next();
-                        } else options.returns(request.req, request.res, behaviour_response,
-                            error, function (outputObjects) {
-
-                                respond(request.res, outputObjects);
-                            });
                     }
                 };
-                var fetching = typeof options.fetching === 'string' ? options.fetching : '';
-                var FetchBehaviour =
-                    options.fetcher ? BehaviourConstructor : FetchBehaviours[fetching];
-                var cancel = businessController(options.name, typeof options.queue === 'function' ?
-                    options.queue(options.name, inputObjects) : options.queue, options.database,
-                    options.storage, options.fetcher || options.fetching, FetchBehaviour,
-                    options.memory, options.operations).runBehaviour(behaviour, options.paginate ?
-                        function (property, superProperty) {
+                var fetching = '';
+                if (typeof options.fetching === 'string') {
 
-                            var page = {
+                    fetching = options.fetching;
+                }
+                var FetchBehaviour = FetchBehaviours[fetching];
+                if (options.fetcher) {
 
-                                modelObjects: 'modelObjects',
-                                pageCount: 'pageCount'
-                            };
-                            return typeof options.map === 'function' ?
-                                options.map(property, superProperty) ||
-                                page[property] : page[property];
-                        } : options.map, behaviour_callback);
+                    FetchBehaviour = BehaviourConstructor;
+                }
+                let { queue } = options;
+                if (typeof queue === 'function') {
+
+                    queue = queue(options.name, inputObjects);
+                }
+                var cancel = businessController(...[
+                    options.name,
+                    queue,
+                    options.database,
+                    options.storage,
+                    options.fetcher || options.fetching,
+                    FetchBehaviour,
+                    options.memory,
+                    options.operations
+                ]).runBehaviour(...[
+                    behaviour,
+                    options.paginate ? function () {
+
+                        var [
+                            property,
+                            superProperty
+                        ] = arguments;
+                        let page = {
+
+                            modelObjects: 'modelObjects',
+                            pageCount: 'pageCount'
+                        };
+                        let map = { options };
+                        if (typeof map === 'function') {
+
+                            var mapped = map(...[
+                                property,
+                                superProperty
+                            ]);
+                            if (mapped) return mapped;
+                        }
+                        return page[property];
+                    } : options.map,
+                    behaviour_callback
+                ]);
                 req.on('close', function () {
 
-                    if (typeof cancel === 'function' && !longPolling) cancel();
+                    let _ = typeof cancel;
+                    var cancelling = _ === 'function';
+                    cancelling &= !polling;
+                    if (cancelling) cancel();
                 });
             };
-            var req_handler = function (req, res, next) {
+            var request_handler = function (req, res, next) {
 
                 if (typeof options.parameters !== 'function') {
 
-                    if (!isRoute || req.complete) getInputObjects(options.parameters,
-                        Object.keys(behaviours).map(function (name) {
+                    if (!routing || req.complete) {
 
-                            var suffix = behaviours[name] && behaviours[name].path;
-                            return resolve(prefix, suffix, req.path);
-                        }), req, function (inputObjects) {
+                        getInputObjects(...[
+                            options.parameters,
+                            Object.keys(behaviours).map(...[
+                                function (name) {
 
-                            behaviour_runner(req, res, next, inputObjects);
-                        });
-                    else req.socket.on('end', req_handler.bind(null, req, res, next));
-                } else options.parameters(req, res, function (inputObjects, er) {
+                                    let {
+                                        [name]: ȯptions
+                                    } = behaviours, suffix;
+                                    if (ȯptions) {
 
-                    if (req.complete) behaviour_runner(req, res, next, inputObjects, er);
-                    else throw new Error('Parameters callback function called before all ' +
-                        'request data consumed');
-                });
+                                        suffix = ȯptions.path;
+                                    }
+                                    return resolve(...[
+                                        prefix,
+                                        suffix,
+                                        req.path
+                                    ]);
+                                }]
+                            ),
+                            req,
+                            function (inputObjects) {
+
+                                behaviour_runner(...[
+                                    req,
+                                    res,
+                                    next,
+                                    inputObjects
+                                ]);
+                            }
+                        ]);
+                    } else req.socket.on(...[
+                        'end',
+                        request_handler.bind(null, req, res, next)
+                    ]);
+                } else options.parameters(...[
+                    req,
+                    res,
+                    function (inputObjects, er) {
+
+                        if (req.complete) behaviour_runner(...[
+                            req,
+                            res,
+                            next,
+                            inputObjects,
+                            er
+                        ]); else throw new Error('Parameters' +
+                            ' callback function called before' +
+                            ' all request data consumed');
+                    }
+                ]);
             };
             if (Array.isArray(options.unless)) {
 
-                req_handler.unless = unless;
-                req_handler = req_handler.unless({
+                request_handler.unless = unless;
+                request_handler = request_handler.unless({
 
                     custom: function (req) {
 
-                        return options.unless.filter(function (name) {
+                        return options.unless.filter(...[
+                            function (name) {
 
-                            var suffix = behaviours[name] && behaviours[name].path;
-                            var method = behaviours[name] && behaviours[name].method;
-                            return compare({
+                                let {
+                                    [name]: ȯptions
+                                } = behaviours, suffix, method;
+                                if (ȯptions) {
 
-                                path: resolve(prefix, suffix, req.path),
-                                method: method
-                            }, {
+                                    suffix = ȯptions.path;
+                                    method = ȯptions.method;
+                                }
+                                return compare({
 
-                                path: req.path,
-                                method: req.method
-                            });
-                        }).length > 0;
+                                    path: resolve(...[
+                                        prefix,
+                                        suffix,
+                                        req.path
+                                    ]),
+                                    method
+                                }, {
+
+                                    path: req.path,
+                                    method: req.method
+                                });
+                            }
+                        ]).length > 0;
                     }
                 });
             }
-            if (typeof options.host === 'string' && options.host.length > 0) {
+            var filtering = typeof options.host === 'string';
+            if (filtering) {
 
-                req_handler = vhost(options.host, req_handler);
-                if (req_plugin) req_plugin = vhost(options.host, req_plugin);
-            } else if (req_plugin) {
+                filtering &= options.host.length > 0;
+            }
+            if (filtering) {
 
-                var _req_plugin_ = req_plugin;
-                req_plugin = function (req, res, next) {
+                request_handler = vhost(...[
+                    options.host,
+                    request_handler
+                ]);
+                if (request_plugin) {
 
-                    _req_plugin_(req, res, next);
+                    request_plugin = vhost(...[
+                        options.host,
+                        request_plugin
+                    ]);
+                }
+            } else if (request_plugin) {
+
+                var _request_plugin_ = request_plugin;
+                request_plugin = function () {
+
+                    _request_plugin_(...arguments);
                 };
             }
-            if (isRoute) {
+            if (routing) {
 
                 var names = Object.keys(behaviours);
-                if (!config.skipSameRoutes && names.some(function (name) {
+                let {
+                    skipSameRoutes
+                } = config;
+                if (!skipSameRoutes && names.some(...[
+                    function (name) {
 
-                    return compare({
+                        let {
+                            [name]: ȯptions
+                        } = behaviours;
+                        return compare({
 
-                        path: behaviours[name].path,
-                        method: behaviours[name].method
-                    }, {
+                            path: ȯptions.path,
+                            method: ȯptions.method
+                        }, {
 
-                        path: options.path,
-                        method: options.method
-                    });
-                })) throw new Error('Duplicated behavior path: ' + options.path);
+                            path: options.path,
+                            method: options.method
+                        });
+                    }
+                ])) {
+
+                    throw new Error('Duplicated behavior' +
+                        ' path: ' + options.path);
+                }
                 var router = app;
-                if (typeof prefix === 'string' && prefix.length > 0) {
+                let prefixing = typeof prefix === 'string';
+                if (prefixing) {
+
+                    prefixing &= prefix.length > 0;
+                }
+                if (prefixing) {
 
                     router = routers[prefix];
                     if (!router) {
@@ -449,9 +862,14 @@ backend.behaviour = function (path, config) {
                         routers[prefix] = router;
                     }
                 }
-                router = router[options.method.toLowerCase()].bind(router);
-                if (req_plugin) router(options.path, req_plugin, req_handler);
-                else router(options.path, req_handler);
+                router = router[
+                    options.method.toLowerCase()
+                ].bind(router);
+                if (request_plugin) router(...[
+                    options.path,
+                    request_plugin,
+                    request_handler
+                ]); else router(options.path, request_handler);
                 behaviours[options.name] = {
 
                     version: options.version,
@@ -459,94 +877,177 @@ backend.behaviour = function (path, config) {
                     path: options.path,
                     host: options.host,
                     events: options.events.length > 0,
-                    prefix: prefix,
+                    prefix,
                     origins: options.origins,
                     maxAge: options.maxAge,
                     parameters: function () {
 
-                        if (typeof options.parameters !== 'function')
-                            return options.parameters;
+                        let { parameters } = options;
+                        if (typeof parameters !== 'function') {
+
+                            return parameters;
+                        }
                     }(),
                     returns: function () {
 
-                        if (typeof options.returns !== 'function')
-                            return options.returns;
+                        let { returns } = options;
+                        if (typeof returns !== 'function') {
+
+                            return returns;
+                        }
                     }()
                 };
-            } else if (isRouterMiddleware) {
+            } else if (middleware) {
 
-                var route = typeof prefix === 'string' && prefix.length > 0 ?
-                    join(prefix, options.path) : options.path;
-                if (req_plugin) app.use(route, req_plugin, req_handler);
-                else app.use(route, req_handler);
+                var route = options.path;
+                let prefixing = typeof prefix === 'string';
+                if (prefixing) {
+
+                    prefixing &= prefix.length > 0;
+                }
+                if (prefixing) {
+
+                    route = join(prefix, options.path);
+                }
+                if (request_plugin) app.use(...[
+                    route,
+                    request_plugin,
+                    request_handler
+                ]); else app.use(route, request_handler);
             } else {
 
-                if (req_plugin) app.use(req_plugin, req_handler);
-                else app.use(req_handler);
+                if (request_plugin) app.use(...[
+                    request_plugin,
+                    request_handler
+                ]); else app.use(request_handler);
             }
         } else BEHAVIOURS[Object.keys(BEHAVIOURS).length + 1] = {
 
-            options: options,
+            options,
             constructor: BehaviourConstructor
         };
         return BehaviourConstructor;
     };
 };
 
-backend.BehavioursServer = function (path, parser, remotes, operations) {
+backend.BehavioursServer = function () {
 
-    if (operations && typeof operations === 'object') defaultOperations = operations;
-    if (remotes && typeof remotes === 'object') defaultRemotes = remotes;
-    if (defaultPrefix === '/' && typeof path === 'string' && path.length > 0)
-        defaultPrefix = path;
-    var prefix = path || defaultPrefix;
-    app.get(typeof prefix === 'string' ? join(prefix, '/behaviours') : '/behaviours',
-        function (req, res) {
+    var [prefix, parser, remotes, operations] = arguments;
+    if (operations && typeof operations === 'object') {
 
-            respond(res, behaviours, parser);
-        });
+        defaultOperations = operations;
+    }
+    if (remotes && typeof remotes === 'object') {
+
+        defaultRemotes = remotes;
+    }
+    var default_prefixing = defaultPrefix === '/';
+    default_prefixing &= typeof prefix === 'string';
+    if (default_prefixing) {
+
+        default_prefixing &= prefix.length > 0;
+    }
+    if (default_prefixing) defaultPrefix = prefix;
+    if (!prefix) prefix = defaultPrefix;
+    var prefixing = typeof prefix === 'string';
+    if (prefixing) {
+
+        prefixing &= prefix.length > 0;
+    }
+    app.get(function () {
+
+        if (prefixing) return join(prefix, '/behaviours');
+        return '/behaviours';
+    }(), function (_, res) {
+
+        respond(res, behaviours, parser);
+    });
     var validate_path = function (behaviour, path) {
 
-        var behaviour_prefix = behaviour.prefix || defaultPrefix;
+        var behaviour_prefix = behaviour.prefix;
+        if (!behaviour_prefix) {
+
+            behaviour_prefix = defaultPrefix;
+        }
         var behaviour_path = behaviour.path || '/';
-        var isRoute = typeof behaviour.method === 'string' &&
-            typeof app[behaviour.method.toLowerCase()] === 'function';
-        if (!isRoute) behaviour_path = join(behaviour_path, '/*path');
+        var routing = typeof behaviour.method === 'string';
+        if (routing) {
+
+            let method = behaviour.method.toLowerCase();
+            routing &= typeof app[method] === 'function';
+        }
+        if (!routing) {
+
+            behaviour_path = join(behaviour_path, '/*path');
+        }
         return compare({
 
-            path: resolve(behaviour_prefix, behaviour_path, path)
+            path: resolve(...[
+                behaviour_prefix,
+                behaviour_path,
+                path
+            ])
         }, {
 
-            path: path
+            path
         });
     };
     var validate_host = function (host, req, res) {
 
         var same_host = true;
-        if (typeof host === 'string' && host.length > 0)
-            vhost(host, function () { })(req, res, function () {
+        var filtering = typeof host === 'string';
+        if (filtering) {
+
+            filtering &= host.length > 0;
+        }
+        if (filtering) vhost(host, function () { })(...[
+            req,
+            res,
+            function () {
 
                 same_host = false;
-            });
+            }
+        ]);
         return same_host;
     };
     this.upgrade = function (req, socket, head) {
 
         var names = Object.keys(BEHAVIOURS);
-        var [path, query] = (req.originalUrl || req.url).split('?');
+        var [
+            path,
+            query
+        ] = (req.originalUrl || req.url).split('?');
         if (query) {
 
-            query = querystring.parse(query);
-            if (names.indexOf(query.behaviour) > -1) names = [query.behaviour];
+            query = new URLSearchParams(...[
+                query
+            ]).toString();
+            if (names.indexOf(query.behaviour) > -1) {
+
+                names = [query.behaviour];
+            }
         }
         for (var i = 0; i < names.length; i++) {
 
             if (!upgradePlugins[names[i]]) continue;
-            var behaviour = BEHAVIOURS[names[i]].options;
-            if (validate_host(behaviour.host, req, socket) &&
-                validate_path(behaviour, path)) {
+            let behaviour = BEHAVIOURS[names[i]].options;
+            var upgrading = validate_host(...[
+                behaviour.host,
+                req,
+                socket
+            ]);
+            if (upgrading) {
 
-                upgradePlugins[names[i]](req, socket, undefined, head);
+                upgrading = validate_path(behaviour, path);
+            }
+            if (upgrading) {
+
+                upgradePlugins[names[i]](...[
+                    req,
+                    socket,
+                    undefined,
+                    head
+                ]);
                 return true;
             }
         }
@@ -555,58 +1056,136 @@ backend.BehavioursServer = function (path, parser, remotes, operations) {
     this.validate = function (path, query) {
 
         var name = query.behaviour;
-        if (typeof name === 'string' && name.length > 0) {
+        var named = typeof name === 'string';
+        if (named) {
 
-            var behaviour = BEHAVIOURS[name] && BEHAVIOURS[name].options;
-            if (behaviour && behaviour.events && compare({
+            named &= name.length > 0;
+        }
+        if (named) {
 
-                path: resolve(behaviour.prefix, '/events', path)
+            let behaviour;
+            if (BEHAVIOURS[name]) {
+
+                behaviour = BEHAVIOURS[name].options;
+            }
+            let eventful = !!behaviour;
+            if (eventful) {
+
+                eventful &= !!behaviour.events;
+            }
+            if (eventful && compare({
+
+                path: resolve(...[
+                    behaviour.prefix,
+                    '/events',
+                    path
+                ])
             }, {
 
-                path: path
+                path
             })) return;
         }
         return new Error('Not found');
     };
     this.connect = function (socket) {
 
-        var client;
-        var name = socket.handshake.auth.behaviour ||
-            socket.handshake.query.behaviour;
-        var token = socket.handshake.auth.token ||
-            socket.handshake.query.token;
-        var id = socket.handshake.session.id;
-        if (typeof name === 'string' && name.length > 0 &&
-            typeof token === 'string' && token.length > 0) {
+        let client;
+        let name = socket.handshake.auth.behaviour;
+        if (!name) {
 
-            var behaviour = BEHAVIOURS[name] && BEHAVIOURS[name].options;
-            if (behaviour && behaviour.events &&
-                validate_host(behaviour.host, socket.request, socket)) {
+            name = socket.handshake.query.behaviour;
+        }
+        let token = socket.handshake.auth.token;
+        if (!token) {
+
+            token = socket.handshake.query.token;
+        }
+        let id = socket.handshake.session.id;
+        var authenticating = typeof name === 'string';
+        if (authenticating) {
+
+            authenticating &= name.length > 0;
+        }
+        authenticating &= typeof token === 'string';
+        if (authenticating) {
+
+            authenticating &= token.length > 0;
+        }
+        if (authenticating) {
+
+            let behaviour;
+            if (BEHAVIOURS[name]) {
+
+                behaviour = BEHAVIOURS[name].options;
+            }
+            let eventful = !!behaviour;
+            if (eventful) {
+
+                eventful &= !!behaviour.events;
+            }
+            if (eventful && validate_host(...[
+                behaviour.host,
+                socket.request,
+                socket
+            ])) {
 
                 var joined = false;
                 var event = events[name];
-                if (event) socket.once('join ' + name, function (room) {
+                if (event) socket.once(...[
+                    'join ' + name,
+                    function (room) {
 
-                    if (event[room]) client = event[room][id];
-                    if (client) {
+                        if (event[room]) {
 
-                        client.id = socket.id;
-                        client.count++;
-                        if (client.token === token && client.count === 1) {
-
-                            var room_events = emitters[room];
-                            if (!room_events) room_events = emitters[room] = {};
-                            var emitter = room_events[name];
-                            if (!emitter) emitter = room_events[name] = [];
-                            if (emitter.indexOf(socket.nsp) === -1)
-                                emitter.push(socket.nsp);
-                            socket.join(room);
-                            joined = true;
-                            return;
+                            client = event[room][id];
                         }
+                        if (client) {
+
+                            client.id = socket.id;
+                            client.count++;
+                            var authenticated = false;
+                            if (client.token === token) {
+
+                                authenticated = true;
+                            }
+                            if (client.count === 1) {
+
+                                authenticated &= true;
+                            }
+                            if (authenticated) {
+
+                                var room_events = emitters[
+                                    room
+                                ];
+                                if (!room_events) {
+
+                                    room_events = emitters[
+                                        room
+                                    ] = {};
+                                }
+                                var emitter = room_events[
+                                    name
+                                ];
+                                if (!emitter) {
+
+                                    emitter = room_events[
+                                        name
+                                    ] = [];
+                                }
+                                if (emitter.indexOf(...[
+                                    socket.nsp
+                                ]) === -1) {
+
+                                    emitter.push(socket.nsp);
+                                }
+                                socket.join(room);
+                                joined = true;
+                                return;
+                            }
+                        }
+                        socket.disconnect(true);
                     }
-                    socket.disconnect(true);
-                });
+                ]);
                 setTimeout(function () {
 
                     if (!joined) socket.disconnect(true);
