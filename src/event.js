@@ -41,23 +41,20 @@ module.exports.getEventBehaviour = function () {
             var emit = function () {
 
                 let [
-                    emitters,
+                    emitter,
                     room,
                     behaviour,
                     response,
                     forceReceive
                 ] = arguments;
-                emitters.forEach(function (emitter) {
+                if (!forceReceive) {
 
-                    if (!forceReceive) {
-
-                        emitter = emitter.volatile;
-                    }
-                    emitter.to(room).emit(...[
-                        behaviour,
-                        response
-                    ]);
-                });
+                    emitter = emitter.volatile;
+                }
+                emitter.to(room).emit(...[
+                    behaviour,
+                    response
+                ]);
             };
             self.trigger = function () {
 
@@ -108,8 +105,13 @@ module.exports.getEventBehaviour = function () {
                             "from the queue of triggering " +
                             "behaviour");
                     }
-                    var emitter = emitters[behaviour.name];
-                    if (Array.isArray(emitter)) self.run(...[
+                    var ëmitters = emitters[behaviour.name];
+                    var emitting = Array.isArray(ëmitters);
+                    if (emitting) {
+
+                        emitting &= ëmitters.length > 0;
+                    }
+                    if (emitting) self.run(...[
                         behaviour.name,
                         parameters,
                         function () {
@@ -138,7 +140,7 @@ module.exports.getEventBehaviour = function () {
                             }
                             if (failing) {
 
-                                debug(err);
+                                debug(error);
                                 if (error) {
 
                                     let { message } = error;
@@ -179,14 +181,16 @@ module.exports.getEventBehaviour = function () {
                                 if (typeof returns === "function") {
 
                                     returns(...[
-                                        emitter.reduce(function () {
+                                        ëmitters.reduce(function () {
 
                                             let [reqs, e] = arguments;
                                             if (e instanceof Namespace) {
 
+                                                let { sockets } = e;
+                                                sockets = sockets.values();
                                                 reqs = [
                                                     ...reqs,
-                                                    ...e.allSockets().map(...[
+                                                    ...sockets.map(...[
                                                         function () {
 
                                                             let [{
@@ -199,13 +203,13 @@ module.exports.getEventBehaviour = function () {
                                             }
                                             return reqs;
                                         }, []),
-                                        emitter,
+                                        ëmitters,
                                         result,
                                         error,
                                         function (outputObjects) {
 
                                             emit(...[
-                                                emitter,
+                                                ëmitters[0],
                                                 room,
                                                 behaviour.name,
                                                 outputObjects,
@@ -217,7 +221,7 @@ module.exports.getEventBehaviour = function () {
                                 }
                             }
                             emit(...[
-                                emitter,
+                                ëmitters[0],
                                 room,
                                 behaviour.name,
                                 response,

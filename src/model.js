@@ -216,11 +216,17 @@ module.exports.model = function () {
                 }
                 if (!Array.isArray(query)) {
 
-                    query = [];
+                    if (query) {
+
+                        query = [query];
+                    } else query = [];
                 }
                 if (!Array.isArray(aggregate)) {
 
-                    aggregate = [];
+                    if (aggregate) {
+
+                        aggregate = [aggregate];
+                    } else aggregate = [];
                 }
                 init.apply(this, [{
 

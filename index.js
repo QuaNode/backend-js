@@ -190,7 +190,7 @@ module.exports = {
                 }
                 if (allow) {
 
-                    origins = origins == true;
+                    origins = origins === true;
                 }
                 var query, path = req.path;
                 if (!path) {
@@ -279,7 +279,7 @@ module.exports = {
             name: "behaviours.sid",
             store: new MemoryStore(),
             resave: false,
-            saveUninitialized: false,
+            saveUninitialized: true,
             secret: "" + new Date().getTime()
         }));
         var {
@@ -434,11 +434,19 @@ module.exports = {
                 return https;
             }, {}); else return app;
         }(), app);
-        var io = new Server(server, {
+        var io = new Server(server, function () {
 
-            cors: corsDelegate,
-            allowEIO3: true
-        });
+            var { sockets } = options;
+            if (typeof sockets !== 'object') {
+
+                sockets = {};
+            }
+            return Object.assign({
+
+                cors: corsDelegate,
+                allowEIO3: true
+            }, sockets);
+        }());
         io.of(function (path, query, next) {
 
             var err = validate(path, query);

@@ -187,7 +187,7 @@ var businessController = function () {
                     operationSubtype
                 ] = arguments;
                 var _in_ = "";
-                if (behaviour) {
+                if (behaviour && behaviour != data.behaviour) {
 
                     _in_ = " in " + behaviour;
                 }

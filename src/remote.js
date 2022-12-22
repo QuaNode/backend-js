@@ -198,7 +198,7 @@ module.exports.getRemoteBehaviour = function () {
 
                     operations = options.operations;
                 }
-                businessController(...[
+                let cancel = businessController(...[
                     behaviour.name,
                     queue,
                     database,
@@ -208,6 +208,15 @@ module.exports.getRemoteBehaviour = function () {
                     memory,
                     operations
                 ]).runBehaviour(behaviour, null, callback);
+                let _cancel = self.cancel;
+                self.cancel = function () {
+
+                    cancel();
+                    if (typeof _cancel === 'function') {
+
+                        _cancel();
+                    }
+                };
                 return self;
             };
             self.remote = function (baseURL) {
@@ -288,10 +297,19 @@ module.exports.getRemoteBehaviour = function () {
                         }
                         behaviours.ready(function () {
 
-                            behaviours[behaviour](...[
-                                parameters,
-                                callback
-                            ]);
+                            let cancel = behaviours[
+                                behaviour
+                            ](parameters, callback);
+                            let _cancel = self.cancel;
+                            self.cancel = function () {
+
+                                if (cancel) cancel();
+                                _ = typeof _cancel;
+                                if (_ === 'function') {
+
+                                    _cancel();
+                                }
+                            };
                         });
                         return self;
                     }

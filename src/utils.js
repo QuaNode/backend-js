@@ -557,7 +557,7 @@ module.exports = {
             options,
             req
         ] = arguments;
-        var origin = origins == true;
+        var origin = origins === true;
         var allowed = ("" + origins).indexOf(...[
             "*" || req.headers.origin
         ]) > -1;

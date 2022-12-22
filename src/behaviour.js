@@ -5,6 +5,7 @@
 var express = require("express");
 var paginate = require("express-paginate");
 var Route = require("route-parser");
+var debug = require("debug");
 var {
     unless
 } = require("express-unless");
@@ -43,6 +44,9 @@ var {
     setSignature,
     getRequest
 } = require("./utils.js");
+
+debug.enable("backend:*");
+debug = debug("backend:behaviour");
 
 var backend = module.exports;
 
@@ -350,28 +354,33 @@ backend.behaviour = function (path, config) {
 
                 options.plugins.push(options.plugin);
             }
-            var request_plugin = options.plugins.reduce(...[
-                function (request_plugin, plugin) {
+            var request_plugins = options.plugins.filter(...[
+                function (plugin) {
 
                     let valid = typeof plugin === "function";
                     if (valid) {
 
                         valid &= parse(plugin)[0] !== "out";
                     }
-                    if (valid) return plugin;
-                    return request_plugin;
-                },
-                undefined
+                    return valid;
+                }
             ]);
-            var upgrading = !!request_plugin;
+            var upgradePlugin;
+            var upgrading = request_plugins.length > 0;
             if (upgrading) {
 
-                let [last] = parse(request_plugin).reverse();
-                upgrading &= last === "head";
+                upgradePlugin = request_plugins.find(...[
+                    function (plugin) {
+
+                        let [last] = parse(plugin).reverse();
+                        return last === "head";
+                    }
+                ]);
+                upgrading &= !!upgradePlugin;
             }
             if (upgrading) {
 
-                upgradePlugins[options.name] = request_plugin;
+                upgradePlugins[options.name] = upgradePlugin;
             }
             var response_plugin = options.plugins.reduce(...[
                 function (response_plugin, plugin) {
@@ -463,6 +472,9 @@ backend.behaviour = function (path, config) {
                         let client = event[room][sessionId];
                         if (client) return client.id;
                     }
+                }, function () {
+
+                    return req.complete;
                 });
                 var behaviour_callback = function () {
 
@@ -686,12 +698,25 @@ backend.behaviour = function (path, config) {
                     } : options.map,
                     behaviour_callback
                 ]);
-                req.on("close", function () {
+                req.socket.on("close", function () {
 
                     let _ = typeof cancel;
                     var cancelling = _ === "function";
                     cancelling &= !polling;
-                    if (cancelling) cancel();
+                    if (cancelling) {
+
+                        cancelling &= !req.readableEnded;
+                        if (!cancelling) {
+
+                            cancelling |= !res.writableEnded;
+                        }
+                    }
+                    if (cancelling) {
+
+                        cancel();
+                        debug("Request aborted and " +
+                            "behaviour cancelled");
+                    }
                 });
             };
             var request_handler = function (req, res, next) {
@@ -751,14 +776,25 @@ backend.behaviour = function (path, config) {
                     }
                 ]);
             };
-            if (Array.isArray(options.unless)) {
+            let filtering = Array.isArray(options.unless);
+            filtering |= Array.isArray(options.for);
+            if (filtering) {
 
                 request_handler.unless = unless;
                 request_handler = request_handler.unless({
 
                     custom(req) {
 
-                        return options.unless.filter(...[
+                        var exceptions = [];
+                        if (Array.isArray(options.for)) {
+
+                            exceptions = options.for;
+                        } else options.for = undefined;
+                        if (Array.isArray(options.unless)) {
+
+                            exceptions = options.unless;
+                        } else options.unless = undefined;
+                        exceptions = exceptions.filter(...[
                             function (name) {
 
                                 let {
@@ -783,11 +819,16 @@ backend.behaviour = function (path, config) {
                                     method: req.method
                                 });
                             }
-                        ]).length > 0;
+                        ]).length;
+                        if (options.unless) {
+
+                            return exceptions > 0;
+                        }
+                        return exceptions === 0;
                     }
                 });
             }
-            var filtering = typeof options.host === "string";
+            filtering = typeof options.host === "string";
             if (filtering) {
 
                 filtering &= options.host.length > 0;
@@ -798,20 +839,30 @@ backend.behaviour = function (path, config) {
                     options.host,
                     request_handler
                 ]);
-                if (request_plugin) {
+                let plugins = request_plugins;
+                if (plugins.length > 0) {
 
-                    request_plugin = vhost(...[
-                        options.host,
-                        request_plugin
+                    request_plugins = plugins.map(...[
+                        function (plugin) {
+
+                            return vhost(...[
+                                options.host, plugin
+                            ]);
+                        }
                     ]);
                 }
-            } else if (request_plugin) {
+            } else if (request_plugins.length > 0) {
 
-                var _request_plugin_ = request_plugin;
-                request_plugin = function () {
+                let plugins = request_plugins;
+                request_plugins = plugins.map(...[
+                    function (plugin) {
 
-                    _request_plugin_(...arguments);
-                };
+                        return function (req, res, next) {
+
+                            plugin(req, res, next);
+                        };
+                    }
+                ]);
             }
             if (routing) {
 
@@ -865,9 +916,9 @@ backend.behaviour = function (path, config) {
                 router = router[
                     options.method.toLowerCase()
                 ].bind(router);
-                if (request_plugin) router(...[
+                if (request_plugins.length > 0) router(...[
                     options.path,
-                    request_plugin,
+                    ...request_plugins,
                     request_handler
                 ]); else router(options.path, request_handler);
                 behaviours[options.name] = {
@@ -909,15 +960,15 @@ backend.behaviour = function (path, config) {
 
                     route = join(prefix, options.path);
                 }
-                if (request_plugin) app.use(...[
+                if (request_plugins.length > 0) app.use(...[
                     route,
-                    request_plugin,
+                    ...request_plugins,
                     request_handler
                 ]); else app.use(route, request_handler);
             } else {
 
-                if (request_plugin) app.use(...[
-                    request_plugin,
+                if (request_plugins.length > 0) app.use(...[
+                    ...request_plugins,
                     request_handler
                 ]); else app.use(request_handler);
             }
@@ -995,7 +1046,7 @@ backend.BehavioursServer = function () {
     var validate_host = function (host, req, res) {
 
         var same_host = true;
-        var filtering = typeof host === "string";
+        let filtering = typeof host === "string";
         if (filtering) {
 
             filtering &= host.length > 0;
@@ -1131,7 +1182,7 @@ backend.BehavioursServer = function () {
 
                 var joined = false;
                 var event = events[name];
-                if (event) socket.once(...[
+                if (event) socket.on(...[
                     "join " + name,
                     function (room) {
 
@@ -1163,20 +1214,29 @@ backend.BehavioursServer = function () {
                                         room
                                     ] = {};
                                 }
-                                var emitter = room_events[
+                                var ëmitters = room_events[
                                     name
                                 ];
-                                if (!emitter) {
+                                if (!ëmitters) {
 
-                                    emitter = room_events[
+                                    ëmitters = room_events[
                                         name
                                     ] = [];
                                 }
-                                if (emitter.indexOf(...[
-                                    socket.nsp
-                                ]) === -1) {
+                                if (!ëmitters.find(...[
+                                    function () {
 
-                                    emitter.push(socket.nsp);
+                                        var [{
+                                            name: e_id
+                                        }] = arguments;
+                                        var {
+                                            name: nsp_id
+                                        } = socket.nsp;
+                                        return e_id == nsp_id;
+                                    }
+                                ])) {
+
+                                    ëmitters.push(socket.nsp);
                                 }
                                 socket.join(room);
                                 joined = true;
