@@ -47,7 +47,6 @@ var {
     respond
 } = require("./src/utils.js");
 
-var MemoryStore = memorystore(session);
 var LIMIT = 5;
 var HITS = 30;
 var TIMEOUT = 1000;
@@ -274,21 +273,34 @@ module.exports = {
             callback(null, corsOptions);
         };
         app.all("/*", cors(corsDelegate));
-        app.use(session = session({
+        var { parser, format } = options;
+        let __ = typeof format;
+        var parsing = __ === "string";
+        if (!parsing) {
 
-            name: "behaviours.sid",
-            store: new MemoryStore(),
-            resave: false,
-            saveUninitialized: true,
-            secret: "" + new Date().getTime()
-        }));
+            __ = typeof parser;
+            parsing = __ === "string";
+            if (parsing) format = parser;
+        }
+        if (!parsing) {
+
+            __ = typeof parser;
+            parsing = __ === "object";
+            if (parsing) {
+
+                ({ format } = parser);
+                __ = typeof format;
+                parsing = __ === "string";
+            }
+        }
+        if (!parsing) format = undefined;
         var {
             upgrade,
             validate,
             connect
         } = new BehavioursServer(...[
             options.path,
-            options.parser,
+            format,
             paths,
             options.operations
         ]);
@@ -320,30 +332,69 @@ module.exports = {
                 options.static
             ]));
         }
-        let __ = typeof options.parserOptions;
+        app.use(session = session(function () {
+
+            var { cookie } = options;
+            if (typeof cookie !== 'object') {
+
+                cookie = {};
+            }
+            var store;
+            if (!cookie || !cookie.store) {
+
+                var MemoryStore = memorystore(...[
+                    session
+                ]);
+                store = new MemoryStore();
+            }
+            return Object.assign({
+
+                name: "behaviours.sid",
+                secret: "" + new Date().getTime(),
+                resave: false,
+                saveUninitialized: true,
+                store
+            }, cookie);
+        }()));
+        var parserOptions = parser;
+        __ = typeof parserOptions;
         if (__ !== "object") {
 
-            options.parserOptions = undefined;
+            ({ parserOptions } = options);
         }
-        var parser;
-        __ = typeof options.parser;
-        var parsing = __ === "string";
+        __ = typeof parserOptions;
+        if (__ !== "object") {
+
+            parserOptions = undefined;
+        }
+        if (!parserOptions) {
+
+            parserOptions = undefined;
+        }
         if (parsing) {
 
-            __ = typeof bodyParser[
-                options.parser
-            ];
-            parsing &= __ === "function";
-        }
-        if (parsing) parser = bodyParser[
-            options.parser
-        ](options.parserOptions); else {
+            __ = typeof bodyParser[format];
+            if (__ === "function") {
 
-            parser = bodyParser.json(...[
-                options.parserOptions
-            ]);
+                parser = bodyParser[format](...[
+                    parserOptions
+                ]);
+            }
+        } else {
+
+            __ = typeof parser;
+            if (__ !== "function") {
+
+                parser = bodyParser.json(...[
+                    parserOptions
+                ]);
+            }
         }
-        app.use(parser);
+        __ = typeof parser;
+        if (__ === "function") {
+
+            app.use(parser);
+        }
         __ = typeof paths;
         var requiring = __ === "string";
         if (requiring) {
@@ -400,7 +451,7 @@ module.exports = {
                 behaviour: err.name,
                 version: err.version,
                 message: err.message
-            }, options.parser);
+            }, format);
         });
         __ = typeof options.https;
         var https = __ === "object";
@@ -436,16 +487,16 @@ module.exports = {
         }(), app);
         var io = new Server(server, function () {
 
-            var { sockets } = options;
-            if (typeof sockets !== 'object') {
+            var { websocket } = options;
+            if (typeof websocket !== 'object') {
 
-                sockets = {};
+                websocket = {};
             }
             return Object.assign({
 
                 cors: corsDelegate,
                 allowEIO3: true
-            }, sockets);
+            }, websocket);
         }());
         io.of(function (path, query, next) {
 

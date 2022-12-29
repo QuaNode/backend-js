@@ -437,6 +437,7 @@ backend.behaviour = function (path, config) {
                     inputObjects,
                     er
                 ] = arguments;
+                var onClose;
                 var signature = getSignature(req);
                 var response = {
 
@@ -465,11 +466,12 @@ backend.behaviour = function (path, config) {
                     inputObjects
                 }, function (name, room) {
 
+                    if (!req.session) return;
                     var event = events[name];
                     if (event && event[room]) {
 
-                        let sessionId = req.session.id;
-                        let client = event[room][sessionId];
+                        let { id } = req.session;
+                        let client = event[room][id];
                         if (client) return client.id;
                     }
                 }, function () {
@@ -545,7 +547,10 @@ backend.behaviour = function (path, config) {
                                     response.response = page;
                                 }
                             }
-                            if (options.events.length > 0) {
+                            let { length } = options.events;
+                            let eventful = length > 0;
+                            eventful &= !!req.session;
+                            if (eventful) {
 
                                 let _ = crypto.randomBytes(48);
                                 let token = _.toString("base64");
@@ -602,6 +607,7 @@ backend.behaviour = function (path, config) {
                                         event[room][id] = {
 
                                             token,
+                                            date: new Date(),
                                             count: 0
                                         };
                                         return true;
@@ -646,6 +652,12 @@ backend.behaviour = function (path, config) {
                                 }
                             ]);
                         }
+                    }
+                    if (onClose) {
+
+                        req.socket.removeListener(...[
+                            "close", onClose
+                        ]);
                     }
                 };
                 var fetching = "";
@@ -698,7 +710,7 @@ backend.behaviour = function (path, config) {
                     } : options.map,
                     behaviour_callback
                 ]);
-                req.socket.on("close", function () {
+                req.socket.on("close", onClose = function () {
 
                     let _ = typeof cancel;
                     var cancelling = _ === "function";
@@ -1151,7 +1163,7 @@ backend.BehavioursServer = function () {
 
             token = socket.handshake.query.token;
         }
-        let id = socket.handshake.session.id;
+        let id = (socket.handshake.session || {}).id;
         var authenticating = typeof name === "string";
         if (authenticating) {
 
@@ -1192,17 +1204,22 @@ backend.BehavioursServer = function () {
                         }
                         if (client) {
 
-                            client.id = socket.id;
-                            client.count++;
-                            var authenticated = false;
-                            if (client.token === token) {
+                            if (client.id !== socket.id) {
 
-                                authenticated = true;
+                                client.count++;
                             }
-                            if (client.count === 1) {
+                            var { date: dt } = client;
+                            dt = dt.getTime();
+                            dt = new Date().getTime() - dt;
+                            var authenticated = dt < 60000;
+                            if (client.token !== token) {
 
-                                authenticated &= true;
+                                authenticated = false;
                             }
+                            if (client.count !== 1) {
+
+                                authenticated = false;
+                            };
                             if (authenticated) {
 
                                 var room_events = emitters[
@@ -1238,10 +1255,14 @@ backend.BehavioursServer = function () {
 
                                     ëmitters.push(socket.nsp);
                                 }
-                                socket.join(room);
-                                joined = true;
-                                return;
+                                if (client.id !== socket.id) {
+
+                                    client.id = socket.id;
+                                    socket.join(room);
+                                    joined = true;
+                                }
                             }
+                            return;
                         }
                         socket.disconnect(true);
                     }
@@ -1252,7 +1273,14 @@ backend.BehavioursServer = function () {
                 }, 60000);
                 socket.once("disconnect", function () {
 
-                    if (client) client.count--;
+                    if (client) {
+
+                        client.count--;
+                        if (client.count === 0) {
+
+                            client.date = new Date();
+                        }
+                    }
                 });
                 return;
             }
