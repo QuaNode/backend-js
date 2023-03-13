@@ -472,7 +472,7 @@ module.exports = {
             requests[
                 response.signature
             ].push(request);
-        } else utils.respond(res, response);
+        }
         if (responses[response.signature]) {
 
             clearTimeout(responses[
@@ -485,6 +485,11 @@ module.exports = {
                 response.signature
             ];
             callback();
+        } else if (requests[
+            response.signature
+        ].length > 1) {
+
+            utils.respond(res, response);
         }
     },
     getSignature(req) {
@@ -494,10 +499,12 @@ module.exports = {
                 "Behaviour-Signature"
             ]) || undefined
         ]);
-        if (!isNaN(signature)) {
+        var valid = !isNaN(signature);
+        if (valid) {
 
-            return signature;
+            valid &= !!requests[signature];
         }
+        if (valid) return signature;
         return new Date();
     },
     getRequest() {

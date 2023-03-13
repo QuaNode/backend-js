@@ -1262,9 +1262,7 @@ backend.BehavioursServer = function () {
                                     joined = true;
                                 }
                             }
-                            return;
                         }
-                        socket.disconnect(true);
                     }
                 ]);
                 setTimeout(function () {
