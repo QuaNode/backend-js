@@ -105,6 +105,10 @@ var limiter = rateLimit({
 });
 
 debug.enable("backend:*");
+
+var inform = debug("backend:index:info");
+inform.log = console.log.bind(console);
+
 debug = debug("backend:index");
 
 var server;
@@ -508,7 +512,7 @@ module.exports = {
                 "disconnect",
                 function () {
 
-                    debug("backend " +
+                    inform("backend " +
                         "socket:" + socket.id +
                         " disconnected on port " +
                         app.get("port"));
@@ -540,7 +544,7 @@ module.exports = {
             app.get("port"),
             function () {
 
-                debug("backend listening on port " +
+                inform("backend listening on port " +
                     app.get("port"));
             }
         ]);
