@@ -1,5 +1,7 @@
 # backend-js [![Codacy Badge](https://app.codacy.com/project/badge/Grade/dc618343c99f4f57a83b2c3a7d5fac6c)](https://www.codacy.com/gh/QuaNode/backend-js/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=QuaNode/backend-js&amp;utm_campaign=Badge_Grade)
 
+![0_00](https://user-images.githubusercontent.com/3101473/227796079-0705dbd3-e3d0-4fdb-8cc3-5d4caa9d1447.png)
+
 Backend-js is a layer built above expressjs to enable [behaviours framework](https://github.com/QuaNode/behaviours) for nodejs applications.
 
 ## Installation
