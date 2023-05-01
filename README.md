@@ -2,7 +2,7 @@
 
 ![0_00](https://user-images.githubusercontent.com/3101473/227796079-0705dbd3-e3d0-4fdb-8cc3-5d4caa9d1447.png)
 
-Backend-js is a layer built above expressjs to enable [behaviours framework](https://github.com/QuaNode/behaviours) for nodejs applications.
+Backend-js is a layer built above expressjs and socket.io to enable [behaviours framework](https://github.com/QuaNode/behaviours) for nodejs applications.
 
 ## Installation
 
