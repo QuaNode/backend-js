@@ -1223,7 +1223,7 @@ backend.BehavioursServer = function () {
                             if (client.count !== 1) {
 
                                 authenticated = false;
-                            };
+                            }
                             if (authenticated) {
 
                                 var room_events = emitters[
