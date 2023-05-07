@@ -93,7 +93,7 @@ var businessController = function () {
         theQueue = queues[aQueue].spare;
     }
     var businessControllerSharedInstance;
-    if (theQueue.length > 0) {
+    if (theQueue && theQueue.length > 0) {
 
         ({
             [theQueue]: businessControllerSharedInstance
@@ -210,7 +210,7 @@ var businessController = function () {
                 }, "Queue -> " + (aQueue || "Anonymous"));
             }
         });
-        if (theQueue.length > 0) {
+        if (theQueue && theQueue.length > 0) {
 
             businessControllerSharedInstances[
                 theQueue

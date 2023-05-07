@@ -244,6 +244,10 @@ backend.behaviour = function (path, config) {
         }
         if (!Array.isArray(options.events)) {
 
+            if (options.events) {
+
+                debug('Events should be array or use event');
+            }
             options.events = [];
         }
         if (typeof options.event === "function") {
@@ -507,9 +511,9 @@ backend.behaviour = function (path, config) {
                     failing |= typeof result !== "object";
                     if (failing) {
 
-                        if (error && !error.name) {
+                        if (error && !error.behaviour) {
 
-                            error.name = options.name;
+                            error.behaviour = options.name;
                         }
                         if (error && !error.version) {
 

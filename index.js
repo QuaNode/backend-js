@@ -452,7 +452,8 @@ module.exports = {
                 ]) || 500
             ]), {
 
-                behaviour: err.name,
+                behaviour: err.behaviour,
+                name: err.name,
                 version: err.version,
                 message: err.message
             }, format);

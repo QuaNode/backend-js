@@ -1,6 +1,6 @@
 {
     "name": "backend-js",
-    "version": "1.2.5",
+    "version": "1.2.7",
     "description": "Backend-js is a layer built above expressjs to enable behaviours framework for nodejs applications.",
     "main": "index.js",
     "scripts": {
