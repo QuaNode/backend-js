@@ -94,7 +94,7 @@ module.exports.service = function () {
                         request,
                         callback
                     ] = arguments;
-                    switch (request) {
+                    switch (request.type) {
 
                         case "authentication":
                             if (!authenticator) {
@@ -113,6 +113,9 @@ module.exports.service = function () {
                         case "request":
                             serve(request, callback);
                             break;
+                        default:
+                            throw new Error('Invalid ' +
+                                'request type');
                     }
                 };
                 self.sendRequest = function () {
