@@ -60,7 +60,7 @@ module.exports.service = function () {
 
                     return function () {
 
-                        var self = init.apply(...[
+                        let self = init.apply(...[
                             this,
                             arguments
                         ]).self();
@@ -77,7 +77,7 @@ module.exports.service = function () {
 
             return function (base, constants) {
 
-                var self = init.apply(...[
+                let self = init.apply(...[
                     this,
                     arguments
                 ]).self();
@@ -221,9 +221,8 @@ module.exports.service = function () {
                 options = path;
             }
             if (!options) options = {};
-            var EndPoint = define(function () {
+            var EndPoint = define(function (init, sṵper) {
 
-                let [init, sṵper] = arguments;
                 return function () {
 
                     let [
@@ -425,7 +424,7 @@ module.exports.service = function () {
                         }
                         return metadata;
                     };
-                    var self = init.apply(this, [{
+                    let self = init.apply(this, [{
 
                         responseMetadata: getMetadata(...[
                             mappings,
@@ -437,27 +436,18 @@ module.exports.service = function () {
                     }]).self();
                     self.path = path;
                     self.context = context || {};
-                    self.context[
-                        "serialize"
-                    ] = self.context.serialize;
                     if (!self.context.serialize) {
 
                         self.context[
                             "serialize"
                         ] = options.serialize;
                     }
-                    self.context[
-                        "deserialize"
-                    ] = self.context.deserialize;
                     if (!self.context.deserialize) {
 
                         self.context[
                             "deserialize"
                         ] = options.deserialize;
                     }
-                    self.context[
-                        "authenticate"
-                    ] = self.context.authenticate;
                     if (!self.context.authenticate) {
 
                         self.context[
