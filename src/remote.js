@@ -25,7 +25,9 @@ module.exports.getRemoteBehaviour = function () {
 
         return function () {
 
-            var ȯptions = arguments[0];
+            var [
+                ȯptions, _, getDatabase
+            ] = arguments;
             if ((ȯptions || {}).parameters) {
 
                 ȯptions[
@@ -56,21 +58,43 @@ module.exports.getRemoteBehaviour = function () {
                     }
                 }
             ]);
+            var typeOf = typeof getDatabase;
+            if (typeOf !== "function") {
+
+                getDatabase = function () {
+
+                    return ȯptions.database;
+                };
+            }
             self.run = function () {
 
                 let [
                     behaviour,
                     parameters,
                     callback,
-                    queue
+                    opts
                 ] = arguments;
-                var database,
-                    storage,
+                var storage,
                     fetcher,
                     fetching,
                     FetchBehaviour,
                     memory,
                     operations;
+                let BB = BusinessBehaviour;
+                if (behaviour instanceof BB) {
+
+                    opts = callback;
+                    callback = parameters;
+                }
+                var {
+                    queue,
+                    database
+                } = opts || {};
+                if (typeof callback !== "function") {
+
+                    throw new Error("Invalid behaviour" +
+                        " callback");
+                }
                 var queuě = options.queue;
                 if (typeof queuě === "function") {
 
@@ -79,7 +103,10 @@ module.exports.getRemoteBehaviour = function () {
                         self.inputObjects
                     ]);
                 }
-                let BB = BusinessBehaviour;
+                if (!database) {
+
+                    database = getDatabase();
+                }
                 if (!(behaviour instanceof BB)) {
 
                     let _ = typeof behaviour;
@@ -98,7 +125,6 @@ module.exports.getRemoteBehaviour = function () {
                     var ȯptiȯns = BEHAVIOURS[
                         behaviour
                     ].options;
-                    database = ȯptiȯns.database;
                     storage = ȯptiȯns.storage;
                     fetcher = ȯptiȯns.fetcher;
                     fetching = options.fetching;
@@ -127,6 +153,9 @@ module.exports.getRemoteBehaviour = function () {
                         priority: options.priority || 0,
                         timeout: ȯptiȯns.timeout,
                         inputObjects: parameters
+                    }, self.getEmitterId, function () {
+
+                        return database;
                     });
                     if (!queue && ȯptiȯns.queue) {
 
@@ -147,12 +176,9 @@ module.exports.getRemoteBehaviour = function () {
                             }
                         }
                     }
-                } else callback = parameters;
-                if (typeof callback !== "function") {
-
-                    throw new Error("Invalid behaviour" +
-                        " callback");
                 }
+                behaviour.getEmitterId = self.getEmitterId;
+                behaviour.isCompleted = self.isCompleted;
                 if (!queue) queue = queuě;
                 if (queue == queuě) {
 
@@ -188,7 +214,6 @@ module.exports.getRemoteBehaviour = function () {
                     }
                     FetchBehaviour = FetchBehaviours[fetch];
                 }
-                if (!database) database = options.database;
                 if (!storage) storage = options.storage;
                 if (!fetcher) fetcher = options.fetcher;
                 if (!fetcher) fetcher = fetching;

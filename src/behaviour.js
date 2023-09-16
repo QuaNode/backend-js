@@ -99,7 +99,7 @@ var compare = backend.compare = function () {
     method1 = method1.toLowerCase();
     var method2 = (route2 && route2.method) || "";
     method2 = method2.toLowerCase();
-    var matched = !!route;
+    var matched = route instanceof Route;
     if (matched) {
 
         matched &= !!route.match(path2 || " ");
@@ -149,6 +149,8 @@ var behaviours = {
 };
 
 var BEHAVIOURS = {};
+
+var defaultTenants = {};
 
 var defaultOperations = {};
 
@@ -269,6 +271,72 @@ backend.behaviour = function (path, config) {
                 return valid;
             }
         ]);
+        var no_tenants = !config.tenants;
+        if (!no_tenants) {
+
+            let { tenants: c_tenants } = config;
+            no_tenants |= typeof c_tenants !== "object";
+        }
+        if (no_tenants) config.tenants = {};
+        if (typeof options.database !== "function") {
+
+            let { database } = options;
+            options.database = function (req) {
+
+                if (database) return database;
+                var tenants = Object.assign(...[
+                    {},
+                    defaultTenants,
+                    config.tenants
+                ]);
+                return Object.keys(...[
+                    tenants
+                ]).reduce(function (tenant, key) {
+
+                    if (tenant) return tenant;
+                    let typeOf = typeof tenants[key];
+                    if (req && typeOf === "function") {
+
+                        if (tenants[key](req)) {
+
+                            return tenant = key;
+                        }
+                    }
+                    if (typeOf === "string") {
+
+                        tenants[key] = {
+
+                            host: tenants[key]
+                        };
+                    }
+                    if (req && [
+                        "object", "string"
+                    ].indexOf(typeOf) > -1) {
+
+                        let {
+                            host, path: päth, method
+                        } = tenants[key];
+                        let same_host = true;
+                        if (host) vhost(...[
+                            host, function () { }
+                        ])(...[req, , function () {
+
+                            same_host = false;
+                        }]);
+                        if (same_host && compare({
+
+                            path: päth, method
+                        }, {
+
+                            path: päth && req.path,
+                            method: method && req.method
+                        })) return tenant = key;
+                        return tenant;
+                    }
+                    return undefined;
+                }, undefined);
+            };
+        }
         var named = typeof options.name === "string";
         if (named) {
 
@@ -399,7 +467,7 @@ backend.behaviour = function (path, config) {
                 },
                 undefined
             ]);
-            var prefix;
+            let prefix;
             var pathing = typeof path === "string";
             if (pathing) {
 
@@ -441,7 +509,7 @@ backend.behaviour = function (path, config) {
                     inputObjects,
                     er
                 ] = arguments;
-                var onClose;
+                let onClose, database = options.database(req);
                 var signature = getSignature(req);
                 var response = {
 
@@ -480,8 +548,12 @@ backend.behaviour = function (path, config) {
                     }
                 }, function () {
 
-                    return req.complete;
+                    return database;
                 });
+                behaviour.isCompleted = function () {
+
+                    return req.complete;
+                };
                 var behaviour_callback = function () {
 
                     var [
@@ -682,7 +754,7 @@ backend.behaviour = function (path, config) {
                 var cancel = businessController(...[
                     options.name,
                     queue,
-                    options.database,
+                    database,
                     options.storage,
                     options.fetcher || options.fetching,
                     FetchBehaviour,
@@ -999,7 +1071,13 @@ backend.behaviour = function (path, config) {
 
 backend.BehavioursServer = function () {
 
-    var [prefix, parser, remotes, operations] = arguments;
+    var [
+        prefix, parser, remotes, operations, tenants
+    ] = arguments;
+    if (tenants && typeof tenants === "object") {
+
+        defaultTenants = tenants;
+    }
     if (operations && typeof operations === "object") {
 
         defaultOperations = operations;
@@ -1054,23 +1132,18 @@ backend.BehavioursServer = function () {
                 behaviour_path,
                 path
             ])
-        }, {
-
-            path
-        });
+        }, { path });
     };
-    var validate_host = function (host, req, res) {
+    var validate_host = function (host, req) {
 
-        var same_host = true;
+        let same_host = true;
         let filtering = typeof host === "string";
         if (filtering) {
 
             filtering &= host.length > 0;
         }
         if (filtering) vhost(host, function () { })(...[
-            req,
-            res,
-            function () {
+            req, , function () {
 
                 same_host = false;
             }
@@ -1100,8 +1173,7 @@ backend.BehavioursServer = function () {
             let behaviour = BEHAVIOURS[names[i]].options;
             var upgrading = validate_host(...[
                 behaviour.host,
-                req,
-                socket
+                req
             ]);
             if (upgrading) {
 
@@ -1111,8 +1183,7 @@ backend.BehavioursServer = function () {
 
                 upgradePlugins[names[i]](...[
                     req,
-                    socket,
-                    undefined,
+                    socket, ,
                     head
                 ]);
                 return true;
@@ -1192,8 +1263,7 @@ backend.BehavioursServer = function () {
             }
             if (eventful && validate_host(...[
                 behaviour.host,
-                socket.request,
-                socket
+                socket.request
             ])) {
 
                 var joined = false;

@@ -100,7 +100,7 @@ module.exports.scheduleBehaviour = function () {
             businessController(...[
                 options.name,
                 queue,
-                options.database,
+                options.database(),
                 options.storage,
                 options.fetcher || options.fetching,
                 FetchBehaviour,

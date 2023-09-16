@@ -1,6 +1,6 @@
 {
     "name": "backend-js",
-    "version": "1.2.10",
+    "version": "1.3.0",
     "description": "Backend-js is a layer built above expressjs to enable behaviours framework for nodejs applications.",
     "main": "index.js",
     "scripts": {
@@ -14,6 +14,7 @@
         "bunyan": "latest",
         "converter": "git+https://github.com/QuaNode/converter.git",
         "cors": "latest",
+        "cron-parser": "latest",
         "debug": "latest",
         "define-js": "latest",
         "express": "latest",
@@ -27,10 +28,9 @@
         "morgan": "latest",
         "parseparams": "latest",
         "route-parser": "latest",
-        "@snyk/protect": "latest",
         "socket.io": "latest",
         "vhost": "latest",
-        "cron-parser": "latest"
+        "@snyk/protect": "latest"
     },
     "repository": {
         "type": "git",

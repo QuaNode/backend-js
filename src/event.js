@@ -34,9 +34,10 @@ module.exports.getEventBehaviour = function () {
                 arguments
             ]).self();
             var [_, getEmitterId] = arguments;
-            if (!getEmitterId) {
+            self.getEmitterId = getEmitterId;
+            if (!self.getEmitterId) {
 
-                getEmitterId = function () { };
+                self.getEmitterId = () => { };
             }
             var emit = function () {
 
@@ -124,10 +125,9 @@ module.exports.getEventBehaviour = function () {
 
                                 behaviour: behaviour.name,
                                 version: behaviour.version,
-                                emitter_id: getEmitterId(...[
-                                    behaviour.name,
-                                    room
-                                ])
+                                emitter_id: self[
+                                    "getEmitterId"
+                                ](behaviour.name, room)
                             };
                             var failing = false;
                             if (typeof error === "object") {

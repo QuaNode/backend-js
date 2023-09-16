@@ -119,7 +119,7 @@ module.exports.model = function () {
         }
         let {
             name,
-            database
+            databases
         } = options;
         var no_name = typeof name !== "string";
         if (!no_name) {
@@ -129,30 +129,6 @@ module.exports.model = function () {
         if (no_name) {
 
             throw new Error("Invalid model name");
-        }
-        var invalid = !!database;
-        if (invalid) {
-
-            invalid = typeof database !== "string";
-            if (!invalid) {
-
-                invalid |= database.length === 0;
-            }
-        }
-        if (invalid) {
-
-            throw new Error("Invalid database key");
-        }
-        var no_controller = !ModelControllers[
-            database || "main"
-        ];
-        no_controller |= !modelControllers[
-            database || "main"
-        ];
-        if (no_controller) {
-
-            throw new Error("Set model controller" +
-                " before defining a model");
         }
         // if (typeof options.version !== "string") {
 
@@ -187,14 +163,77 @@ module.exports.model = function () {
                 }
             }
         ]);
-        var EntityConstructor = ModelControllers[
-            database || "main"
-        ].defineEntity(...[
-            name,
-            attributes,
-            plugins,
-            options.constraints
+        if (!Array.isArray(databases)) {
+
+            options.databases = databases = [];
+        }
+        if (options.database) {
+
+            databases.push(options.database);
+        }
+        if (databases.length === 0) {
+
+            databases.push("main");
+        }
+        var EntityConstructors = databases.reduce(...[
+            function () {
+
+                var [
+                    EntityConstructors,
+                    database,
+                    index
+                ] = arguments;
+                var invalid = !!database;
+                if (invalid) {
+
+                    var typeOf = typeof database;
+                    invalid = typeOf !== "string";
+                    if (!invalid) {
+
+                        var length = database.length;
+                        invalid |= length === 0;
+                    }
+                }
+                if (invalid) {
+
+                    throw new Error("Invalid " +
+                        "database key");
+                }
+                var not_existed = !ModelControllers[
+                    database
+                ];
+                not_existed |= !modelControllers[
+                    database
+                ];
+                if (not_existed) {
+
+                    throw new Error("Set model " +
+                        "controller before " +
+                        "defining a model");
+                }
+                EntityConstructors[
+                    database
+                ] = ModelControllers[
+                    database
+                ].defineEntity(...[
+                    name,
+                    attributes,
+                    plugins,
+                    options.constraints,
+                    database,
+                    index === databases.length - 1
+                ]);
+                return EntityConstructors;
+            }, {}
         ]);
+        var EntityConstructor;
+        if (databases.length === 1) {
+
+            EntityConstructor = EntityConstructors[
+                databases[0]
+            ];
+            EntityConstructors = undefined;
+        }
         var Entity = define(function (init) {
 
             return function () {
@@ -231,6 +270,7 @@ module.exports.model = function () {
                 init.apply(this, [{
 
                     constructor: EntityConstructor,
+                    constructors: EntityConstructors,
                     attributes,
                     features: Object.assign(...[
                         features,
@@ -249,6 +289,7 @@ module.exports.model = function () {
         }).extend(ModelEntity).defaults({
 
             constructor: EntityConstructor,
+            constructors: EntityConstructors,
             attributes,
             features: options.features,
             query: options.query,

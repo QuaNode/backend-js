@@ -26,14 +26,26 @@ module.exports.getLogBehaviour = function () {
             var self = init.apply(...[
                 this, arguments
             ]).self();
+            var [
+                ȯptions, _, getDatabase
+            ] = arguments;
             var identifier = new Date().getTime();
+            var typeOf = typeof getDatabase;
+            if (typeOf !== "function") {
+
+                getDatabase = function () {
+
+                    return ȯptions.database;
+                };
+            }
             self.log = function () {
 
                 let [
                     parameters,
                     callback,
-                    logger
+                    opts
                 ] = arguments;
+                var { logger, database } = opts || {};
                 var LogBehaviour = LogBehaviours[
                     logger || ""
                 ];
@@ -41,6 +53,10 @@ module.exports.getLogBehaviour = function () {
 
                     throw new Error("Logger " +
                         "behaviour is not set");
+                }
+                if (!database) {
+
+                    database = getDatabase();
                 }
                 var ȯptions = Object.keys(...[
                     BEHAVIOURS
@@ -77,14 +93,20 @@ module.exports.getLogBehaviour = function () {
 
                     timeout = options.timeout;
                 }
-                logBehaviour = LogBehaviour({
+                logBehaviour = new LogBehaviour({
 
                     name: ȯptions.name,
                     type: types[type],
                     priority: priority || 0,
                     timeout,
                     inputObjects: parameters
+                }, self.getEmitterId, function () {
+
+                    return database;
                 });
+                logBehaviour[
+                    "isCompleted"
+                ] = self.isCompleted;
                 self.run(logBehaviour, callback);
             };
             self.logger = function (logger) {
@@ -96,7 +118,7 @@ module.exports.getLogBehaviour = function () {
                         self.log(...[
                             parameters,
                             callback,
-                            logger
+                            { logger }
                         ]);
                     }
                 };

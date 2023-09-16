@@ -306,7 +306,8 @@ module.exports = {
             options.path,
             format,
             paths,
-            options.operations
+            options.operations,
+            options.tenants
         ]);
         var proxied = typeof paths === "object";
         if (proxied) {
@@ -405,8 +406,7 @@ module.exports = {
 
             requiring &= paths.length > 0;
         }
-        if (requiring) require(paths);
-        else {
+        if (requiring) require(paths); else {
 
             requiring = __ === "object";
             if (requiring) {
