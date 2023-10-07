@@ -273,8 +273,8 @@ module.exports.model = function () {
                     constructors: EntityConstructors,
                     attributes,
                     features: Object.assign(...[
-                        features,
-                        options.features
+                        {}, options.features,
+                        features
                     ]),
                     query: [
                         ...options.query,

@@ -3,6 +3,7 @@
 "use strict";
 
 var fs = require("fs");
+var { createSecureContext } = require("tls");
 var { URLSearchParams } = require("url");
 var bodyParser = require("body-parser");
 var logger = require("morgan");
@@ -59,6 +60,12 @@ var limiter = rateLimit({
     max: MAX,
     delayMs: 0,
     headers: false,
+    keyGenerator(req, res) {
+
+        var { ip, socket } = req;
+        if (!ip) return socket.remoteAddress;
+        return ip.replace(/:\d+[^:]*$/, '');
+    },
     handler(req, res, next) {
 
         if (!limited[req.ip]) {
@@ -467,29 +474,62 @@ module.exports = {
         var protocol = https ? "https" : "http";
         server = require(...[
             protocol
-        ]).createServer(function () {
+        ]).createServer(https ? function read() {
 
-            if (https) return [
-                "key",
-                "cert",
-                "ca"
-            ].reduce(function (https, prop) {
+            ([https] = arguments);
+            var createSC = function (domain) {
 
-                var path = options.https[prop];
+                return createSecureContext(...[
+                    read(domains[domain])
+                ]);
+            };
+            __ = typeof https.domains;
+            var domains = __ === "object";
+            if (domains) {
+
+                ({ domains } = https);
+                Object.keys(domains).forEach(...[
+                    function (domain) {
+
+                        domains[
+                            domain
+                        ] = createSC(domain);
+                    }
+                ]);
+                https.SNICallback = function () {
+
+                    var [
+                        domain, cb
+                    ] = arguments;
+                    var ctx = domains[domain];
+                    if (cb) cb(null, ctx); else {
+
+                        return ctx;
+                    }
+                };
+            }
+            return [
+                "key", "cert", "ca"
+            ].reduce(function (opts, opt) {
+
+                var path = https[opt];
                 __ = typeof path;
                 var existed = __ === "string";
                 existed &= fs.existsSync(path);
                 if (existed) {
 
-                    https[
-                        prop
+                    opts[
+                        opt
                     ] = fs.readFileSync(...[
                         path
                     ]).toString();
                 }
-                return https;
-            }, {}); else return app;
-        }(), app);
+                return opts;
+            }, https);
+        }(options.https) : app, function () {
+
+            return https ? app : undefined;
+        }());
         var io = new Server(server, function () {
 
             var { websocket } = options;
