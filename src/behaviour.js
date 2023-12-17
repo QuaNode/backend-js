@@ -1036,29 +1036,37 @@ backend.behaviour = function (path, config) {
                         }
                     }()
                 };
-            } else if (middleware) {
-
-                var route = options.path;
-                let prefixing = typeof prefix === "string";
-                if (prefixing) {
-
-                    prefixing &= prefix.length > 0;
-                }
-                if (prefixing) {
-
-                    route = join(prefix, options.path);
-                }
-                if (request_plugins.length > 0) app.use(...[
-                    route,
-                    ...request_plugins,
-                    request_handler
-                ]); else app.use(route, request_handler);
             } else {
 
-                if (request_plugins.length > 0) app.use(...[
-                    ...request_plugins,
-                    request_handler
-                ]); else app.use(request_handler);
+                if (Object.keys(behaviours).length > 1) {
+
+                    throw new Error(options.name + ' is ' +
+                        'defined after a route!');
+                }
+                if (middleware) {
+
+                    var route = options.path;
+                    let prefixing = typeof prefix === "string";
+                    if (prefixing) {
+
+                        prefixing &= prefix.length > 0;
+                    }
+                    if (prefixing) {
+
+                        route = join(prefix, options.path);
+                    }
+                    if (request_plugins.length > 0) app.use(...[
+                        route,
+                        ...request_plugins,
+                        request_handler
+                    ]); else app.use(route, request_handler);
+                } else {
+
+                    if (request_plugins.length > 0) app.use(...[
+                        ...request_plugins,
+                        request_handler
+                    ]); else app.use(request_handler);
+                }
             }
         } else BEHAVIOURS[Object.keys(BEHAVIOURS).length + 1] = {
 
