@@ -475,8 +475,10 @@ backend.behaviour = function (path, config) {
             }
             if (pathing) {
 
-                if (config.overwritePath) prefix = path;
-                else prefix = join(defaultPrefix, path);
+                if (config.overwritePath) {
+
+                    prefix = path;
+                } else prefix = join(defaultPrefix, path);
             } else {
 
                 var no_overwrite = !config.overwritePath;
@@ -592,25 +594,28 @@ backend.behaviour = function (path, config) {
                             error.version = options.version;
                         }
                         request.next(...[
-                            error || er || new Error("Error " +
-                                "while executing " +
+                            error || er || new Error("Error" +
+                                " while executing " +
                                 options.name +
                                 " behaviour, version " +
                                 options.version + "!")
                         ]);
                     } else {
 
-                        var responding = !response_plugin;
-                        if (!responding) {
+                        let typeOf = typeof result;
+                        var responding = typeOf === "object";
+                        var responded = 0;
+                        if (response_plugin) {
 
-                            responding |= !response_plugin(...[
+                            responded = response_plugin(...[
                                 result,
                                 request.req,
                                 request.res,
                                 request.next
                             ]);
+                            responding &= !responded;
                         }
-                        if (responding) {
+                        if (responding && responded === 0) {
 
                             response.response = result;
                             if (options.paginate) {
@@ -727,6 +732,9 @@ backend.behaviour = function (path, config) {
                                     ]);
                                 }
                             ]);
+                        } else if (responding) {
+
+                            request.next();
                         }
                     }
                     if (onClose) {

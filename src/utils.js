@@ -267,8 +267,10 @@ module.exports = {
 
             known &= !!responders[format];
         }
-        if (known) responders[format]();
-        else res.format(responders);
+        if (known) responders[format](); else {
+
+            res.format(responders);
+        }
     },
     setResponse() {
 
@@ -385,9 +387,8 @@ module.exports = {
                     ] = value;
                     break;
                 default:
-                    new Error("Invalid " +
+                    throw new Error("Invalid " +
                         "return type");
-                    break;
             }
         }
         if (Object.keys(body).length > 0) {

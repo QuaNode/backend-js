@@ -1,12 +1,10 @@
 {
     "name": "backend-js",
-    "version": "1.3.2",
+    "version": "1.3.3",
     "description": "Backend-js is a layer built above expressjs to enable behaviours framework for nodejs applications.",
     "main": "index.js",
     "scripts": {
-        "test": "test",
-        "snyk-protect": "snyk-protect",
-        "prepare": "npm run snyk-protect"
+        "test": "test"
     },
     "dependencies": {
         "behaviours-js": "latest",
@@ -29,8 +27,7 @@
         "parseparams": "latest",
         "route-parser": "latest",
         "socket.io": "latest",
-        "vhost": "latest",
-        "@snyk/protect": "latest"
+        "vhost": "latest"
     },
     "repository": {
         "type": "git",
