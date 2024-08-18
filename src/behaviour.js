@@ -508,8 +508,7 @@ backend.behaviour = function (path, config) {
                     req,
                     res,
                     next,
-                    inputObjects,
-                    er
+                    inputObjects
                 ] = arguments;
                 let onClose, database = options.database(req);
                 var signature = getSignature(req);
@@ -582,9 +581,17 @@ backend.behaviour = function (path, config) {
                     }
                     if (polling) delete response.signature;
                     var failing = typeof error === "object";
+                    failing |= typeof error === "function";
                     failing |= typeof result !== "object";
                     if (failing) {
 
+                        let typeOf = typeof error;
+                        let responding = typeOf === "function";
+                        if (responding && error(...[
+                            request.req,
+                            request.res,
+                            request.next
+                        ])) return;
                         if (error && !error.behaviour) {
 
                             error.behaviour = options.name;
@@ -594,7 +601,7 @@ backend.behaviour = function (path, config) {
                             error.version = options.version;
                         }
                         request.next(...[
-                            error || er || new Error("Error" +
+                            error || new Error("Error" +
                                 " while executing " +
                                 options.name +
                                 " behaviour, version " +
@@ -603,8 +610,8 @@ backend.behaviour = function (path, config) {
                     } else {
 
                         let typeOf = typeof result;
-                        var responding = typeOf === "object";
-                        var responded = 0;
+                        let responding = typeOf === "object";
+                        let responded = 0;
                         if (response_plugin) {
 
                             responded = response_plugin(...[
@@ -723,7 +730,7 @@ backend.behaviour = function (path, config) {
                                 request.req,
                                 request.res,
                                 result,
-                                error,
+                                request.req.error,
                                 function (outputObjects) {
 
                                     respond(...[
@@ -860,12 +867,12 @@ backend.behaviour = function (path, config) {
                     res,
                     function (inputObjects, er) {
 
+                        req.error = er;
                         if (req.complete) behaviour_runner(...[
                             req,
                             res,
                             next,
-                            inputObjects,
-                            er
+                            inputObjects
                         ]); else throw new Error("Parameters" +
                             " callback function called before" +
                             " all request data consumed");
