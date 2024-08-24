@@ -3,9 +3,13 @@
 "use strict";
 
 var parser = require("cron-parser");
+var debug = require("debug");
 var {
     businessController
 } = require("./controller.js");
+
+var inform = debug("backend:schedule:info");
+inform.log = console.log.bind(console);
 
 module.exports.scheduleBehaviour = function () {
 
@@ -108,5 +112,7 @@ module.exports.scheduleBehaviour = function () {
                 options.operations
             ]).runBehaviour(behaviour);
         }, 1000);
+        inform("Behaviour " + (options.name ? "'" +
+            options.name + "' " : "") + "scheduled");
     }
 };

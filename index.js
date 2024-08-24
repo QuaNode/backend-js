@@ -62,28 +62,46 @@ var limiter = rateLimit({
     headers: false,
     keyGenerator(req, res) {
 
+        let key;
         var { ip, socket } = req;
-        if (!ip) return socket.remoteAddress;
-        return ip.replace(/:\d+[^:]*$/, '');
-    },
-    handler(req, res, next) {
+        if (ip) {
 
-        if (!limited[req.ip]) {
+            key = ip.replace(/:\d+[^:]*$/, '');
+        } else {
 
-            limited[req.ip] = {
+            key = socket.remoteAddress;
+        }
+        if (!res) return key;
+        if (!limited[key]) {
+
+            limited[key] = {
 
                 count: 0,
                 time: new Date().getTime()
             };
         }
+        req.socket.on("close", function () {
+
+            var ending = !req.readableEnded;
+            ending |= !res.writableEnded;
+            if (ending && limited[key]) {
+
+                limited[key].count += HITS;
+            }
+        });
+        return key;
+    },
+    handler(req, res, next) {
+
+        let key = this.keyGenerator(req);
         var time = new Date().getTime();
-        time -= limited[req.ip].time;
+        time -= limited[key].time;
         var resetting = time > WINDOW;
-        var count = ++limited[req.ip].count;
+        var count = ++limited[key].count;
         if (resetting) {
 
-            limited[req.ip] = undefined;
-            delete limited[req.ip];
+            limited[key] = undefined;
+            delete limited[key];
         }
         var timeout = count / MAX * TIMEOUT;
         var limitable = count > MAX;
@@ -223,10 +241,7 @@ module.exports = {
                         "/events",
                         path
                     ])
-                }, {
-
-                    path
-                }) && rM === "get") {
+                }, { path }) && rM === "get") {
 
                     query = new URLSearchParams(...[
                         query
@@ -249,10 +264,7 @@ module.exports = {
                                 routeOptions.path,
                                 path
                             ])
-                        }, {
-
-                            path
-                        });
+                        }, { path });
                         cors_ready &= [
                             method,
                             "options"
@@ -314,7 +326,8 @@ module.exports = {
             format,
             paths,
             options.operations,
-            options.tenants
+            options.tenants,
+            { schedule: options.schedule }
         ]);
         var proxied = typeof paths === "object";
         if (proxied) {
@@ -585,8 +598,8 @@ module.exports = {
             app.get("port"),
             function () {
 
-                inform("backend listening on port " +
-                    app.get("port"));
+                inform("backend listening on " +
+                    "port " + app.get("port"));
             }
         ]);
         return server;

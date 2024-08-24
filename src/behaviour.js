@@ -150,6 +150,8 @@ var behaviours = {
 
 var BEHAVIOURS = {};
 
+var otherDefaults = {};
+
 var defaultTenants = {};
 
 var defaultOperations = {};
@@ -337,24 +339,6 @@ backend.behaviour = function (path, config) {
                 }, undefined);
             };
         }
-        var named = typeof options.name === "string";
-        if (named) {
-
-            named &= options.name.length > 0;
-        }
-        var uniquelyNamed = function () {
-
-            let { skipSameRoutes } = config;
-            if (named && BEHAVIOURS[
-                options.name
-            ] && skipSameRoutes !== true) {
-
-                throw new Error("Duplicate behavior name: " +
-                    options.name + ". Make sure names are " +
-                    "unique and not numerical");
-            }
-            return named && !BEHAVIOURS[options.name];
-        }();
         var BehaviourConstructor = define(...[
             getConstructor
         ]).extend(getLogBehaviour(...[
@@ -391,12 +375,47 @@ backend.behaviour = function (path, config) {
             }
             LogBehaviours[logger] = BehaviourConstructor;
         }
-        scheduleBehaviour(...[
-            options,
-            BehaviourConstructor,
-            types,
-            FetchBehaviours
-        ]);
+        var no_schedule = config.schedule === false;
+        no_schedule |= otherDefaults.schedule === false;
+        if (!no_schedule) {
+
+            let { schedule } = config;
+            if (!schedule) {
+
+                schedule = otherDefaults.schedule;
+            }
+            if (!schedule) {
+
+                schedule = !!process.env.SCHEDULE;
+            }
+            if (schedule) {
+
+                scheduleBehaviour(...[
+                    options,
+                    BehaviourConstructor,
+                    types,
+                    FetchBehaviours
+                ]);
+            }
+        }
+        var named = typeof options.name === "string";
+        if (named) {
+
+            named &= options.name.length > 0;
+        }
+        var uniquelyNamed = function () {
+
+            let { skipSameRoutes } = config;
+            if (named && BEHAVIOURS[
+                options.name
+            ] && skipSameRoutes !== true) {
+
+                throw new Error("Duplicate behavior name: " +
+                    options.name + ". Make sure names are " +
+                    "unique and not numerical");
+            }
+            return named && !BEHAVIOURS[options.name];
+        }();
         if (uniquelyNamed) {
 
             if (options.name === "behaviours") {
@@ -817,8 +836,9 @@ backend.behaviour = function (path, config) {
                     if (cancelling) {
 
                         cancel();
-                        debug("Request aborted and " +
-                            "behaviour cancelled");
+                        debug("Request aborted and '" +
+                            options.name + "' behaviour" +
+                            " cancelled");
                     }
                 });
             };
@@ -970,9 +990,7 @@ backend.behaviour = function (path, config) {
             if (routing) {
 
                 var names = Object.keys(behaviours);
-                let {
-                    skipSameRoutes
-                } = config;
+                let { skipSameRoutes } = config;
                 if (!skipSameRoutes && names.some(...[
                     function (name) {
 
@@ -1095,8 +1113,12 @@ backend.behaviour = function (path, config) {
 backend.BehavioursServer = function () {
 
     var [
-        prefix, parser, remotes, operations, tenants
+        prefix, parser, remotes, operations, tenants, defaults
     ] = arguments;
+    if (defaults && typeof defaults.schedule === "boolean") {
+
+        otherDefaults.schedule = defaults.schedule;
+    }
     if (tenants && typeof tenants === "object") {
 
         defaultTenants = tenants;
@@ -1241,10 +1263,7 @@ backend.BehavioursServer = function () {
                     "/events",
                     path
                 ])
-            }, {
-
-                path
-            })) return;
+            }, { path })) return;
         }
         return new Error("Not found");
     };
