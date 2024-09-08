@@ -602,15 +602,19 @@ backend.behaviour = function (path, config) {
                     var failing = typeof error === "object";
                     failing |= typeof error === "function";
                     failing |= typeof result !== "object";
+                    var failed = false;
                     if (failing) {
 
                         let typeOf = typeof error;
                         let responding = typeOf === "function";
-                        if (responding && error(...[
+                        failed = responding && error(...[
                             request.req,
                             request.res,
                             request.next
-                        ])) return;
+                        ]);
+                    }
+                    if (failing && !failed) {
+
                         if (error && !error.behaviour) {
 
                             error.behaviour = options.name;
@@ -626,7 +630,7 @@ backend.behaviour = function (path, config) {
                                 " behaviour, version " +
                                 options.version + "!")
                         ]);
-                    } else {
+                    } else if (!failed) {
 
                         let typeOf = typeof result;
                         let responding = typeOf === "object";
