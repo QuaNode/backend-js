@@ -71,7 +71,6 @@ var limiter = rateLimit({
 
             key = socket.remoteAddress;
         }
-        if (!res) return key;
         if (!limited[key]) {
 
             limited[key] = {
@@ -80,7 +79,7 @@ var limiter = rateLimit({
                 time: new Date().getTime()
             };
         }
-        req.socket.on("close", function () {
+        var onClose = function () {
 
             var ending = !req.readableEnded;
             ending |= !res.writableEnded;
@@ -88,7 +87,17 @@ var limiter = rateLimit({
 
                 limited[key].count += HITS;
             }
-        });
+        };
+        if (!req.onClose) {
+
+            req.onClose = onClose;
+        }
+        if (req.socket.listenerCount(...[
+            "close", req.onClose
+        ]) === 0) {
+
+            req.socket.on("close", req.onClose);
+        }
         return key;
     },
     handler(req, res, next) {
