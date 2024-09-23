@@ -88,15 +88,10 @@ var limiter = rateLimit({
                 limited[key].count += HITS;
             }
         };
-        if (!req.onClose) {
+        if (!req.__onClose) {
 
-            req.onClose = onClose;
-        }
-        if (req.socket.listenerCount(...[
-            "close", req.onClose
-        ]) === 0) {
-
-            req.socket.on("close", req.onClose);
+            req.__onClose = true;
+            req.socket.on("close", onClose);
         }
         return key;
     },
