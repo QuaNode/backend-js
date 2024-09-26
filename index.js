@@ -88,9 +88,9 @@ var limiter = rateLimit({
                 limited[key].count += HITS;
             }
         };
-        if (!req.__onClose) {
+        if (!req.socket.__onClose) {
 
-            req.__onClose = true;
+            req.socket.__onClose = true;
             req.socket.on("close", onClose);
         }
         return key;
