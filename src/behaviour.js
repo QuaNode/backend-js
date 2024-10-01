@@ -829,14 +829,7 @@ backend.behaviour = function (path, config) {
                     let _ = typeof cancel;
                     var cancelling = _ === "function";
                     cancelling &= !polling;
-                    if (cancelling) {
-
-                        cancelling &= !req.readableEnded;
-                        if (!cancelling) {
-
-                            cancelling |= !res.writableEnded;
-                        }
-                    }
+                    cancelling &= !res.writableEnded;
                     if (cancelling) {
 
                         cancel();

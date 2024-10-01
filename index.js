@@ -81,8 +81,7 @@ var limiter = rateLimit({
         }
         var onClose = function () {
 
-            var ending = !req.readableEnded;
-            ending |= !res.writableEnded;
+            var ending = !res.writableEnded;
             if (ending && limited[key]) {
 
                 limited[key].count += HITS;
