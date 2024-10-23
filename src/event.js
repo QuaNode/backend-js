@@ -46,9 +46,9 @@ module.exports.getEventBehaviour = function () {
                     room,
                     behaviour,
                     response,
-                    forceReceive
+                    retry
                 ] = arguments;
-                if (!forceReceive) {
+                if (!retry) {
 
                     emitter = emitter.volatile;
                 }
@@ -62,7 +62,8 @@ module.exports.getEventBehaviour = function () {
                 let [
                     event,
                     parameters,
-                    forceReceive
+                    retry = true,
+                    later
                 ] = arguments;
                 var room = event;
                 if (room && typeof room === "object") {
@@ -90,7 +91,8 @@ module.exports.getEventBehaviour = function () {
                         behaviour_name
                     ].options;
                     var {
-                        queue: behaviour_queue
+                        queue: behaviour_queue,
+                        database
                     } = behaviour;
                     if (typeof behaviour.queue === "function") {
 
@@ -98,13 +100,6 @@ module.exports.getEventBehaviour = function () {
                             behaviour.name,
                             parameters
                         ]);
-                    }
-                    if (behaviour_queue == queue) {
-
-                        throw new Error("Queue of event " +
-                            "behaviour should be different " +
-                            "from the queue of triggering " +
-                            "behaviour");
                     }
                     var ëmitters = emitters[behaviour.name];
                     var emitting = Array.isArray(ëmitters);
@@ -121,6 +116,31 @@ module.exports.getEventBehaviour = function () {
                                 result,
                                 error
                             ] = arguments;
+                            var {
+                                businessOperations: bOps
+                            } = self.state;
+                            var me_finished = bOps.length === 0;
+                            me_finished &= !later;
+                            var no_queue = !me_finished;
+                            no_queue &= !behaviour_queue;
+                            if (no_queue) {
+
+                                throw new Error("Queue of " +
+                                    "event behaviour should" +
+                                    " be provided or " +
+                                    "constructed from " +
+                                    "parameters");
+                            }
+                            var enqueue = !me_finished;
+                            enqueue &= behaviour_queue == queue;
+                            if (enqueue) {
+
+                                throw new Error("Queue of " +
+                                    "event behaviour should" +
+                                    " be different from the" +
+                                    " queue of triggering " +
+                                    "behaviour");
+                            }
                             var response = {
 
                                 behaviour: behaviour.name,
@@ -213,7 +233,7 @@ module.exports.getEventBehaviour = function () {
                                                 room,
                                                 behaviour.name,
                                                 outputObjects,
-                                                forceReceive
+                                                retry
                                             ]);
                                         }
                                     ]);
@@ -225,12 +245,42 @@ module.exports.getEventBehaviour = function () {
                                 room,
                                 behaviour.name,
                                 response,
-                                forceReceive
+                                retry
                             ]);
                         },
-                        behaviour_queue
+                        {
+                            queue: behaviour_queue,
+                            database: database(),
+                            later
+                        }
                     ]);
                 });
+            };
+            self.triggerLater = function () {
+
+                let [
+                    event,
+                    parameters,
+                    retry = true
+                ] = arguments;
+                self.trigger(...[
+                    event,
+                    parameters,
+                    retry,
+                    true
+                ]);
+            };
+            self.tryTrigger = function () {
+
+                let [
+                    event,
+                    parameters
+                ] = arguments;
+                self.trigger(...[
+                    event,
+                    parameters,
+                    false
+                ]);
             };
         };
     };

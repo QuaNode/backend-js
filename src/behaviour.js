@@ -371,7 +371,7 @@ backend.behaviour = function (path, config) {
             var logger = "";
             if (typeof options.logger === "string") {
 
-                options.logger = logger;
+                logger = options.logger;
             }
             LogBehaviours[logger] = BehaviourConstructor;
         }

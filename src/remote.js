@@ -28,7 +28,8 @@ module.exports.getRemoteBehaviour = function () {
             var [
                 ȯptions, _, getDatabase
             ] = arguments;
-            if ((ȯptions || {}).parameters) {
+            if (!ȯptions) ȯptions = {};
+            if (ȯptions.parameters) {
 
                 ȯptions[
                     "inputObjects"
@@ -88,7 +89,8 @@ module.exports.getRemoteBehaviour = function () {
                 }
                 var {
                     queue,
-                    database
+                    database,
+                    later
                 } = opts || {};
                 if (typeof callback !== "function") {
 
@@ -180,7 +182,7 @@ module.exports.getRemoteBehaviour = function () {
                 behaviour.getEmitterId = self.getEmitterId;
                 behaviour.isCompleted = self.isCompleted;
                 if (!queue) queue = queuě;
-                if (queue == queuě) {
+                if (queue == queuě && !later) {
 
                     let _ = typeof parameters;
                     var mandatory = _ !== "function";
@@ -244,6 +246,23 @@ module.exports.getRemoteBehaviour = function () {
                 };
                 return self;
             };
+            self.runLater = function () {
+
+                let [
+                    behaviour,
+                    parameters,
+                    callback,
+                    opts
+                ] = arguments;
+                if (!opts) opts = {};
+                opts.later = true;
+                return self.run(...[
+                    behaviour,
+                    parameters,
+                    callback,
+                    opts
+                ]);
+            };
             self.remote = function (baseURL) {
 
                 return {
@@ -253,14 +272,16 @@ module.exports.getRemoteBehaviour = function () {
                         let [
                             behaviour,
                             parameters,
-                            callback
+                            callback,
+                            opts
                         ] = arguments;
                         if (baseURL === "local") {
 
                             return self.run(...[
                                 behaviour,
                                 parameters,
-                                callback
+                                callback,
+                                opts
                             ]);
                         }
                         let _ = typeof behaviour;

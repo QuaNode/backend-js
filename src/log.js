@@ -23,12 +23,13 @@ module.exports.getLogBehaviour = function () {
 
         return function () {
 
-            var self = init.apply(...[
-                this, arguments
-            ]).self();
             var [
                 ȯptions, _, getDatabase
             ] = arguments;
+            if (!ȯptions) ȯptions = {};
+            var self = init.apply(...[
+                this, arguments
+            ]).self();
             var identifier = new Date().getTime();
             var typeOf = typeof getDatabase;
             if (typeOf !== "function") {
@@ -58,9 +59,9 @@ module.exports.getLogBehaviour = function () {
 
                     database = getDatabase();
                 }
-                var ȯptions = Object.keys(...[
+                var öptions = Object.keys(...[
                     BEHAVIOURS
-                ]).reduce(function (ȯptions, name) {
+                ]).reduce(function (öptions, name) {
 
                     let {
                         constructor
@@ -71,31 +72,31 @@ module.exports.getLogBehaviour = function () {
                             name
                         ].options;
                     }
-                    return ȯptions;
+                    return öptions;
                 }, {});
                 if (typeof parameters !== "object") {
 
                     parameters = {};
                 }
                 parameters.identifier = identifier;
-                let type = ȯptions.type;
+                let type = öptions.type;
                 if (!type) {
 
                     type = options.type;
                 }
-                let priority = ȯptions.priority;
+                let priority = öptions.priority;
                 if (!priority) {
 
                     priority = options.priority;
                 }
-                let timeout = ȯptions.timeout;
+                let timeout = öptions.timeout;
                 if (!timeout) {
 
                     timeout = options.timeout;
                 }
                 logBehaviour = new LogBehaviour({
 
-                    name: ȯptions.name,
+                    name: öptions.name,
                     type: types[type],
                     priority: priority || 0,
                     timeout,
