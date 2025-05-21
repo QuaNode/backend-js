@@ -797,7 +797,11 @@ backend.behaviour = function (path, config) {
                     options.fetcher || options.fetching,
                     FetchBehaviour,
                     options.memory,
-                    options.operations
+                    options.operations,
+                    function () {
+
+                        return req;
+                    }
                 ]).runBehaviour(...[
                     behaviour,
                     options.paginate ? function () {

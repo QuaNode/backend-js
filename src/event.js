@@ -74,7 +74,8 @@ module.exports.getEventBehaviour = function () {
 
                     throw new Error("Invalid event");
                 }
-                var queue = options.queue;
+                var { controller: self_queue } = self;
+                var queue = self_queue || options.queue;
                 if (typeof options.queue === "function") {
 
                     queue = options.queue(...[

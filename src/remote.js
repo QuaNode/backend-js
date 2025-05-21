@@ -97,7 +97,8 @@ module.exports.getRemoteBehaviour = function () {
                     throw new Error("Invalid behaviour" +
                         " callback");
                 }
-                var queuě = options.queue;
+                var { controller: self_queue } = self;
+                var queuě = self_queue || options.queue;
                 if (typeof queuě === "function") {
 
                     queuě = queuě(...[

@@ -11,6 +11,8 @@ var {
 var inform = debug("backend:schedule:info");
 inform.log = console.log.bind(console);
 
+debug = debug("backend:schedule");
+
 module.exports.scheduleBehaviour = function () {
 
     var [
@@ -69,7 +71,10 @@ module.exports.scheduleBehaviour = function () {
             ]).next().getTime() / 1000;
             _time = Math.floor(_time);
             next = _next;
-        } catch (_) { }
+        } catch (err) {
+
+            debug(err);
+        }
     }
     if (next) {
 

@@ -4,6 +4,7 @@
 
 var os = require("os");
 var fs = require("fs");
+var debug = require("debug");
 var bunyan = require("bunyan");
 var {
     BusinessController
@@ -19,6 +20,9 @@ var {
 } = require("./resource.js");
 
 var businessControllerSharedInstances = {};
+
+var inform = debug("backend:controller:info");
+inform.log = console.log.bind(console);
 
 if (!fs.existsSync("./logs")) {
 
@@ -40,7 +44,9 @@ var log = bunyan.createLogger({
     serializers: bunyan.stdSerializers
 });
 
-var FREEMEMORY = os.freemem() / 1024 / 1024;
+var getFreeMemory = () => os.freemem() / 1024 / 1024;
+var FREEMEMORY = getFreeMemory();
+var MEMORY = { _0: 0, _1: 5, _2: 55 };
 var queues = {};
 
 var businessController = function () {
@@ -53,7 +59,8 @@ var businessController = function () {
         fetch,
         FetchBehaviour,
         memory,
-        operations
+        operations,
+        requesting
     ] = arguments;
     var aQueue = "";
     if (typeof queue === "string") {
@@ -73,8 +80,11 @@ var businessController = function () {
         aQueue += " - " + fetch;
     }
     var theQueue = aQueue;
-    var freeMemory = os.freemem() / 1024 / 1024;
+    var freeMemory = getFreeMemory();
     var theMemory = FREEMEMORY - freeMemory;
+    if (theMemory != MEMORY._0) FREEMEMORY = freeMemory;
+    if (theMemory < MEMORY._1) theMemory = MEMORY._1;
+    if (theMemory > MEMORY._2) theMemory = MEMORY._2;
     if (typeof memory === "number" && memory > 0) {
 
         theMemory = memory;
@@ -82,15 +92,14 @@ var businessController = function () {
     if (!queues[aQueue]) queues[aQueue] = {
 
         memory: theMemory,
-        spare: behaviour
-    };
-    if (theMemory < queues[aQueue].memory) {
-
-        queues[aQueue].memory = theMemory;
-    }
-    if (freeMemory < queues[aQueue].memory) {
+        spare: behaviour || new Date().getTime()
+    }; else queues[aQueue].memory = theMemory;
+    if (requesting && freeMemory < queues[aQueue].memory) {
 
         theQueue = queues[aQueue].spare;
+        inform("Behaviour " + (behaviour ? "'" + behaviour +
+            "' " : "") + "to run on spare queue due to" +
+            " low free memory: " + freeMemory);
     }
     var businessControllerSharedInstance;
     if (theQueue && theQueue.length > 0) {
@@ -168,6 +177,7 @@ var businessController = function () {
         };
         businessControllerSharedInstance = new BusinessController({
 
+            identifier: theQueue,
             modelController: getModelController(database),
             ModelEntity,
             QueryExpression,
@@ -196,18 +206,36 @@ var businessController = function () {
 
                     _when_ = " when " + operationSubtype;
                 }
+                var _url_;
+                if (typeof requesting === "function") {
+
+                    var req = requesting();
+                    if (typeof req === "object") {
+
+                        ({ url: _url_ } = req);
+                    }
+                }
                 if (data && data.error) log.error({
 
                     behaviour: data.behaviour + _in_,
                     operation: operationType + _when_,
                     queue: queues[aQueue],
+                    request: _url_,
                     err: {
 
                         message: data.error.message,
                         name: data.error.name,
-                        stack: data.error.stack.split("\n    ")
+                        stack: function () {
+
+                            var { stack } = data.error;
+                            if (typeof stack === "string") {
+
+                                return stack.split("\n    ");
+                            }
+                            return stack;
+                        }()
                     }
-                }, "Queue -> " + (aQueue || "Anonymous"));
+                }, "Queue -> " + (theQueue || "Anonymous"));
             }
         });
         if (theQueue && theQueue.length > 0) {
