@@ -13,6 +13,7 @@ var session = require("express-session");
 var memorystore = require("memorystore");
 var debug = require("debug");
 var cors = require("cors");
+var dotenv = require('dotenv');
 var { Server } = require("socket.io");
 var {
     BehavioursServer,
@@ -161,6 +162,16 @@ module.exports = {
     server(paths, options) {
 
         if (server) return server;
+        if (options.env) {
+
+            var { env } = options;
+            var envOpts = env
+            if (typeof env !== "object") {
+
+                envOpts = undefined;
+            }
+            dotenv.config(envOpts);
+        }
         app.disable("x-powered-by");
         if (options.proxy) {
 
