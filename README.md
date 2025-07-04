@@ -2,17 +2,21 @@
 
 ![0_00](https://user-images.githubusercontent.com/3101473/227796079-0705dbd3-e3d0-4fdb-8cc3-5d4caa9d1447.png)
 
-Backend-js is a layer built above expressjs and socket.io to enable [behaviours framework](https://github.com/QuaNode/behaviours) for nodejs applications.
+**Backend-js** is a layer built above `expressjs` and `socket.io` to enable the [Behaviours Framework](https://github.com/QuaNode/behaviours) for Node.js applications.
 
-## Installation
+---
 
-```
+## 📦 Installation
+
+```bash
 npm install backend-js
 ```
 
-## Usage
+---
 
-### backend
+## 🚀 Usage
+
+### 🔧 Backend Initialization
 
 ```js
 var backend = require('backend-js');
@@ -24,26 +28,28 @@ var App = backend.app(__dirname + '/behaviours', {
 });
 ```
 
-##### var App = app\(path, options\)
+#### `var App = app(path, options)`
 
-| parameter | type | description |
-| :--- | :--- | :--- |
-| path | string | path of behaviours directory. |
-| options | object | app configurations object. |
-| options.path | string | prefix path appended to the beginning of routes. |
-| options.parser | string | if json, text, raw or urlencoded is used, the body of the request  will be parse accordingly also the body of the response will be serialized accordingly. |
-| options.parserOptions | object | options for [parser](https://github.com/expressjs/body-parser). |
-| options.port | number | port of server. |
-| options.origins | string | comma separated domains allowed to send ajax requests to this server or **"\*"** to allow any. |
-| options.static | object | options object to define [static served](https://expressjs.com/en/4x/api.html#express.static) files. |
-| options.static.route | string | virtual path/route for static served files. |
-| options.static.path | string | relative path of the directory of static served files. |
+| Parameter             | Type    | Description                                                                                      |
+|-----------------------|---------|--------------------------------------------------------------------------------------------------|
+| `path`                | string  | Path to the behaviours directory.                                                                |
+| `options`             | object  | App configuration options.                                                                       |
+| `options.path`        | string  | Prefix path appended to the beginning of routes.                                                 |
+| `options.parser`      | string  | Supports `json`, `text`, `raw`, or `urlencoded`. Parses request/response body accordingly.       |
+| `options.parserOptions` | object | Options for [body-parser](https://github.com/expressjs/body-parser).                            |
+| `options.port`        | number  | Port of the server.                                                                              |
+| `options.origins`     | string  | Allowed AJAX origins (comma-separated or `"*"` for all).                                         |
+| `options.static`      | object  | Options for serving [static files](https://expressjs.com/en/4x/api.html#express.static).        |
+| `options.static.route`| string  | Virtual route for static content.                                                                |
+| `options.static.path` | string  | Path to directory containing static files.                                                       |
 
-| return | type | description |
-| :--- | :--- | :--- |
-| App | function | function conventionally denotes the [Express application](https://expressjs.com/en/4x/api.html#app). |
+| Returns | Type     | Description                                                                          |
+|---------|----------|--------------------------------------------------------------------------------------|
+| `App`   | function | Express app instance ([API reference](https://expressjs.com/en/4x/api.html#app)).    |
 
-### model
+---
+
+### 🧩 Model Definition
 
 ```js
 var backend = require('backend-js');
@@ -56,22 +62,24 @@ var User = model({
 });
 ```
 
-##### var ModelEntity = model\(options, attributes, plugins\)
+#### `var ModelEntity = model(options, attributes, plugins)`
 
-| parameter | type | description |
-| :--- | :--- | :--- |
-| options | string \| object | either model name for lazy loading or object for model configuration. |
-| options.name | string | model name. |
-| options.features | object | object contains special functionalities of the model. It is passed to [data access layer](#data-access). |
-| options.query | array | array of [QueryExpression](#query) repressing the query to be executed by default. |
-| attributes | object | object describes the model schema. it contains key-value pairs where the key is a model attribute/field name and the value is the data type of this attribute/field. Data types are native javascript data types String, Number and Date. Data type could be javascript array of single object annotation \[{}\] or just an object annotation {} containing other key-value pairs expressing nested model schema. |
-| plugins | array | array of [mongoose plugins](https://www.npmjs.com/search?q=mongoose&page=1&ranking=optimal) to define additional functionalities to the model. |
+| Parameter         | Type               | Description                                                                                                      |
+|-------------------|--------------------|------------------------------------------------------------------------------------------------------------------|
+| `options`         | string \| object   | Model name or full configuration object.                                                                         |
+| `options.name`    | string             | Name of the model.                                                                                               |
+| `options.features`| object             | Custom model features passed to the [data access layer](#data-access).                                           |
+| `options.query`   | array              | Default query represented by [QueryExpression](#query).                                                          |
+| `attributes`      | object             | Schema attributes (String, Number, Date). Supports nested objects or arrays.                                     |
+| `plugins`         | array              | Array of [mongoose plugins](https://www.npmjs.com/search?q=mongoose&page=1&ranking=optimal).                     |
 
-| return | type | description |
-| :--- | :--- | :--- |
-| ModelEntity | function | model constructor function prototyped as [ModelEntity](#entity). |
+| Returns      | Type     | Description                              |
+|--------------|----------|------------------------------------------|
+| `ModelEntity`| function | Constructor for the defined model entity. |
 
-### query
+---
+
+### 🔍 Query Builder
 
 ```js
 var QueryExpression = backend.QueryExpression;
@@ -86,43 +94,46 @@ var LogicalOperators = {
 };
 backend.setComparisonOperators(ComparisonOperators);
 backend.setLogicalOperators(LogicalOperators);
-var query = [new QueryExpression({
+
+var query = [
+  new QueryExpression({
     fieldName: 'username',
     comparisonOperator: ComparisonOperators.EQUAL,
     fieldValue: 'name'
-}),new QueryExpression({    
+  }),
+  new QueryExpression({
     fieldName: 'password',
     comparisonOperator: ComparisonOperators.EQUAL,
     fieldValue: 'pass',
     logicalOperator: LogicalOperators.AND,
     contextualLevel: 0
-})]
+  })
+];
 ```
 
-##### setComparisonOperators\(operators\)
+#### `setComparisonOperators(operators)` / `setLogicalOperators(operators)`
 
-##### setLogicalOperators\(operators\)
+| Parameter | Type   | Description                                                                 |
+|-----------|--------|-----------------------------------------------------------------------------|
+| `operators` | object | Key-value pairs mapping to database engine operators (used by data access). |
 
-| parameter | type | description |
-| :--- | :--- | :--- |
-| operators | object | object contains key-value pairs where the key is a unique id for an operator and the value is a corresponding database engine operator. It is passed to [data access layer](#data-access). |
+#### `var expression = new QueryExpression(options)`
 
-##### var expression = new QueryExpression\(options\)
+| Parameter             | Type   | Description                                                                                     |
+|-----------------------|--------|-------------------------------------------------------------------------------------------------|
+| `options.fieldName`   | string | Field name in the model.                                                                        |
+| `options.comparisonOperator` | string | Comparison operator (`=`, `$ne`, etc.).                                                   |
+| `options.fieldValue`  | any    | Value to compare against the field.                                                             |
+| `options.logicalOperator` | string | Logical operator (`$and`, `$or`, `$not`).                                                 |
+| `options.contextualLevel` | number | Nesting level of conditions (for grouping).                                               |
 
-| parameter | type | description |
-| :--- | :--- | :--- |
-| options | object | object describes a condition in a where clause of a query. |
-| options.fieldName | string | attribute/field name of the model to be part of the condition. |
-| options.comparisonOperator | string | a value represents comparison operation to be manipulated by database engine. |
-| options.fieldValue | any | the value to be compared to the attribute/field of the model. |
-| options.logicalOperator | string | a value represents logical operation to be manipulated by database to combine multiple conditions. |
-| options.contextualLevel | number | starts with 0 represents the depth of the logical operation in the conditions tree. It is used to indicate brackets. |
+| Returns     | Type   | Description                                                                 |
+|-------------|--------|-----------------------------------------------------------------------------|
+| `expression`| object | Query expression object used in queries.                                    |
 
-| return | type | description |
-| :--- | :--- | :--- |
-| expression | object | object represents a condition expression combined with other expressions to represent a query. It is adapted by [data access layer](#data-access).. |
+---
 
-### entity
+### 🧱 Entity API
 
 ```js
 var ModelEntity = backend.ModelEntity;
@@ -133,21 +144,26 @@ var features = entity.getObjectFeatures();
 var query = entity.getObjectQuery();
 ```
 
-##### var entity = new ModelEntity\(features\)
+#### `var entity = new ModelEntity(features)`
 
-| parameter | type | description |
-| :--- | :--- | :--- |
-| features | object | object contains special functionalities of the model. It is passed to [data access layer](#data-access). |
+| Parameter     | Type   | Description                                                                  |
+|---------------|--------|------------------------------------------------------------------------------|
+| `features`    | object | Special model functionalities passed to the [data access layer](#data-access).|
 
-| return | type | description |
-| :--- | :--- | :--- |
-| entity | object | object contains all specifications and meta data of the model. |
-| entity.getObjectConstructor | function | function returns the model constructor depending on the[ data access layer](#data-access). |
-| entity.getObjectAttributes | function | function returns the model schema key-value pairs. |
-| entity.getObjectFeatures | function | function returns the model features. |
-| entity.getObjectQuery | function | function returns the model query an array of [QueryExpression](#query) to be executed by default. |
+| Returns      | Type   | Description                        |
+|--------------|--------|------------------------------------|
+| `entity`     | object | Holds model metadata and schema.   |
 
-### behaviour \(API / functional code unit\)
+**Entity Methods:**
+
+- `getObjectConstructor()` – returns model constructor  
+- `getObjectAttributes()` – returns schema fields  
+- `getObjectFeatures()` – returns model features  
+- `getObjectQuery()` – returns default query array
+
+---
+
+### ⚙️ Behaviour (API Unit)
 
 ```js
 var getUsers = behaviour({
@@ -163,21 +179,23 @@ var getUsers = behaviour({
           .entity(new User())
           .append(true)
           .apply();
-      });
+    });
   };
 });
 ```
 
-##### var Behavior = behaviour\(option, constructor\);
+#### `var Behavior = behaviour(option, constructor)`
 
-| parameter | type | description |
-| :--- | :--- | :--- |
-| options | object | api configuration \(name, version, path, method, parameters, returns\) |
-| constructor | function | logic function works by registering on methods to do functions regardless its orders, like \(database processor query, insert, delete or update\), data mapping to map returns of data to specific format or server error handling |
+| Parameter     | Type     | Description                                                                 |
+|---------------|----------|-----------------------------------------------------------------------------|
+| `option`      | object   | API metadata (name, version, path, method, params, returns).                 |
+| `constructor` | function | Business logic with database or response mapping functionality.              |
 
-## data access
+---
 
-you should define your own data access layer like following
+## 🧬 Data Access
+
+Define your own **data access layer** like below:
 
 ```js
 var backend = require('backend-js');
@@ -193,7 +211,7 @@ var ModelController = function () {
         // do select
     };
     self.save = function (callback, oldSession) {
-        // do select
+        // do save
     };
 };
 
@@ -207,13 +225,16 @@ ModelController.prototype.constructor = ModelController;
 backend.setModelController(new ModelController());
 ```
 
-## Starter project
+---
 
-A sample project that you can learn from examples how to use Backend-JS.
+## 🚀 Starter Project
 
-#### [https://github.com/QuaNode/BeamJS-Start](https://github.com/QuaNode/BeamJS-Start)
+Explore the official starter to learn Backend-JS with examples:
 
-#### 
+🔗 [https://github.com/QuaNode/BeamJS-Start](https://github.com/QuaNode/BeamJS-Start)
 
+---
 
+## 📄 License
 
+- [licensed as MIT](./LICENSE).

@@ -316,8 +316,15 @@ backend.behaviour = function (path, config) {
                     ].indexOf(typeOf) > -1) {
 
                         let {
-                            host, path: päth, method
+                            host, path: päth, method, id
                         } = tenants[key];
+                        let tenantID = req.get(...[
+                            "Behaviour-Tenant"
+                        ]);
+                        if (id == tenantID) {
+
+                            return tenant = key;
+                        }
                         let same_host = true;
                         if (host) vhost(...[
                             host, function () { }
@@ -325,14 +332,17 @@ backend.behaviour = function (path, config) {
 
                             same_host = false;
                         }]);
-                        if (same_host && compare({
+                        if (same_host && (compare({
 
                             path: päth, method
                         }, {
 
                             path: päth && req.path,
                             method: method && req.method
-                        })) return tenant = key;
+                        }) || key == tenantID)) {
+
+                            return tenant = key;
+                        }
                         return tenant;
                     }
                     return undefined;
@@ -346,6 +356,7 @@ backend.behaviour = function (path, config) {
             config,
             types,
             BEHAVIOURS,
+            defaultTenants,
             defaultRemotes,
             FetchBehaviours,
             LogBehaviours,

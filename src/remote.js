@@ -18,6 +18,7 @@ module.exports.getRemoteBehaviour = function () {
         config,
         types,
         BEHAVIOURS,
+        defaultTenants,
         defaultRemotes,
         FetchBehaviours
     ] = arguments;
@@ -296,15 +297,36 @@ module.exports.getRemoteBehaviour = function () {
                             throw new Error("Invalid " +
                                 "behaviour name");
                         }
-                        var remotes;
+                        var { database } = opts || {};
+                        if (!database) {
+
+                            database = getDatabase();
+                        }
+                        var remotes, tenants;
                         if (typeof config === "object") {
 
+                            tenants = config.tenants;
                             remotes = config.remotes;
                         }
-                        _ = typeof remotes;
+                        var tenantID = (Object.assign(...[
+                            {},
+                            defaultTenants,
+                            tenants,
+                        ])[database] || {}).id;
+                        var tenant;
+                        if (tenantID || database) {
+
+                            tenant = {
+
+                                key: 'Behaviour-Tenant',
+                                type: 'header',
+                                value: tenantID || database
+                            };
+                        }
                         var remoteURL = Object.assign(...[
-                            _ === "object" ? remotes : {},
-                            defaultRemotes
+                            {},
+                            defaultRemotes,
+                            remotes
                         ])[baseURL];
                         var behaviours;
                         if (remoteURL) baseURL = remoteURL;
@@ -346,7 +368,10 @@ module.exports.getRemoteBehaviour = function () {
 
                             let cancel = behaviours[
                                 behaviour
-                            ](parameters, callback);
+                            ](parameters, callback, {
+
+                                __tenant__: tenant
+                            });
                             let _cancel = self.cancel;
                             self.cancel = function () {
 

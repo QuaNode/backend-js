@@ -21,6 +21,7 @@ module.exports.getEventBehaviour = function () {
         config,
         types,
         BEHAVIOURS,
+        defaultTenants,
         defaultRemotes,
         FetchBehaviours,
         getEmitters
@@ -290,6 +291,7 @@ module.exports.getEventBehaviour = function () {
         config,
         types,
         BEHAVIOURS,
+        defaultTenants,
         defaultRemotes,
         FetchBehaviours
     ])).defaults({

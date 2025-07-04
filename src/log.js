@@ -14,6 +14,7 @@ module.exports.getLogBehaviour = function () {
         config,
         types,
         BEHAVIOURS,
+        defaultTenants,
         defaultRemotes,
         FetchBehaviours,
         LogBehaviours,
@@ -131,6 +132,7 @@ module.exports.getLogBehaviour = function () {
         config,
         types,
         BEHAVIOURS,
+        defaultTenants,
         defaultRemotes,
         FetchBehaviours,
         getEmitters
