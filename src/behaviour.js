@@ -250,7 +250,7 @@ backend.behaviour = function (path, config) {
 
             if (options.events) {
 
-                debug('Events should be array or use event');
+                debug("Events should be array or use event");
             }
             options.events = [];
         }
@@ -280,17 +280,17 @@ backend.behaviour = function (path, config) {
             no_tenants |= typeof c_tenants !== "object";
         }
         if (no_tenants) config.tenants = {};
+        var tenants = Object.assign(...[
+            {},
+            defaultTenants,
+            config.tenants
+        ]);
         if (typeof options.database !== "function") {
 
             let { database } = options;
             options.database = function (req) {
 
                 if (database) return database;
-                var tenants = Object.assign(...[
-                    {},
-                    defaultTenants,
-                    config.tenants
-                ]);
                 return Object.keys(...[
                     tenants
                 ]).reduce(function (tenant, key) {
@@ -456,8 +456,13 @@ backend.behaviour = function (path, config) {
 
                 options.plugins.push(options.plugin);
             }
-            var request_plugins = options.plugins.filter(...[
-                function (plugin) {
+            var request_plugins = [
+                function (req, res, next) {
+
+                    req.tenant = options.database(req);
+                    next();
+                },
+                ...options.plugins.filter(function (plugin) {
 
                     let valid = typeof plugin === "function";
                     if (valid) {
@@ -465,22 +470,16 @@ backend.behaviour = function (path, config) {
                         valid &= parse(plugin)[0] !== "out";
                     }
                     return valid;
+                })
+            ];
+            var upgradePlugin = request_plugins.find(...[
+                function (plugin) {
+
+                    let [last] = parse(plugin).reverse();
+                    return last === "head";
                 }
             ]);
-            var upgradePlugin;
-            var upgrading = request_plugins.length > 0;
-            if (upgrading) {
-
-                upgradePlugin = request_plugins.find(...[
-                    function (plugin) {
-
-                        let [last] = parse(plugin).reverse();
-                        return last === "head";
-                    }
-                ]);
-                upgrading &= !!upgradePlugin;
-            }
-            if (upgrading) {
+            if (upgradePlugin) {
 
                 upgradePlugins[options.name] = upgradePlugin;
             }
@@ -540,7 +539,7 @@ backend.behaviour = function (path, config) {
                     next,
                     inputObjects
                 ] = arguments;
-                let onClose, database = options.database(req);
+                let onClose, database = req.tenant;
                 var signature = getSignature(req);
                 var response = {
 
@@ -690,15 +689,27 @@ backend.behaviour = function (path, config) {
                                                 inputObjects
                                             ]);
                                         }
+                                        let { stringify } = JSON;
                                         let jsonify = !!room;
                                         _ = typeof room;
                                         jsonify &= _ === "object";
                                         if (jsonify) {
 
-                                            let {
-                                                stringify
-                                            } = JSON;
-                                            return stringify(room);
+                                            room = stringify(room);
+                                        }
+                                        if (database) {
+
+                                            let { keys } = Object;
+                                            let tenant = keys(...[
+                                                tenants
+                                            ]).sort().indexOf(...[
+                                                database
+                                            ]);
+                                            room = stringify({
+
+                                                tenant,
+                                                event: room
+                                            });
                                         }
                                         return room;
                                     }
@@ -975,18 +986,15 @@ backend.behaviour = function (path, config) {
                     request_handler
                 ]);
                 let plugins = request_plugins;
-                if (plugins.length > 0) {
+                request_plugins = plugins.map(...[
+                    function (plugin) {
 
-                    request_plugins = plugins.map(...[
-                        function (plugin) {
-
-                            return vhost(...[
-                                options.host, plugin
-                            ]);
-                        }
-                    ]);
-                }
-            } else if (request_plugins.length > 0) {
+                        return vhost(...[
+                            options.host, plugin
+                        ]);
+                    }
+                ]);
+            } else {
 
                 let plugins = request_plugins;
                 request_plugins = plugins.map(...[
@@ -1046,14 +1054,13 @@ backend.behaviour = function (path, config) {
                         routers[prefix] = router;
                     }
                 }
-                router = router[
+                router[
                     options.method.toLowerCase()
-                ].bind(router);
-                if (request_plugins.length > 0) router(...[
+                ].bind(router)(...[
                     options.path,
                     ...request_plugins,
                     request_handler
-                ]); else router(options.path, request_handler);
+                ]);
                 behaviours[options.name] = {
 
                     version: options.version,
@@ -1085,8 +1092,8 @@ backend.behaviour = function (path, config) {
 
                 if (Object.keys(behaviours).length > 1) {
 
-                    throw new Error(options.name + ' is ' +
-                        'defined after a route!');
+                    throw new Error(options.name + " is " +
+                        "defined after a route!");
                 }
                 if (middleware) {
 
@@ -1100,18 +1107,15 @@ backend.behaviour = function (path, config) {
 
                         route = join(prefix, options.path);
                     }
-                    if (request_plugins.length > 0) app.use(...[
+                    app.use(...[
                         route,
                         ...request_plugins,
                         request_handler
-                    ]); else app.use(route, request_handler);
-                } else {
-
-                    if (request_plugins.length > 0) app.use(...[
-                        ...request_plugins,
-                        request_handler
-                    ]); else app.use(request_handler);
-                }
+                    ]);
+                } else app.use(...[
+                    ...request_plugins,
+                    request_handler
+                ]);
             }
         } else BEHAVIOURS[Object.keys(BEHAVIOURS).length + 1] = {
 
@@ -1228,7 +1232,7 @@ backend.BehavioursServer = function () {
 
             if (!upgradePlugins[names[i]]) continue;
             let behaviour = BEHAVIOURS[names[i]].options;
-            var upgrading = validate_host(...[
+            let upgrading = validate_host(...[
                 behaviour.host,
                 req
             ]);

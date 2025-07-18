@@ -30,15 +30,26 @@ module.exports.getEventBehaviour = function () {
 
         return function () {
 
+            var [
+                ȯptions, getEmitterId, getDatabase
+            ] = arguments;
+            if (!ȯptions) ȯptions = {};
             var self = init.apply(...[
                 this,
                 arguments
             ]).self();
-            var [_, getEmitterId] = arguments;
             self.getEmitterId = getEmitterId;
             if (!self.getEmitterId) {
 
                 self.getEmitterId = () => { };
+            }
+            var typeOf = typeof getDatabase;
+            if (typeOf !== "function") {
+
+                getDatabase = function () {
+
+                    return ȯptions.database;
+                };
             }
             var emit = function () {
 
@@ -74,6 +85,25 @@ module.exports.getEventBehaviour = function () {
                 if (typeof room !== "string") {
 
                     throw new Error("Invalid event");
+                }
+                if (getDatabase()) {
+
+                    var tenants = Object.assign(...[
+                        {},
+                        defaultTenants,
+                        config.tenants
+                    ]);
+                    var databases = Object.keys(...[
+                        tenants
+                    ]).sort();
+                    var tenant = databases.indexOf(...[
+                        getDatabase()
+                    ])
+                    room = JSON.stringify({
+
+                        tenant,
+                        event: room
+                    });
                 }
                 var { controller: self_queue } = self;
                 var queue = self_queue || options.queue;
@@ -252,7 +282,7 @@ module.exports.getEventBehaviour = function () {
                         },
                         {
                             queue: behaviour_queue,
-                            database: database(),
+                            database: database() || getDatabase(),
                             later
                         }
                     ]);

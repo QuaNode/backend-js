@@ -183,6 +183,7 @@ module.exports.getRemoteBehaviour = function () {
                 }
                 behaviour.getEmitterId = self.getEmitterId;
                 behaviour.isCompleted = self.isCompleted;
+                behaviour.setOption("database", database);
                 if (!queue) queue = queuě;
                 if (queue == queuě && !later) {
 

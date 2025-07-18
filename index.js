@@ -13,7 +13,7 @@ var session = require("express-session");
 var memorystore = require("memorystore");
 var debug = require("debug");
 var cors = require("cors");
-var dotenv = require('dotenv');
+var dotenv = require("dotenv");
 var { Server } = require("socket.io");
 var {
     BehavioursServer,
@@ -374,7 +374,7 @@ module.exports = {
         app.use(session = session(function () {
 
             var { cookie } = options;
-            if (typeof cookie !== 'object') {
+            if (typeof cookie !== "object") {
 
                 cookie = {};
             }
@@ -560,7 +560,7 @@ module.exports = {
         var io = new Server(server, function () {
 
             var { websocket } = options;
-            if (typeof websocket !== 'object') {
+            if (typeof websocket !== "object") {
 
                 websocket = {};
             }
