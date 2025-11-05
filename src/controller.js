@@ -14,10 +14,10 @@ var {
     getComparisonOperators,
     ModelEntity,
     getModelController
-} = require("./model.js");
+} = require("./model");
 var {
     getResourceController
-} = require("./resource.js");
+} = require("./resource");
 
 var businessControllerSharedInstances = {};
 

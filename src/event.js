@@ -9,7 +9,7 @@ var debug = require("debug");
 var define = require("define-js");
 var {
     getRemoteBehaviour
-} = require("./remote.js");
+} = require("./remote");
 
 debug.enable("backend:*");
 debug = debug("backend:event");
@@ -152,7 +152,7 @@ module.exports.getEventBehaviour = function () {
                                 businessOperations: bOps
                             } = self.state;
                             var me_finished = bOps.length === 0;
-                            me_finished &= !later;
+                            me_finished |= !!later;
                             var no_queue = !me_finished;
                             no_queue &= !behaviour_queue;
                             if (no_queue) {

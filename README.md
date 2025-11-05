@@ -237,4 +237,4 @@ Explore the official starter to learn Backend-JS with examples:
 
 ## 📄 License
 
-- [licensed as MIT](./LICENSE).
+- [MIT](./LICENSE).

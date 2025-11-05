@@ -23,7 +23,7 @@ var {
     app,
     routes,
     behaviour
-} = require("./src/behaviour.js");
+} = require("./src/behaviour");
 var {
     ModelEntity,
     QueryExpression,
@@ -34,20 +34,20 @@ var {
     setModelController,
     getModelController,
     model
-} = require("./src/model.js");
+} = require("./src/model");
 var {
     ServiceParameter,
     ServiceParameterType,
     service
-} = require("./src/service.js");
+} = require("./src/service");
 var {
     setResourceController,
     getResourceController
-} = require("./src/resource.js");
+} = require("./src/resource");
 var {
     setCorsOptions,
     respond
-} = require("./src/utils.js");
+} = require("./src/utils");
 
 var LIMIT = 5;
 var HITS = 30;
@@ -140,7 +140,7 @@ inform.log = console.log.bind(console);
 
 debug = debug("backend:index");
 
-var server;
+var server, env;
 
 module.exports = {
 
@@ -159,18 +159,29 @@ module.exports = {
     model,
     service,
     behaviour,
+    env(options) {
+
+        if (typeof options !== "object") {
+
+            options = {};
+        }
+        options.quiet = process.env[
+            "NODE_ENV"
+        ] === "production";
+        var vars = dotenv.config(options);
+        if (vars && vars.error) {
+
+            debug(vars.error);
+        }
+        env = true;
+        return vars;
+    },
     server(paths, options) {
 
         if (server) return server;
-        if (options.env) {
+        if (env !== true) {
 
-            var { env } = options;
-            var envOpts = env
-            if (typeof env !== "object") {
-
-                envOpts = undefined;
-            }
-            dotenv.config(envOpts);
+            this.env(options.env);
         }
         app.disable("x-powered-by");
         if (options.proxy) {
@@ -578,11 +589,12 @@ module.exports = {
 
             socket.once(...[
                 "disconnect",
-                function () {
+                function (reason) {
 
                     inform("backend " +
                         "socket:" + socket.id +
-                        " disconnected on port " +
+                        " disconnected due to: " +
+                        reason + " on port " +
                         app.get("port"));
                 }
             ]);

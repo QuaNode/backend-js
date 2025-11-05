@@ -9,7 +9,7 @@ var {
 } = require("behaviours-js");
 var {
     businessController
-} = require("./controller.js");
+} = require("./controller");
 
 module.exports.getRemoteBehaviour = function () {
 
@@ -185,7 +185,7 @@ module.exports.getRemoteBehaviour = function () {
                 behaviour.isCompleted = self.isCompleted;
                 behaviour.setOption("database", database);
                 if (!queue) queue = queuě;
-                if (queue == queuě && !later) {
+                if (!later) {
 
                     let _ = typeof parameters;
                     var mandatory = _ !== "function";
@@ -238,15 +238,18 @@ module.exports.getRemoteBehaviour = function () {
                     memory,
                     operations
                 ]).runBehaviour(behaviour, null, callback);
-                let _cancel = self.cancel;
-                self.cancel = function () {
+                if (self.mandatoryBehaviour !== behaviour) {
 
-                    cancel();
-                    if (typeof _cancel === 'function') {
+                    let _cancel = self.cancel;
+                    self.cancel = function () {
 
-                        _cancel();
-                    }
-                };
+                        cancel();
+                        if (typeof _cancel === 'function') {
+
+                            _cancel();
+                        }
+                    };
+                }
                 return self;
             };
             self.runLater = function () {
@@ -329,26 +332,26 @@ module.exports.getRemoteBehaviour = function () {
                             defaultRemotes,
                             remotes
                         ])[baseURL];
-                        var behaviours;
+                        var behaviours, remote = baseURL;
                         if (remoteURL) baseURL = remoteURL;
                         _ = typeof baseURL;
-                        var url_string = _ === "string";
-                        if (url_string) {
+                        var string_url = _ === "string";
+                        if (string_url) {
 
-                            url_string &= baseURL.length > 0;
+                            string_url &= baseURL.length > 0;
                         }
                         if (baseURL instanceof Behaviours) {
 
                             behaviours = baseURL;
-                        } else if (url_string) {
+                        } else if (string_url) {
 
                             behaviours = new Behaviours(...[
                                 baseURL
                             ]);
-                            if (defaultRemotes[baseURL]) {
+                            if (defaultRemotes[remote]) {
 
                                 defaultRemotes[
-                                    baseURL
+                                    remote
                                 ] = behaviours;
                             } else {
 
@@ -356,7 +359,7 @@ module.exports.getRemoteBehaviour = function () {
                                 if (_ === "object") {
 
                                     remotes[
-                                        baseURL
+                                        remote
                                     ] = behaviours;
                                 }
                             }

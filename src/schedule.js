@@ -6,7 +6,7 @@ var parser = require("cron-parser");
 var debug = require("debug");
 var {
     businessController
-} = require("./controller.js");
+} = require("./controller");
 
 var inform = debug("backend:schedule:info");
 inform.log = console.log.bind(console);

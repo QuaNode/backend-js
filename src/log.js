@@ -5,7 +5,7 @@
 var define = require("define-js");
 var {
     getEventBehaviour
-} = require("./event.js");
+} = require("./event");
 
 module.exports.getLogBehaviour = function () {
 
