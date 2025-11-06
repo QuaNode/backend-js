@@ -287,6 +287,25 @@ module.exports.getEventBehaviour = function () {
                         }
                     ]);
                 });
+                var remotes = Object.assign(...[
+                    {}, defaultRemotes, config.remotes
+                ]);
+                Object.keys(remotes).forEach(function (key) {
+
+                    var { ip } = parameters || {};
+                    var matched = ip != remotes[key];
+                    matched &= /^node_(\d+)$/.match(key);
+                    if (matched) {
+
+                        self.remote(key).run("trigger", {
+
+                            event, parameters, retry
+                        }, function (_, err) {
+
+                            if (err) debug(err);
+                        }, { database: getDatabase() });
+                    }
+                });
             };
             self.triggerLater = function () {
 

@@ -491,10 +491,15 @@ module.exports = {
 
                 return next(err);
             }
+            var statusCode = 500;
+            if (err instanceof URIError) {
+
+                statusCode = 400;
+            }
             respond(res.status(...[
                 HttpStatus.getStatus(...[
                     err.code
-                ]) || 500
+                ]) || statusCode
             ]), {
 
                 behaviour: err.behaviour,
