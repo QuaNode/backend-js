@@ -75,7 +75,8 @@ module.exports.getEventBehaviour = function () {
                     event,
                     parameters,
                     retry = true,
-                    later
+                    later,
+                    remote = true
                 ] = arguments;
                 var room = event;
                 if (room && typeof room === "object") {
@@ -287,15 +288,13 @@ module.exports.getEventBehaviour = function () {
                         }
                     ]);
                 });
+                if (!remote) return;
                 var remotes = Object.assign(...[
                     {}, defaultRemotes, config.remotes
                 ]);
                 Object.keys(remotes).forEach(function (key) {
 
-                    var { ip } = parameters || {};
-                    var matched = ip != remotes[key];
-                    matched &= /^node_(\d+)$/.match(key);
-                    if (matched) {
+                    if (/^node_(\d+)$/.match(key)) {
 
                         self.remote(key).run("trigger", {
 
@@ -306,6 +305,21 @@ module.exports.getEventBehaviour = function () {
                         }, { database: getDatabase() });
                     }
                 });
+            };
+            self.triggerThis = function () {
+
+                let [
+                    event,
+                    parameters,
+                    retry = true
+                ] = arguments;
+                self.trigger(...[
+                    event,
+                    parameters,
+                    retry,
+                    true,
+                    false
+                ]);
             };
             self.triggerLater = function () {
 
