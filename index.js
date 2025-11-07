@@ -171,7 +171,11 @@ module.exports = {
         var vars = dotenv.config(options);
         if (vars && vars.error) {
 
-            debug(vars.error);
+            var { error } = vars;
+            if (error.code !== 'ENOENT') {
+
+                debug(error);
+            }
         }
         env = true;
         return vars;

@@ -294,7 +294,7 @@ module.exports.getEventBehaviour = function () {
                 ]);
                 Object.keys(remotes).forEach(function (key) {
 
-                    if (/^node_(\d+)$/.match(key)) {
+                    if (/^node_(\d+)$/.test(key)) {
 
                         self.remote(key).run("trigger", {
 
