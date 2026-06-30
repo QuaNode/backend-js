@@ -5,8 +5,8 @@
 var {
     Namespace
 } = require("socket.io");
-var debug = require("debug");
 var define = require("define-js");
+var debug = require("debug");
 var {
     getRemoteBehaviour
 } = require("./remote");
@@ -120,7 +120,7 @@ module.exports.getEventBehaviour = function () {
                     emitters
                 ]).forEach(function (behaviour_name) {
 
-                    var behaviour = BEHAVIOURS[
+                    let behaviour = BEHAVIOURS[
                         behaviour_name
                     ].options;
                     var {
@@ -296,12 +296,25 @@ module.exports.getEventBehaviour = function () {
 
                     if (/^node_(\d+)$/.test(key)) {
 
-                        self.remote(key).run("trigger", {
+                        let behaviour = Object.keys(...[
+                            BEHAVIOURS
+                        ]).reduce(function (opts, name) {
+
+                            var behaviour_opts = BEHAVIOURS[
+                                name
+                            ].options;
+                            if (!!behaviour_opts.mesh) {
+
+                                return behaviour_opts;
+                            }
+                            return opts;
+                        }, undefined) || { name: "trigger" };
+                        self.remote(key).run(behaviour.name, {
 
                             event, parameters, retry
                         }, function (_, err) {
 
-                            if (err) debug(err);
+                            if (err) debug(key + ": " + err);
                         }, { database: getDatabase() });
                     }
                 });
@@ -359,6 +372,7 @@ module.exports.getEventBehaviour = function () {
         FetchBehaviours
     ])).defaults({
 
+        name: options.name,
         type: types[options.type]
     });
 };

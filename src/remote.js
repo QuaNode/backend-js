@@ -7,9 +7,13 @@ var Behaviours = require("js-behaviours");
 var {
     BusinessBehaviour
 } = require("behaviours-js");
+var debug = require("debug");
 var {
     businessController
 } = require("./controller");
+
+debug.enable("backend:*");
+debug = debug("backend:remote");
 
 module.exports.getRemoteBehaviour = function () {
 
@@ -60,7 +64,7 @@ module.exports.getRemoteBehaviour = function () {
                     }
                 }
             ]);
-            var typeOf = typeof getDatabase;
+            let typeOf = typeof getDatabase;
             if (typeOf !== "function") {
 
                 getDatabase = function () {
@@ -88,10 +92,11 @@ module.exports.getRemoteBehaviour = function () {
                     opts = callback;
                     callback = parameters;
                 }
-                var {
+                let {
                     queue,
                     database,
-                    later
+                    later,
+                    remote
                 } = opts || {};
                 if (typeof callback !== "function") {
 
@@ -181,6 +186,16 @@ module.exports.getRemoteBehaviour = function () {
                         }
                     }
                 }
+                var type = behaviour.constructor[
+                    "prototype"
+                ].getType();
+                if (behaviour.getType() !== type) {
+
+                    debug("Execution type of " +
+                        (behaviour.name || "a behaviour") +
+                        ", is different from its original" +
+                        " type " + type);
+                }
                 behaviour.getEmitterId = self.getEmitterId;
                 behaviour.isCompleted = self.isCompleted;
                 behaviour.setOption("database", database);
@@ -244,13 +259,60 @@ module.exports.getRemoteBehaviour = function () {
                     self.cancel = function () {
 
                         cancel();
-                        if (typeof _cancel === 'function') {
+                        if (typeof _cancel === "function") {
 
                             _cancel();
                         }
                     };
                 }
+                if (typeof remote !== "function") return;
+                let remotes = Object.assign(...[
+                    {}, defaultRemotes, config.remotes
+                ]);
+                Object.keys(remotes).forEach(function (key) {
+
+                    if (/^node_(\d+)$/.test(key)) {
+
+                        self.remote(key).run(...[
+                            behaviour.name,
+                            behaviour.parameters,
+                            function (res, err) {
+
+                                remote(res, err, key);
+                            },
+                            { database }
+                        ]);
+                    }
+                });
                 return self;
+            };
+            self.runEvery = function () {
+
+                let [
+                    behaviour,
+                    parameters,
+                    callback,
+                    opts
+                ] = arguments;
+                if (!opts) opts = {};
+                opts.later = true;
+                typeOf = typeof opts.remote;
+                if (typeOf !== "function") {
+
+                    opts.remote = (_, err, key) => {
+
+                        if (err) {
+
+                            debug(key + ": " + err);
+                        }
+                    };
+                }
+                return self.run(...[
+                    behaviour,
+                    parameters,
+                    callback,
+                    opts
+                ]);
             };
             self.runLater = function () {
 
@@ -306,7 +368,7 @@ module.exports.getRemoteBehaviour = function () {
 
                             database = getDatabase();
                         }
-                        var remotes, tenants;
+                        let remotes, tenants;
                         if (typeof config === "object") {
 
                             tenants = config.tenants;
@@ -322,8 +384,8 @@ module.exports.getRemoteBehaviour = function () {
 
                             tenant = {
 
-                                key: 'Behaviour-Tenant',
-                                type: 'header',
+                                key: "Behaviour-Tenant",
+                                type: "header",
                                 value: tenantID || database
                             };
                         }
@@ -332,7 +394,7 @@ module.exports.getRemoteBehaviour = function () {
                             defaultRemotes,
                             remotes
                         ])[baseURL];
-                        var behaviours, remote = baseURL;
+                        let behaviours, remote = baseURL;
                         if (remoteURL) baseURL = remoteURL;
                         _ = typeof baseURL;
                         var string_url = _ === "string";
@@ -381,7 +443,7 @@ module.exports.getRemoteBehaviour = function () {
 
                                 if (cancel) cancel();
                                 _ = typeof _cancel;
-                                if (_ === 'function') {
+                                if (_ === "function") {
 
                                     _cancel();
                                 }
@@ -399,14 +461,16 @@ module.exports.getRemoteBehaviour = function () {
             options.inherits
         ]).defaults({
 
+            name: options.name,
             type: types[options.type],
             inputObjects: options.defaults
-        })
+        });
     }
     return define(getRBConstructor).extend(...[
         BusinessBehaviour
     ]).defaults({
 
+        name: options.name,
         type: types[options.type]
     });
 };

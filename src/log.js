@@ -138,6 +138,7 @@ module.exports.getLogBehaviour = function () {
         getEmitters
     ])).defaults({
 
+        name: options.name,
         type: types[options.type]
     });
 };

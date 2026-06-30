@@ -205,6 +205,7 @@ module.exports = {
             ] = arguments;
             var corsOptions = {
 
+                error: null,
                 origin: false,
                 credentials: true
             };
@@ -322,7 +323,9 @@ module.exports = {
 
                 corsOptions.maxAge = maxAge;
             }
-            callback(null, corsOptions);
+            callback(...[
+                corsOptions.error, corsOptions
+            ]);
         };
         app.all("/*", cors(corsDelegate));
         var { parser, format } = options;
@@ -447,7 +450,13 @@ module.exports = {
         __ = typeof parser;
         if (__ === "function") {
 
-            app.use(parser);
+            app.use(function (req, res, next) {
+
+                var reading = req.readableFlowing;
+                reading |= req.readableEnded;
+                if (reading) return next();
+                parser(req, res, next);
+            });
         }
         __ = typeof paths;
         var requiring = __ === "string";
@@ -477,7 +486,7 @@ module.exports = {
         }
         app.use(function (req, res, next) {
 
-            var err = new Error("Not found");
+            let err = new Error("Not found");
             if (/[A-Z]/.test(req.path)) {
 
                 err = new Error("Not " +
@@ -495,10 +504,19 @@ module.exports = {
 
                 return next(err);
             }
+            if (req.method === "CONNECT") {
+
+                req.socket.destroy();
+                return;
+            }
             var statusCode = 500;
             if (err instanceof URIError) {
 
                 statusCode = 400;
+            }
+            if (err.forbidden) {
+
+                statusCode = 403;
             }
             respond(res.status(...[
                 HttpStatus.getStatus(...[
@@ -549,7 +567,17 @@ module.exports = {
                         domain, cb
                     ] = arguments;
                     var ctx = domains[domain];
-                    if (cb) cb(null, ctx); else {
+                    let err = null;
+                    if (!ctx && !https.key) {
+
+                        err = new Error(...[
+                            "Unrecognized domain"
+                        ]);
+                        err[
+                            "code"
+                        ] = "ERR_TLS_INVALID_SNI";
+                    }
+                    if (cb) cb(err, ctx); else {
 
                         return ctx;
                     }
@@ -562,7 +590,10 @@ module.exports = {
                 var path = https[opt];
                 __ = typeof path;
                 var existed = __ === "string";
-                existed &= fs.existsSync(path);
+                if (existed) {
+
+                    existed &= fs.existsSync(path);
+                }
                 if (existed) {
 
                     opts[
@@ -613,22 +644,39 @@ module.exports = {
             session(socket.handshake, {}, next);
         });
         server.removeAllListeners("upgrade");
-        server.on("upgrade", function () {
+        server.removeAllListeners("connect");
+        var handleUpgrade = function () {
 
             let [
                 req,
                 socket,
                 head
             ] = arguments;
+            socket.on("error", function (err) {
+
+                let event = "upgrade failed: ";
+                if (req.method === "CONNECT") {
+
+                    event = "connect failed: ";
+                }
+                debug(event + err);
+            });
             if (!upgrade(req, socket, head)) {
 
+                if (req.method === "CONNECT") {
+
+                    socket.destroy();
+                    return;
+                }
                 io.engine.handleUpgrade(...[
                     req,
                     socket,
                     head
                 ]);
             }
-        });
+        };
+        server.on("upgrade", handleUpgrade);
+        server.on("connect", handleUpgrade);
         server.listen(...[
             app.get("port"),
             function () {

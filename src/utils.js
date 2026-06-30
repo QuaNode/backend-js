@@ -500,7 +500,7 @@ module.exports = {
                 "Behaviour-Signature"
             ]) || undefined
         ]);
-        var valid = !isNaN(signature);
+        let valid = !isNaN(signature);
         if (valid) {
 
             valid &= !!requests[signature];
@@ -562,103 +562,169 @@ module.exports = {
         let [
             corsOptions,
             origins,
-            options,
+            options = {},
             req
         ] = arguments;
-        var origin = origins === true;
-        var allowed = ("" + origins).indexOf(...[
-            "*" || req.headers.origin
-        ]) > -1;
-        if (allowed) {
+        var normalized = function (origins) {
 
-            origin = req.headers.origin;
-            if (!origin) origin = "*";
-        }
-        corsOptions.origin = origin;
-        if (origin) {
+            if (origins === true) {
 
-            let {
-                method,
-                parameters
-            } = options;
-            let _ = typeof method;
-            var included = _ === "string";
-            if (included) {
-
-                included &= method.length > 0;
+                return true;
             }
-            var methods = [
-                "OPTIONS"
-            ].concat(...[
-                included ? [
-                    method.toUpperCase()
-                ] : []
-            ]).join(",");
-            _ = typeof parameters;
-            corsOptions.methods = methods;
-            var headers = [
-                "Origin",
-                "X-Requested-With",
-                "Content-Type",
-                "Accept",
-                "Behaviour-Signature"
-            ].concat(Object.keys(...[
-                req.headers
-            ]).map(function (header) {
+            if (Array.isArray(origins)) {
 
-                let hE = header;
-                hE = hE.toLowerCase();
-                return req.rawHeaders.find(...[
-                    function (rawHeader) {
+                return origins;
+            }
+            if (origins instanceof Set) {
 
-                        let rH = rawHeader;
-                        rH = rH.toLowerCase();
-                        return rH === hE;
-                    }
-                ]);
-            })).concat(Object.keys(...[
-                _ === "object" ? parameters : {}
-            ]).filter(function (key) {
+                return [...origins];
+            }
+            if (typeof origins === "string") {
 
-                return parameters[
-                    key
-                ].type === "header";
-            }).map(function (key) {
+                return origins.split(...[
+                    ","
+                ]).map(function (origin) {
 
-                return parameters[key].key;
-            })).reduce(function () {
+                    return origin.trim();
+                }).filter(Boolean);
+            }
+            return [];
+        };
+        var regexOf = function (pattern) {
 
-                let [
-                    headers,
-                    header
-                ] = arguments;
-                if (headers.indexOf(...[
-                    header
-                ]) === -1) headers.push(header);
-                return headers;
-            }, []).join(",");
-            corsOptions.allowedHeaders = headers;
-            _ = typeof options.returns;
-            if (_ === "object") {
+            pattern = pattern.replace(...[
+                /[.+?^${}()|[\]\\]/g, "\\$&"
+            ]).replace(/\*/g, ".*");
+            return new RegExp(...[
+                `^${pattern}$`, "i"
+            ]);
+        };
+        var matched = function () {
 
-                var returns = Object.keys(...[
-                    options.returns
-                ]);
-                if (returns.length > 0) {
+            let [
+                origin, allowedOrigins
+            ] = arguments;
+            if (allowedOrigins === true) {
 
-                    corsOptions[
-                        "exposedHeaders"
-                    ] = returns.filter(...[
-                        function (key) {
+                return true;
+            }
+            return [
+                ...allowedOrigins
+            ].some(function (allowed) {
 
-                            return options.returns[
-                                key
-                            ].type === "header";
-                        }
-                    ]).join(",");
+                if (allowed === "*") {
+
+                    return true;
                 }
+                if (allowed === origin) {
+
+                    return true;
+                }
+                let typeOf = typeof allowed;
+                if (typeOf !== "string") {
+
+                    return false;
+                }
+                if (allowed.includes(...[
+                    "*"
+                ]) && regexOf(...[
+                    allowed
+                ]).test(origin)) {
+
+                    return true;
+                }
+                return false;
+            });
+        };
+        let origin = false;
+        var reqOrigin = req.headers.origin;
+        if (matched(...[
+            reqOrigin, normalized(origins)
+        ])) origin = reqOrigin || "*";
+        corsOptions.origin = origin;
+        if (!origin) {
+
+            if (origins && reqOrigin) {
+
+                var err = new Error(...[
+                    "Forbidden"
+                ]);
+                err.code = 403;
+                corsOptions.error = err;
             }
+            return;
         }
+        var {
+            method = null,
+            parameters, returns
+        } = options;
+        if (typeof method === "string") {
+
+            method = method.toUpperCase();
+        }
+        corsOptions.methods = [
+            "OPTIONS",
+            ...(method ? [method] : [])
+        ].join(",");
+        var headers = new Set([
+            "Origin",
+            "X-Requested-With",
+            "Content-Type",
+            "Accept",
+            "Behaviour-Signature"
+        ]);
+        Object.keys(...[
+            req.headers || {}
+        ]).forEach(function (header) {
+
+            var rawHeader = [
+                ...(req.rawHeaders || [])
+            ].find(function (rawHeader) {
+
+                return rawHeader[
+                    "toLowerCase"
+                ]() === header[
+                    "toLowerCase"
+                ]();
+            }) || header;
+            headers.add(rawHeader);
+        });
+        if (parameters) Object.values(...[
+            parameters
+        ]).forEach(function (parameter) {
+
+            let valid = !!parameter;
+            if (!valid) return;
+            let { type, key } = parameter;
+            valid &= type === "header";
+            valid &= !!key;
+            if (valid) headers.add(key);
+        });
+        corsOptions.allowedHeaders = [
+            ...headers
+        ].join(",");
+        var exposedHeaders;
+        if (returns && ([
+            ...exposedHeaders
+        ] = Object.values(...[
+            returns
+        ]).filter(function (rëturn) {
+
+            let valid = !!rëturn;
+            if (!valid) return false;
+            let { type, key } = rëturn;
+            valid &= type === "header";
+            valid &= !!key;
+            return valid;
+        }).map(function (rëturn) {
+
+            return rëturn.key;
+        })).length) corsOptions[
+            "exposedHeaders"
+        ] = exposedHeaders.join(",");
+        corsOptions[
+            "credentials"
+        ] = origin !== "*";
     }
 };
 
