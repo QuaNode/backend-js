@@ -12,7 +12,7 @@ module.exports.setResourceController = function () {
         throw new Error("Invalid resource" +
             " controller key");
     }
-    if (typeof rc !== "object") {
+    if (!rc || typeof rc !== "object") {
 
         throw new Error("Invalid resource" +
             " controller");

@@ -290,8 +290,9 @@ module.exports = {
                     "behaviour callback");
             }
             let _ = typeof response;
-            let no_signature = _ !== "object";
-            if (no_signature) {
+            let no_signature = !response;
+            no_signature |= _ !== "object";
+            if (!no_signature) {
 
                 _ = typeof response.signature;
                 no_signature |= _ !== "number";
@@ -317,12 +318,15 @@ module.exports = {
             return;
         }
         let __ = typeof returns;
-        var no_structure = __ !== "object";
+        var no_structure = !returns;
+        no_structure |= __ !== "object";
         __ = typeof response;
+        no_structure |= !response;
         no_structure |= __ !== "object";
         if (!no_structure) {
 
             __ = typeof response.response;
+            no_structure |= !response.response;
             no_structure |= __ !== "object";
             no_structure |= Array.isArray(...[
                 response.response
@@ -334,7 +338,8 @@ module.exports = {
             if (no_response) {
 
                 __ = typeof response;
-                no_response = __ !== "object";
+                no_response |= !response;
+                no_response |= __ !== "object";
                 no_response |= !Array.isArray(...[
                     response.response
                 ]);
@@ -411,7 +416,8 @@ module.exports = {
             response
         ] = arguments;
         let _ = typeof response;
-        let no_signature = _ !== "object";
+        let no_signature = !response;
+        no_signature |= _ !== "object";
         if (!no_signature) {
 
             _ = typeof response.signature;
@@ -518,7 +524,8 @@ module.exports = {
         ] = arguments;
         var request = { req, res, next };
         let _ = typeof response;
-        var signed = _ === "object";
+        var signed = !!response;
+        signed &= _ === "object";
         if (signed) {
 
             _ = typeof response.signature;
@@ -666,15 +673,15 @@ module.exports = {
             "OPTIONS",
             ...(method ? [method] : [])
         ].join(",");
-        var headers = new Set([
+        var headers = new Set();
+        Object.keys(...[
+            req.headers || {}
+        ]).concat([
             "Origin",
             "X-Requested-With",
             "Content-Type",
             "Accept",
             "Behaviour-Signature"
-        ]);
-        Object.keys(...[
-            req.headers || {}
         ]).forEach(function (header) {
 
             var rawHeader = [
@@ -687,7 +694,10 @@ module.exports = {
                     "toLowerCase"
                 ]();
             }) || header;
-            headers.add(rawHeader);
+            if (!headers.has(rawHeader)) {
+
+                headers.add(rawHeader);
+            }
         });
         if (parameters) Object.values(...[
             parameters
@@ -706,19 +716,16 @@ module.exports = {
         var exposedHeaders;
         if (returns && ([
             ...exposedHeaders
-        ] = Object.values(...[
+        ] = Object.keys(...[
             returns
-        ]).filter(function (rëturn) {
+        ]).filter(function (key) {
 
-            let valid = !!rëturn;
+            let valid = !!returns[key];
             if (!valid) return false;
-            let { type, key } = rëturn;
+            let { type } = returns[key];
             valid &= type === "header";
             valid &= !!key;
             return valid;
-        }).map(function (rëturn) {
-
-            return rëturn.key;
         })).length) corsOptions[
             "exposedHeaders"
         ] = exposedHeaders.join(",");

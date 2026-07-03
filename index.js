@@ -161,10 +161,7 @@ module.exports = {
     behaviour,
     env(options) {
 
-        if (typeof options !== "object") {
-
-            options = {};
-        }
+        if (!options) options = {};
         options.quiet = process.env[
             "NODE_ENV"
         ] === "production";
@@ -172,7 +169,7 @@ module.exports = {
         if (vars && vars.error) {
 
             var { error } = vars;
-            if (error.code !== 'ENOENT') {
+            if (error.code !== "ENOENT") {
 
                 debug(error);
             }
@@ -226,13 +223,13 @@ module.exports = {
                 var {
                     method: rM
                 } = routeOptions;
-                let _ = typeof rM;
-                var valid = _ === "string";
+                let __ = typeof rM;
+                var valid = __ === "string";
                 if (valid) {
 
                     rM = rM.toLowerCase();
-                    _ = typeof app[rM];
-                    valid &= _ === "function";
+                    __ = typeof app[rM];
+                    valid &= __ === "function";
                 }
                 if (valid) method = rM;
                 var { origins } = routeOptions;
@@ -240,8 +237,8 @@ module.exports = {
 
                     ({ origins } = options);
                 }
-                _ = typeof origins;
-                var allow = _ !== "string";
+                __ = typeof origins;
+                var allow = __ !== "string";
                 if (!allow) {
 
                     allow |= origins.length === 0;
@@ -343,7 +340,7 @@ module.exports = {
             parsing = __ === "object";
             if (parsing) {
 
-                ({ format } = parser);
+                ({ format } = parser || {});
                 __ = typeof format;
                 parsing = __ === "string";
             }
@@ -361,32 +358,34 @@ module.exports = {
             options.tenants,
             { schedule: options.schedule }
         ]);
-        var proxied = typeof paths === "object";
+        var proxied = !!paths
+        proxied &= typeof paths === "object";
         if (proxied) {
 
-            let _ = typeof paths.proxy;
-            proxied &= _ === "string";
+            let __ = typeof paths.proxy;
+            proxied &= __ === "string";
             if (proxied) {
 
                 proxied &= paths.proxy.length > 0;
             }
         }
         if (proxied) require(paths.proxy);
-        if (typeof options.static === "object") {
+        var { static: sOpt } = options;
+        if (sOpt && typeof sOpt === "object") {
 
-            let _ = typeof options.static.route;
-            if (_ === "string") {
+            let __ = typeof sOpt.route;
+            if (__ === "string") {
 
                 app.use(...[
-                    options.static.route,
+                    sOpt.route,
                     serve(...[
-                        options.static.path,
-                        options.static
+                        sOpt.path,
+                        sOpt
                     ])
                 ]);
             } else app.use(serve(...[
-                options.static.path,
-                options.static
+                sOpt.path,
+                sOpt
             ]));
         }
         app.use(session = session(function () {
@@ -415,7 +414,7 @@ module.exports = {
         }()));
         var parserOptions = parser;
         __ = typeof parserOptions;
-        if (__ !== "object") {
+        if (!parserOptions || __ !== "object") {
 
             ({ parserOptions } = options);
         }
@@ -466,7 +465,8 @@ module.exports = {
         }
         if (requiring) require(paths); else {
 
-            requiring = __ === "object";
+            requiring = !!paths;
+            requiring &= __ === "object";
             if (requiring) {
 
                 __ = typeof paths.local;
@@ -531,7 +531,8 @@ module.exports = {
             }, format);
         });
         __ = typeof options.https;
-        var https = __ === "object";
+        var https = !!options.https;
+        https &= __ === "object";
         var port = options.port;
         if (!port) port = process.env.PORT;
         if (!port) port = https ? 443 : 80;
@@ -549,7 +550,8 @@ module.exports = {
                 ]);
             };
             __ = typeof https.domains;
-            var domains = __ === "object";
+            var domains = !!https.domains;
+            domains &= __ === "object";
             if (domains) {
 
                 ({ domains } = https);

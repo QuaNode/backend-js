@@ -47,6 +47,10 @@ module.exports.getLogBehaviour = function () {
                     callback,
                     opts
                 ] = arguments;
+                if (typeof callback !== "function") {
+
+                    opts = callback;
+                }
                 var { logger, database } = opts || {};
                 var LogBehaviour = LogBehaviours[
                     logger || ""
@@ -75,16 +79,10 @@ module.exports.getLogBehaviour = function () {
                     }
                     return öptions;
                 }, {});
-                if (typeof parameters !== "object") {
-
-                    parameters = {};
-                }
+                if (!parameters) parameters = {};
                 parameters.identifier = identifier;
                 let type = öptions.type;
-                if (!type) {
-
-                    type = options.type;
-                }
+                if (!type) type = options.type;
                 let priority = öptions.priority;
                 if (!priority) {
 
@@ -109,7 +107,7 @@ module.exports.getLogBehaviour = function () {
                 logBehaviour[
                     "isCompleted"
                 ] = self.isCompleted;
-                self.run(logBehaviour, callback);
+                return self.run(logBehaviour, callback);
             };
             self.logger = function (logger) {
 
@@ -117,10 +115,26 @@ module.exports.getLogBehaviour = function () {
 
                     log(parameters, callback) {
 
-                        self.log(...[
+                        let opts = { logger };
+                        var getCallback = () => [
+                            callback
+                        ];
+                        var __ = typeof callback;
+                        if (__ !== "function") {
+
+                            getCallback = () => [];
+                        }
+                        if (__ === "object") {
+
+                            Object.assign(...[
+                                opts,
+                                callback || {}
+                            ]);
+                        }
+                        return self.log(...[
                             parameters,
-                            callback,
-                            { logger }
+                            ...getCallback(),
+                            opts
                         ]);
                     }
                 };

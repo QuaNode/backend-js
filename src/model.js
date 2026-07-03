@@ -40,7 +40,7 @@ module.exports.setModelController = function () {
         throw new Error("Invalid model" +
             " controller key");
     }
-    if (typeof mc !== "object") {
+    if (!mc || typeof mc !== "object") {
 
         throw new Error("Invalid model" +
             " controller");
@@ -112,7 +112,7 @@ module.exports.model = function () {
             }
             return modelEntity;
         };
-        if (typeof options !== "object") {
+        if (!options || typeof options !== "object") {
 
             throw new Error("Invalid definition" +
                 " object");
@@ -134,10 +134,7 @@ module.exports.model = function () {
 
         //   throw new Error("Invalid model version");
         // }
-        if (typeof options.features !== "object") {
-
-            options.features = {};
-        }
+        if (!options.features) options.features = {};
         if (!Array.isArray(options.query)) {
 
             options.query = [];
@@ -146,7 +143,12 @@ module.exports.model = function () {
 
             options.aggregate = [];
         }
+        var no_attributes = !attributes;
         if (typeof attributes !== "object") {
+
+            no_attributes = true;
+        }
+        if (no_attributes) {
 
             throw new Error("Invalid attributes");
         } else Object.keys(attributes).forEach(...[
@@ -175,57 +177,57 @@ module.exports.model = function () {
 
             databases.push("main");
         }
-        var EntityConstructors = databases.reduce(...[
-            function () {
+        var EntityConstructors = [
+            ...databases
+        ].reduce(function () {
 
-                var [
-                    EntityConstructors,
-                    database,
-                    index
-                ] = arguments;
-                var invalid = !!database;
-                if (invalid) {
+            var [
+                EntityConstructors,
+                database,
+                index
+            ] = arguments;
+            var invalid = !!database;
+            if (invalid) {
 
-                    var typeOf = typeof database;
-                    invalid = typeOf !== "string";
-                    if (!invalid) {
+                var typeOf = typeof database;
+                invalid = typeOf !== "string";
+                if (!invalid) {
 
-                        var length = database.length;
-                        invalid |= length === 0;
-                    }
+                    var length = database.length;
+                    invalid |= length === 0;
                 }
-                if (invalid) {
+            }
+            if (invalid) {
 
-                    throw new Error("Invalid " +
-                        "database key");
-                }
-                var not_existed = !ModelControllers[
-                    database
-                ];
-                not_existed |= !modelControllers[
-                    database
-                ];
-                if (not_existed) {
+                throw new Error("Invalid " +
+                    "database key");
+            }
+            var not_existed = !ModelControllers[
+                database
+            ];
+            not_existed |= !modelControllers[
+                database
+            ];
+            if (not_existed) {
 
-                    throw new Error("Set model " +
-                        "controller before " +
-                        "defining a model");
-                }
-                EntityConstructors[
-                    database
-                ] = ModelControllers[
-                    database
-                ].defineEntity(...[
-                    name,
-                    attributes,
-                    plugins,
-                    options.constraints,
-                    database,
-                    index === databases.length - 1
-                ]);
-                return EntityConstructors;
-            }, {}
-        ]);
+                throw new Error("Set model " +
+                    "controller before " +
+                    "defining a model");
+            }
+            EntityConstructors[
+                database
+            ] = ModelControllers[
+                database
+            ].defineEntity(...[
+                name,
+                attributes,
+                plugins,
+                options.constraints,
+                database,
+                index === databases.length - 1
+            ]);
+            return EntityConstructors;
+        }, {});
         var EntityConstructor;
         if (databases.length === 1) {
 
@@ -239,7 +241,7 @@ module.exports.model = function () {
             return function () {
 
                 let [
-                    features,
+                    features = {},
                     query,
                     aggregate
                 ] = arguments;

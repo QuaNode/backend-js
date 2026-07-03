@@ -212,7 +212,7 @@ var businessController = function () {
                     var req = requesting();
                     if (typeof req === "object") {
 
-                        ({ url: _url_ } = req);
+                        ({ url: _url_ } = req || {});
                     }
                 }
                 if (data && data.error) log.error({

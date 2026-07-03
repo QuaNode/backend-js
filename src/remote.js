@@ -72,6 +72,59 @@ module.exports.getRemoteBehaviour = function () {
                     return ȯptions.database;
                 };
             }
+            var getPromise = function () {
+
+                let [
+                    baseURL = "local",
+                    behaviour,
+                    parameters,
+                    callback,
+                    opts
+                ] = arguments;
+                var awaiting = false;
+                var argsLen = arguments.length;
+                var getParameters = () => [
+                    parameters
+                ];
+                let BB = BusinessBehaviour;
+                if (behaviour instanceof BB) {
+
+                    opts = callback;
+                    callback = parameters;
+                    awaiting = argsLen === 2;
+                    getParameters = () => [];
+                } else awaiting = argsLen === 3;
+                let __ = typeof callback;
+                if (__ !== "function") {
+
+                    awaiting = true;
+                }
+                if (!awaiting) return;
+                opts = callback;
+                var executor = function () {
+
+                    var [
+                        resolve, reject
+                    ] = arguments;
+                    callback = function () {
+
+                        let [
+                            res, err
+                        ] = arguments;
+                        if (err) {
+
+                            reject(err);
+                        } else resolve(res);
+                    };
+                    self.remote(baseURL).run(...[
+                        behaviour,
+                        ...getParameters(),
+                        callback,
+                        opts
+                    ]);
+                }
+                return new Promise(executor);
+            };
             self.run = function () {
 
                 let [
@@ -80,6 +133,10 @@ module.exports.getRemoteBehaviour = function () {
                     callback,
                     opts
                 ] = arguments;
+                var promise = getPromise(...[
+                    "local", ...arguments
+                ]);
+                if (promise) return promise;
                 var storage,
                     fetcher,
                     fetching,
@@ -118,8 +175,8 @@ module.exports.getRemoteBehaviour = function () {
                 }
                 if (!(behaviour instanceof BB)) {
 
-                    let _ = typeof behaviour;
-                    let invalid = _ !== "string";
+                    let __ = typeof behaviour;
+                    let invalid = __ !== "string";
                     if (!invalid) {
 
                         invalid |= !BEHAVIOURS[
@@ -145,8 +202,8 @@ module.exports.getRemoteBehaviour = function () {
                     }
                     memory = ȯptiȯns.memory;
                     operations = ȯptiȯns.operations;
-                    _ = typeof parameters;
-                    if (_ === "function") {
+                    __ = typeof parameters;
+                    if (__ === "function") {
 
                         behaviour = parameters(...[
                             BEHAVIOURS[
@@ -175,8 +232,8 @@ module.exports.getRemoteBehaviour = function () {
                         if (any) {
 
                             queue = ȯptiȯns.queue;
-                            _ = typeof queue;
-                            if (_ === "function") {
+                            __ = typeof queue;
+                            if (__ === "function") {
 
                                 queue = queue(...[
                                     ȯptiȯns.name,
@@ -202,8 +259,8 @@ module.exports.getRemoteBehaviour = function () {
                 if (!queue) queue = queuě;
                 if (!later) {
 
-                    let _ = typeof parameters;
-                    var mandatory = _ !== "function";
+                    let __ = typeof parameters;
+                    var mandatory = __ !== "function";
                     mandatory |= callback == parameters;
                     if (mandatory) {
 
@@ -213,20 +270,20 @@ module.exports.getRemoteBehaviour = function () {
                 if (!FetchBehaviour) {
 
                     var fetch = "";
-                    let _ = typeof options.fetcher;
-                    if (_ === "string") {
+                    let __ = typeof options.fetcher;
+                    if (__ === "string") {
 
                         fetch = options.fetcher;
                     } else {
 
-                        _ = typeof fetching;
-                        if (_ === "string") {
+                        __ = typeof fetching;
+                        if (__ === "string") {
 
                             fetch = fetching;
                         } else {
 
-                            _ = typeof options.fetching;
-                            if (_ === "string") {
+                            __ = typeof options.fetching;
+                            if (__ === "string") {
 
                                 fetch = options.fetching;
                             }
@@ -343,6 +400,10 @@ module.exports.getRemoteBehaviour = function () {
                             callback,
                             opts
                         ] = arguments;
+                        var promise = getPromise(...[
+                            baseURL, ...arguments
+                        ]);
+                        if (promise) return promise;
                         if (baseURL === "local") {
 
                             return self.run(...[
@@ -352,8 +413,8 @@ module.exports.getRemoteBehaviour = function () {
                                 opts
                             ]);
                         }
-                        let _ = typeof behaviour;
-                        var no_name = _ !== "string";
+                        let __ = typeof behaviour;
+                        var no_name = __ !== "string";
                         if (!no_name) {
 
                             no_name |= behaviour.length === 0;
@@ -369,7 +430,7 @@ module.exports.getRemoteBehaviour = function () {
                             database = getDatabase();
                         }
                         let remotes, tenants;
-                        if (typeof config === "object") {
+                        if (config) {
 
                             tenants = config.tenants;
                             remotes = config.remotes;
@@ -396,8 +457,8 @@ module.exports.getRemoteBehaviour = function () {
                         ])[baseURL];
                         let behaviours, remote = baseURL;
                         if (remoteURL) baseURL = remoteURL;
-                        _ = typeof baseURL;
-                        var string_url = _ === "string";
+                        __ = typeof baseURL;
+                        var string_url = __ === "string";
                         if (string_url) {
 
                             string_url &= baseURL.length > 0;
@@ -417,10 +478,10 @@ module.exports.getRemoteBehaviour = function () {
                                 ] = behaviours;
                             } else {
 
-                                _ = typeof remotes;
-                                if (_ === "object") {
+                                __ = typeof remotes;
+                                if (__ === "object") {
 
-                                    remotes[
+                                    if (remotes) remotes[
                                         remote
                                     ] = behaviours;
                                 }
@@ -442,8 +503,8 @@ module.exports.getRemoteBehaviour = function () {
                             self.cancel = function () {
 
                                 if (cancel) cancel();
-                                _ = typeof _cancel;
-                                if (_ === "function") {
+                                __ = typeof _cancel;
+                                if (__ === "function") {
 
                                     _cancel();
                                 }

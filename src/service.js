@@ -114,8 +114,8 @@ module.exports.service = function () {
                             serve(request, callback);
                             break;
                         default:
-                            throw new Error('Invalid ' +
-                                'request type');
+                            throw new Error("Invalid " +
+                                "request type");
                     }
                 };
                 self.sendRequest = function () {
@@ -128,7 +128,8 @@ module.exports.service = function () {
                     request.constants = constants || {};
                     var serializedRequest = request;
                     _ = typeof request.context;
-                    var serializing = _ === "object";
+                    var serializing = !!request.context;
+                    serializing &= _ === "object";
                     let serialize;
                     if (serializing) {
 
@@ -144,7 +145,8 @@ module.exports.service = function () {
                     }
                     var deserializeCallback = callback;
                     _ = typeof request.context;
-                    var deserializing = _ === "object";
+                    var deserializing = !!request.context;
+                    deserializing &= _ === "object";
                     let deserialize;
                     if (deserializing) {
 
@@ -191,7 +193,8 @@ module.exports.service = function () {
 
                         let { context } = request;
                         _ = typeof context;
-                        var authenticating = _ === "object";
+                        var authenticating = !!context;
+                        authenticating &= _ === "object";
                         if (authenticating) {
 
                             _ = typeof context.authenticate;
@@ -219,7 +222,7 @@ module.exports.service = function () {
         }).extend(ServiceAdapter).defaults(baseURI);
         return function (path, options) {
 
-            if (typeof path === "object") {
+            if (path && typeof path === "object") {
 
                 options = path;
             }
@@ -358,7 +361,7 @@ module.exports.service = function () {
                         if (typeof map === "object") {
 
                             modelAttributes = Object.values(...[
-                                map
+                                map || {}
                             ]).map(function (attribute) {
 
                                 _ = typeof attribute;
@@ -382,7 +385,9 @@ module.exports.service = function () {
                         var serviceAttributes = serviceAttrs;
                         if (typeof map === "object") {
 
-                            serviceAttributes = Object.keys(map);
+                            serviceAttributes = Object.keys(...[
+                                map || {}
+                            ]);
                         }
                         var metadata = new ServiceObjectMetadata({
 

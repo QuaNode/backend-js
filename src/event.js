@@ -182,15 +182,8 @@ module.exports.getEventBehaviour = function () {
                                     "getEmitterId"
                                 ](behaviour.name, room)
                             };
-                            var failing = false;
-                            if (typeof error === "object") {
-
-                                failing = true;
-                            }
-                            if (typeof result !== "object") {
-
-                                failing |= true;
-                            }
+                            var failing = !!error;
+                            failing |= result !== "object";
                             if (failing) {
 
                                 debug(error);
